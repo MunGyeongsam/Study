@@ -11,6 +11,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kalgorithm", "..\kalgorithm\kalgorithm.vcxproj", "{BBC31BDC-E446-4B81-BDE0-F08F417E1B97}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "examples", "..\examples\examples.vcxproj", "{415B794E-3BC8-42C2-AE5F-97F8148D15A8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BBC31BDC-E446-4B81-BDE0-F08F417E1B97} = {BBC31BDC-E446-4B81-BDE0-F08F417E1B97}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

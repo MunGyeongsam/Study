@@ -111,6 +111,11 @@ void TestAll()
     PointerTest2();
 }
 
+int* create(int n)
+{
+    return new int[n];
+}
+
 int main()
 {
     std::cout << "Hello World!\n";
