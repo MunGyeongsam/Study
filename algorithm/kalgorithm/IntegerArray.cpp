@@ -6,20 +6,28 @@
 
 namespace ka
 {
+	//IntegerArray::IntegerArray()
+	//	: m_lower(0)
+	//	, m_upper(0)
+	//	, m_data(new int[1])
+	//{
+	//	m_data[0] = 0;
+	//}
 	IntegerArray::IntegerArray()
-		: m_lower(0)
-		, m_upper(0)
-		, m_data(new int[1])
+		: IntegerArray(0, 0)
 	{
 	}
-	IntegerArray::IntegerArray(int up, int low)
+
+	IntegerArray::IntegerArray(int up, int low/*=0*/)
 		: m_lower(low)
 		, m_upper(up)
-		, m_data(new int[up-low+1])
+		, m_data(nullptr)
 	{
-		memset(m_data, 0, (up - low + 1));
+		assert(up >= low);
+		m_data = new int[up - low + 1];
+		memset(m_data, 0, sizeof(int)*Size());
 	}
-	IntegerArray::IntegerArray(int a[], int size)
+	IntegerArray::IntegerArray(const int a[], int size)
 		: m_lower(0)
 		, m_upper(size-1)
 		, m_data(new int[size])
@@ -52,17 +60,17 @@ namespace ka
 		assert(up >= low);
 
 		int newSize = up - low + 1;
-		int oldSize = m_upper - m_lower + 1;
-
 		int* newData = new int[newSize];
 
-		int cnt = (newSize > oldSize) ? oldSize : newSize;
-		std::copy(m_data, m_data + cnt, newData);
+		int lowMax = std::max(low, m_lower);
+		int upMin = std::min(up, m_upper);
 
-		if (newSize > oldSize)
-		{
-			memset(newData + oldSize, 0, newSize - oldSize);
-		}
+		for (int i = low; i < lowMax; ++i)
+			newData[i - low] = 0;
+		for (int i = lowMax; i <= upMin; ++i)
+			newData[i - low] = m_data[i - m_lower];
+		for (int i = up; i > upMin; --i)
+			newData[i - low] = 0;
 
 		delete[] m_data;
 
@@ -85,11 +93,38 @@ namespace ka
 
 		return *this;
 	}
-	int& IntegerArray::operator[] (int i) const
+	const int& IntegerArray::operator[] (int i) const
 	{
 		assert(i >= m_lower);
 		assert(i <= m_upper);
 		return m_data[i - m_lower];
+	}
+	int& IntegerArray::operator[] (int i)
+	{
+		assert(i >= m_lower);
+		assert(i <= m_upper);
+		return m_data[i - m_lower];
+	}
+
+	unsigned int IntegerArray::Size() const
+	{
+		return static_cast<unsigned int>(m_upper - m_lower) + 1U;
+	}
+	int IntegerArray::Lower() const
+	{
+		return m_lower;
+	}
+	int IntegerArray::Uppper() const
+	{
+		return m_upper;
+	}
+	std::ostream& operator<<(std::ostream& os, const IntegerArray& a)
+	{
+		os << "size : " << a.Size() << "(" << a.Lower() << " ~ " << a.Uppper() << ")" << std::endl;
+		for (int i = a.Lower(); i <= a.Uppper(); ++i)
+			os << "[" << i << "] : " << a[i] << std::endl;
+
+		return os;
 	}
 }
 
