@@ -151,6 +151,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="FixedArray.h" />
+    <ClInclude Include="FixedArray2D.h" />
     <ClInclude Include="IntegerArray.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />

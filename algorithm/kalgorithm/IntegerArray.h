@@ -7,8 +7,7 @@ namespace ka
 	// lower <= i <= upper
 	class IntegerArray
 	{
-		typedef std::ostream ostream;
-		friend ostream& operator<< (ostream& os, const IntegerArray& a);
+		friend std::ostream& operator<< (std::ostream& os, const IntegerArray& a);
 
 	public:
 		IntegerArray();
