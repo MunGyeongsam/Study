@@ -7,11 +7,100 @@
 namespace ka
 {
 	template<class T, int R, int C>
+	class FixedArray2D1st
+	{
+		friend std::ostream& operator<< (std::ostream& os, FixedArray2D1st const& a)
+		{
+			os << "Length : " << a.Length() << std::endl;
+			os << "Row : " << R << std::endl;
+			os << "Column : " << C << std::endl;
+			for (int r = 0, i = 0; r < R; ++r)
+			{
+				for (int c = 0; c < C; ++c)
+					os << "[" << r << "][" << c << "] : " << a(r,c) << std::endl;
+			}
+			return os;
+		}
+
+	public:
+		typedef T(&arr_t)[R][C];
+		typedef const T(&carr_t)[R][C];
+		FixedArray2D1st() {
+			//do nothing!
+		}
+		FixedArray2D1st(T const& v)
+		{
+			for (int r = 0, i = 0; r < R; ++r)
+			{
+				for (int c = 0; c < C; ++c)
+					m_data[r][c] = v;
+			}
+		}
+
+		explicit FixedArray2D1st(const T(&arr)[R*C])
+		{
+			for (int r = 0, i = 0; r < R; ++r)
+			{
+				for (int c = 0; c < C; ++c)
+					m_data[r][c] = arr[i++];
+			}
+		}
+
+		explicit FixedArray2D1st(const T(&arr)[R][C])
+		{
+			for (int r = 0; r < R; ++r)
+			{
+				for (int c = 0; c < C; ++c)
+					m_data[r][c] = arr[r][c];
+			}
+		}
+		FixedArray2D1st(FixedArray2D1st const& rhs)
+		{
+			new(this)FixedArray2D1st(rhs.m_data);
+		}
+
+		FixedArray2D1st& operator= (FixedArray2D1st const& rhs)
+		{
+			new(this)FixedArray2D1st(rhs.m_data);
+			return *this;
+		}
+
+		T& operator() (int i, int j)
+		{
+
+			assert(i >= 0);
+			assert(i < R);
+			assert(j >= 0);
+			assert(j < C);
+			return m_data[i][j];
+		}
+		const T& operator() (int i, int j) const
+		{
+
+			assert(i >= 0);
+			assert(i < R);
+			assert(j >= 0);
+			assert(j < C);
+			return m_data[i][j];
+		}
+
+		const size_t Length()const { return R * C; }
+		const size_t Row()const { return R; }
+		const size_t Column()const { return C; }
+
+		operator arr_t() { return m_data; }
+		operator carr_t()const { return m_data; }
+
+	private:
+		T m_data[R][C];
+	};
+
+	template<class T, int R, int C>
 	class FixedArray2D
 	{
 		friend std::ostream& operator<< (std::ostream& os, FixedArray2D const& a)
 		{
-			os << "Count : " << a.Count() << std::endl;
+			os << "Length : " << a.Length() << std::endl;
 			os << "Row : " << R << std::endl;
 			os << "Column : " << C << std::endl;
 			for (int r = 0, i = 0; r < R; ++r)
@@ -88,7 +177,7 @@ namespace ka
 			return *this;
 		}
 
-		const size_t Count()const { return R * C; }
+		const size_t Length()const { return R * C; }
 		const size_t Row()const { return R; }
 		const size_t Column()const { return C; }
 

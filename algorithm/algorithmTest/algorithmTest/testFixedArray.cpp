@@ -26,7 +26,7 @@ TEST(FixedArray, Construct1) {
 
 	cout << a << endl;
 
-	for (int i = 0; i < a.Size(); ++i)
+	for (int i = 0; i < (int)a.Size(); ++i)
 		a[i] = i;
 
 	ASSERT_TRUE(a.Size() == 10);
