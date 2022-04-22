@@ -52,6 +52,7 @@
     <ClCompile Include="testFixedArray.cpp" />
     <ClCompile Include="testFixedArray2D.cpp" />
     <ClCompile Include="testIntegerArray.cpp" />
+    <ClCompile Include="testNumber.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

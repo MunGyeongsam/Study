@@ -155,11 +155,13 @@
     <ClInclude Include="FixedArray2D.h" />
     <ClInclude Include="IntegerArray.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Number.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="IntegerArray.cpp" />
     <ClCompile Include="kalgorithm.cpp" />
+    <ClCompile Include="Number.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
