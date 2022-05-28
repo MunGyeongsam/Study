@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,24 +26,154 @@ public class Floor : MonoBehaviour
     int _layerMask;         //for picking
     float _maxDist;         //for picking
     float _stoneY;
+    bool _isGameOver = false;
 
     Stone[,] _map = new Stone[19, 19];
     List<GameObject> _stones = new List<GameObject>();
 
     Camera _mainCamera;
+    UI _ui;
 
+    int CountN(Index iPos, Stone stone)
+    {
+        int rt = 0;
+
+        for (int r = iPos.row + 1, c = iPos.col; r < 19; ++r)
+        {
+            if (_map[r, c] != stone)
+                break;
+            ++rt;
+        }
+
+        return rt;
+    }
+
+    int CountS(Index iPos, Stone stone)
+    {
+        int rt = 0;
+
+        for (int r = iPos.row - 1, c = iPos.col; r >= 0; --r)
+        {
+            if (_map[r, c] != stone)
+                break;
+            ++rt;
+        }
+
+        return rt;
+    }
+    int CountE(Index iPos, Stone stone)
+    {
+        int rt = 0;
+
+        for (int r = iPos.row, c = iPos.col+1; c < 19; ++c)
+        {
+            if (_map[r, c] != stone)
+                break;
+            ++rt;
+        }
+
+        return rt;
+    }
+    int CountW(Index iPos, Stone stone)
+    {
+        int rt = 0;
+
+        for (int r = iPos.row, c = iPos.col - 1; c >= 0; --c)
+        {
+            if (_map[r, c] != stone)
+                break;
+            ++rt;
+        }
+
+        return rt;
+    }
+    int CountNe(Index iPos, Stone stone)
+    {
+        int rt = 0;
+
+        for (int r = iPos.row+1, c = iPos.col + 1; c < 19 && r < 19; ++r, ++c)
+        {
+            if (_map[r, c] != stone)
+                break;
+            ++rt;
+        }
+
+        return rt;
+    }
+    int CountSe(Index iPos, Stone stone)
+    {
+        int rt = 0;
+
+        for (int r = iPos.row - 1, c = iPos.col + 1; c < 19 && r >= 0; --r, ++c)
+        {
+            if (_map[r, c] != stone)
+                break;
+            ++rt;
+        }
+
+        return rt;
+    }
+    int CountNw(Index iPos, Stone stone)
+    {
+        int rt = 0;
+
+        for (int r = iPos.row + 1, c = iPos.col - 1; c >= 0 && r < 19; ++r, --c)
+        {
+            if (_map[r, c] != stone)
+                break;
+            ++rt;
+        }
+
+        return rt;
+    }
+    int CountSw(Index iPos, Stone stone)
+    {
+        int rt = 0;
+
+        for (int r = iPos.row - 1, c = iPos.col - 1; c >= 0 && r >= 0; --r, --c)
+        {
+            if (_map[r, c] != stone)
+                break;
+            ++rt;
+        }
+
+        return rt;
+    }
+
+    bool IsFiveStone(Index ipos, Stone stone)
+    {
+        int cnt = 0;
+        //horizontal
+        cnt = CountE(ipos, stone) + CountW(ipos, stone) + 1;
+        if (cnt == 5) 
+            return true;
+        //vertical
+        cnt = CountN(ipos, stone) + CountS(ipos, stone) + 1;
+        if (cnt == 5)
+            return true;
+        //diagonal
+        cnt = CountNe(ipos, stone) + CountSw(ipos, stone) + 1;
+        if (cnt == 5)
+            return true;
+        cnt = CountNw(ipos, stone) + CountSe(ipos, stone) + 1;
+        if (cnt == 5)
+            return true;
+
+        return false;
+    }
     public void Reset()
     {
-        for (int i = 0; i < _map.GetLength(0); ++i)
-            for (int j = 0; j < _map.GetLength(1); ++j)
-                _map[i, j] = Stone.None;
+        System.Array.Clear(_map, 0, _map.Length);
 
-        foreach (var s in _stones)
+        foreach (GameObject s in _stones)
             Destroy(s);
+        _stones.Clear();
 
         _curStone.gameObject.SetActive(false);
         _curStone = _black;
         _curStone.gameObject.SetActive(true);
+
+        _isGameOver = false;
     }
 
     Index ToIndex(Vector3 pos)
@@ -64,11 +194,23 @@ public class Floor : MonoBehaviour
         return new Vector3(index.col - 9F, _stoneY, index.row - 9F);
     }
 
+    string ToString(Index index)
+    {
+        char row = (char)('S' - index.row);
+        string col = (index.col+1).ToString();
+        Stone s = _map[index.row, index.col];
+
+        return string.Format("[{0},{1}] {2}", row, col, s);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         Debug.Assert(null != prefabStoneBlack);
         Debug.Assert(null != prefabStoneWhite);
+
+        _ui = GameObject.FindObjectOfType<UI>();
+        Debug.Assert(null != _ui);
 
         _black = Instantiate(prefabStoneBlack).transform;
         _white = Instantiate(prefabStoneWhite).transform;
@@ -130,6 +272,9 @@ public class Floor : MonoBehaviour
 
             GameObject prefab = isBlack ? prefabStoneBlack : prefabStoneWhite;
             _stones.Add(Instantiate(prefab, pos, Quaternion.identity));
+
+            _isGameOver = IsFiveStone(index, isBlack ? Stone.Black : Stone.White);
+
             return true;
         }
 
@@ -139,16 +284,24 @@ public class Floor : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (PickingFloor())
+        if (!_isGameOver && PickingFloor())
         {
             Vector3 pos = _curStone.transform.position;
             if (Input.GetMouseButtonUp(0) && AddStone(pos))
             {
-                Transform newStone = (_curStone == _black) ? _white : _black;
-                _curStone.gameObject.SetActive(false);
-                _curStone = newStone;
-                _curStone.position = pos;
-                _curStone.gameObject.SetActive(true);
+                if (_isGameOver)
+                {
+                    _ui.SetDbgText(string.Format("{0} Win", ToString(ToIndex(pos))));
+                    _curStone.gameObject.SetActive(false);
+                }
+                else
+                {
+                    Transform newStone = (_curStone == _black) ? _white : _black;
+                    _curStone.gameObject.SetActive(false);
+                    _curStone = newStone;
+                    _curStone.position = pos;
+                    _curStone.gameObject.SetActive(true);
+                }
             }
         }
     }
