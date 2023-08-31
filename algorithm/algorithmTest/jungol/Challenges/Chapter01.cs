@@ -11,7 +11,8 @@ namespace jungol.Challenges
         {
             //Prob01();
             //Prob02();
-            Prob03();
+            //Prob03();
+            Prob04();
         }
 
         //--------------------------------
@@ -188,7 +189,7 @@ namespace jungol.Challenges
                     line = lines[++i].Trim();
                     arr[j] = Convert.ToSingle(line);
 
-                    Console.WriteLine(arr[j]);
+                    //Console.WriteLine(arr[j]);
                 }
 
                 Prob03_TheTrip(arr);
@@ -202,8 +203,7 @@ namespace jungol.Challenges
                 sum += v;
             float avg = sum / arr.Length;
 
-
-            Console.WriteLine("avg : {0:N}", avg);
+            //Console.WriteLine("avg : {0:N}", avg);
 
             sum = 0F;
             foreach (var v in arr)
@@ -216,7 +216,151 @@ namespace jungol.Challenges
                 }
             }
 
-            Console.WriteLine("sum : {0:N2}", sum);
+            Console.WriteLine("${0:N2}", sum);
+        }
+
+
+        //--------------------------------
+        // 4. LCD Display
+        //--------------------------------
+        static void Prob04()
+        {
+            Prob04_Impl(@"2 12345
+3 67890
+1 8055
+0 0");
+        }
+
+        static void Prob04_Impl(string input)
+        {
+            string[] lines = input.Split('\n');
+
+            foreach(var line in lines)
+            {
+                string[] words = line.Split();
+                int s = Convert.ToInt32(words[0]);
+
+                if (s == 0) { break; }
+
+                Prob04_Impl_LCD(s, words[1]);
+                Console.WriteLine();
+            }
+        }
+
+        static void Prob04_Impl_LCD(int s, string num)
+        {
+            const bool T = true;
+            const bool F = false;
+            bool[][,] tbl =
+            {
+                new bool[5,3]{  //0
+                    {F, T, F},
+                    {T, F, T},
+                    {F, F, F},
+                    {T, F, T},
+                    {F, T, T} },
+                new bool[5,3]{  //1
+                    {F, F, F},
+                    {F, F, T},
+                    {F, F, F},
+                    {F, F, T},
+                    {F, F, F} },
+                new bool[5,3]{  //2
+                    {F, T, F},
+                    {F, F, T},
+                    {F, T, F},
+                    {T, F, F},
+                    {F, T, F} },
+                new bool[5,3]{  //3
+                    {F, T, F},
+                    {F, F, T},
+                    {F, T, F},
+                    {F, F, T},
+                    {F, T, F} },
+                new bool[5,3]{  //4
+                    {F, F, F},
+                    {T, F, T},
+                    {F, T, F},
+                    {F, F, T},
+                    {F, F, F} },
+                new bool[5,3]{  //5
+                    {F, T, F},
+                    {T, F, F},
+                    {F, T, F},
+                    {F, F, T},
+                    {F, T, F} },
+                new bool[5,3]{  //6
+                    {F, T, F},
+                    {T, F, F},
+                    {F, T, F},
+                    {T, F, T},
+                    {F, T, F} },
+                new bool[5,3]{  //7
+                    {F, T, F},
+                    {F, F, T},
+                    {F, F, F},
+                    {F, F, T},
+                    {F, F, F} },
+                new bool[5,3]{  //8
+                    {F, T, F},
+                    {T, F, T},
+                    {F, T, F},
+                    {T, F, T},
+                    {F, T, F} },
+                new bool[5,3]{  //9
+                    {F, T, F},
+                    {T, F, T},
+                    {F, T, F},
+                    {F, F, T},
+                    {F, T, F} },
+            };
+
+
+            var horizontal = true;
+            for(int i=0; i<5; i++)
+            {
+                int N = horizontal ? 1 : s;
+
+                for (int j = 0; j < N; j++)
+                {
+                    var n = 0;
+                    foreach(var c in num)
+                    {
+                        n = c - '0';
+
+                        var flags = tbl[n];
+                        if (horizontal)
+                        {
+                            Prob04_Impl_DrawHorizontal(s, flags[i, 1]);
+                        }
+                        else
+                        {
+                            Prob04_Impl_DrawVertical(s, flags[i, 0], flags[i, 2]);
+                        }
+                        Console.Write(' ');
+                    }
+
+                    Console.WriteLine();
+                }
+
+                horizontal = !horizontal;
+            }
+        }
+
+        static void Prob04_Impl_DrawHorizontal(int s, bool flag)
+        {
+            if (flag)
+            {
+                Console.Write(' '); Console.Write(new string('-', s)); Console.Write(' ');
+            }
+            else
+            {
+                Console.Write(new string(' ', s + 2));
+            }
+        }
+        static void Prob04_Impl_DrawVertical(int s, bool flag1, bool flag2)
+        {
+            Console.Write(flag1 ? '|' : ' '); Console.Write(new string(' ', s)); Console.Write(flag2 ? '|' : ' ');
         }
     }
 }
