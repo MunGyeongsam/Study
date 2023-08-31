@@ -10,7 +10,8 @@ namespace jungol.Challenges
         public static void Test()
         {
             //Prob01();
-            Prob02();
+            //Prob02();
+            Prob03();
         }
 
         //--------------------------------
@@ -147,6 +148,75 @@ namespace jungol.Challenges
                 Console.WriteLine();
             }
             Console.WriteLine();
+        }
+
+
+        //--------------------------------
+        // 3. The Trip
+        //--------------------------------
+        static void Prob03()
+        {
+            Prob03_Impl(@"3
+10.00
+20.00
+30.00
+4
+15.00
+15.01
+3.00
+3.01
+0");
+        }
+
+        static void Prob03_Impl(string input)
+        {
+            string[] lines = input.Split('\n');
+            string line;
+            for(int i=0; i<lines.Length; ++i)
+            {
+                line = lines[i].Trim();
+
+                int n = Convert.ToInt32(line);
+
+                if (n == 0)
+                    return;
+
+                float[] arr = new float[n];
+
+                for(int j=0; j<n; ++j)
+                {
+                    line = lines[++i].Trim();
+                    arr[j] = Convert.ToSingle(line);
+
+                    Console.WriteLine(arr[j]);
+                }
+
+                Prob03_TheTrip(arr);
+            }
+        }
+
+        static void Prob03_TheTrip(float[] arr)
+        {
+            float sum = 0F;
+            foreach (var v in arr)
+                sum += v;
+            float avg = sum / arr.Length;
+
+
+            Console.WriteLine("avg : {0:N}", avg);
+
+            sum = 0F;
+            foreach (var v in arr)
+            {
+                if (v > avg)
+                {
+                    float t = v - avg;
+                    t = MathF.Truncate(t * 100F) / 100F;
+                    sum += t;
+                }
+            }
+
+            Console.WriteLine("sum : {0:N2}", sum);
         }
     }
 }
