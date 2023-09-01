@@ -13,7 +13,8 @@ namespace jungol.Challenges
             //Prob02();
             //Prob03();
             //Prob04();
-            Prob05();
+            //Prob05();
+            Prob06();
         }
 
         //--------------------------------
@@ -552,5 +553,175 @@ X");
                 Console.WriteLine();
             }
         }
+
+
+
+        //--------------------------------
+        // 6. Interpreter
+        //--------------------------------
+        static void Prob06()
+        {
+            Prob06_Impl(@"2
+
+299
+492
+495
+399
+492
+495
+399
+283
+279
+689
+078
+100
+000
+000
+000
+
+
+299
+492
+495
+399
+492
+495
+399
+283
+279
+689
+078
+100
+000
+000
+000
+");
+        }
+        static void Prob06_Impl(string input)
+        {
+            string[] lines = input.Split('\n');
+
+            int n = Convert.ToInt32(lines[0].Trim());
+
+            List<string> cmds = new List<string>();
+
+            int li = 2;
+
+            for (int i = 0; i < n; i++)
+            {
+                cmds.Clear();
+
+                for (; li < lines.Length; li++)
+                {
+                    var line = lines[li].Trim();
+                    if (line.Length == 0)
+                    {
+                        li += 2;
+                        break;
+                    }
+
+                    cmds.Add(line);
+                }
+
+                Prob06_Impl_Interperter(cmds);
+            }
+        }
+        static void Prob06_Impl_Interperter(List<string> cmds)
+        {
+            int[] regs = new int[10];
+
+            int iIns = 0;
+            int insCnt = 0;
+
+            string cmd;
+            int d, n, s, a;
+            while(iIns < cmds.Count)
+            {
+                ++insCnt;
+                cmd = cmds[iIns++];
+
+                Console.WriteLine($"{cmd}, iIns({iIns}), insCnt({insCnt})");
+
+                if (cmd == "100")
+                    break;
+
+                switch(cmd[0])
+                {
+                    case '2':
+                        {
+                            d = cmd[1] - '0';
+                            n = cmd[2] - '0';
+                            regs[d] = n;
+                        } break;
+                    case '3':
+                        {
+                            d = cmd[1] - '0';
+                            n = cmd[2] - '0';
+                            regs[d] += n;
+                            regs[d] %= 1000;
+                        }
+                        break;
+                    case '4':
+                        {
+                            d = cmd[1] - '0';
+                            n = cmd[2] - '0';
+                            regs[d] *= n;
+                            regs[d] %= 1000;
+                        }
+                        break;
+                    case '5':
+                        {
+                            d = cmd[1] - '0';
+                            s = cmd[2] - '0';
+                            regs[d] = regs[s];
+                        }
+                        break;
+                    case '6':
+                        {
+                            d = cmd[1] - '0';
+                            s = cmd[2] - '0';
+                            regs[d] += regs[s];
+                            regs[d] %= 1000;
+                        }
+                        break;
+                    case '7':
+                        {
+                            d = cmd[1] - '0';
+                            s = cmd[2] - '0';
+                            regs[d] *= regs[s];
+                            regs[d] %= 1000;
+                        }
+                        break;
+                    case '8':
+                        {
+                            d = cmd[1] - '0';
+                            a = cmd[2] - '0';
+                            regs[d] = Convert.ToInt32(cmds[regs[a]]);
+                        }
+                        break;
+                    case '9':
+                        {
+                            s = cmd[1] - '0';
+                            a = cmd[2] - '0';
+                            cmds[regs[a]] = string.Format("{0:0##}", regs[s]);
+                        }
+                        break;
+                    case '0':
+                        {
+                            d = cmd[1] - '0';
+                            s = cmd[2] - '0';
+
+                            if (regs[s] != 0)
+                            {
+                                iIns = regs[d];
+                            }
+                        }
+                        break;
+                }
+            }
+
+            Console.WriteLine($"---- {insCnt}");
+        }
+
     }
 }
