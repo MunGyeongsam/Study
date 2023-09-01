@@ -14,7 +14,8 @@ namespace jungol.Challenges
             //Prob03();
             //Prob04();
             //Prob05();
-            Prob06();
+            //Prob06();
+            Prob07();
         }
 
         //--------------------------------
@@ -635,7 +636,7 @@ X");
 
             string cmd;
             int d, n, s, a;
-            while(iIns < cmds.Count)
+            while (iIns < cmds.Count)
             {
                 ++insCnt;
                 cmd = cmds[iIns++];
@@ -645,7 +646,7 @@ X");
                 if (cmd == "100")
                     break;
 
-                switch(cmd[0])
+                switch (cmd[0])
                 {
                     case '2':
                         {
@@ -723,5 +724,247 @@ X");
             Console.WriteLine($"---- {insCnt}");
         }
 
+
+        //--------------------------------
+        // 7. Check the Check
+        //--------------------------------
+        static void Prob07()
+        {
+            Prob07_Impl(@"..k.....
+ppp.pppp
+........
+.R...B..
+........
+........
+PPPPPPPP
+K.......
+
+rnbqkbnr
+pppppppp
+........
+........
+........
+........
+PPPPPPPP
+RNBQKBNR
+
+rnbqk.nr
+ppp..ppp
+....p...
+...p....
+.bPP....
+.....N..
+PP..PPPP
+RNBQKB.R
+
+........
+........
+........
+........
+........
+........
+........
+........");
+        }
+
+        static void Prob07_Impl(string input)
+        {
+            char[,] board = new char[8, 8];
+            int gameId = 0;
+
+            string[] lines = input.Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                bool isEmpty = true;
+                for (int j = 0; j < 8; ++j)
+                {
+                    string line = lines[i++].Trim();
+
+                    for (int k = 0; k < 8; ++k)
+                    {
+                        board[j, k] = line[k];
+                        isEmpty = isEmpty && line[k] == '.';
+                    }
+                }
+
+                if (isEmpty)
+                    break;
+
+                Prob07_Impl_Check(board, ++gameId);
+            }
+        }
+
+        static void Prob07_Impl_Check(char[,] board, int gameId)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    char c = Char.ToLower(board[i, j]);
+                    bool chk = false;
+                    switch (c)
+                    {
+                        case 'p':
+                            chk = Prob07_Impl_Check_Pawn(board, i, j);
+                            break;
+                        case 'n':
+                            chk = Prob07_Impl_Check_Knight(board, i, j);
+                            break;
+                        case 'b':
+                            chk = Prob07_Impl_Check_Bishop(board, i, j);
+                            break;
+                        case 'r':
+                            chk = Prob07_Impl_Check_Rook(board, i, j);
+                            break;
+                        case 'q':
+                            chk = Prob07_Impl_Check_Queen(board, i, j);
+                            break;
+                        case 'k':
+                            chk = Prob07_Impl_Check_King(board, i, j);
+                            break;
+                    }
+
+                    if (chk)
+                    {
+                        bool isBlack = Char.IsLower(board[i, j]);
+                        Console.WriteLine("Game #{0}: {1} king is in check.", gameId, isBlack ? "white" : "black");
+                        return;
+                    }
+                }
+            }
+            Console.WriteLine("Game #{0}: no king is in check.", gameId);
+        }
+        static bool Prob07_Impl_VaildIndex(int r, int c)
+        {
+            return (r >= 0 && r < 8) && (c >= 0 && c < 8);
+        }
+        static bool Prob07_Impl_Check_Pawn(char[,] board, int r, int c)
+        {
+            bool isBlack = Char.IsLower(board[r, c]);
+            char K = isBlack ? 'K' : 'k';
+
+            int tr = r + (isBlack ? 1 : -1);
+
+            return (Prob07_Impl_VaildIndex(tr, c + 1) && board[tr, c + 1] == K)
+                || (Prob07_Impl_VaildIndex(tr, c + 1) && board[tr, c + 1] == K);
+        }
+        static bool Prob07_Impl_Check_Knight(char[,] board, int r, int c)
+        {
+            bool isBlack = Char.IsLower(board[r, c]);
+            char K = isBlack ? 'K' : 'k';
+
+            return ((Prob07_Impl_VaildIndex(r - 1, c - 2) && board[r - 1, c - 2] == K))
+                || ((Prob07_Impl_VaildIndex(r - 2, c - 1) && board[r - 2, c - 1] == K))
+                || ((Prob07_Impl_VaildIndex(r - 2, c + 1) && board[r - 2, c + 1] == K))
+                || ((Prob07_Impl_VaildIndex(r - 1, c + 2) && board[r - 1, c + 2] == K))
+
+                || ((Prob07_Impl_VaildIndex(r + 1, c - 2) && board[r + 1, c - 2] == K))
+                || ((Prob07_Impl_VaildIndex(r + 2, c - 1) && board[r + 2, c - 1] == K))
+                || ((Prob07_Impl_VaildIndex(r + 2, c + 1) && board[r + 2, c + 1] == K))
+                || ((Prob07_Impl_VaildIndex(r + 1, c + 2) && board[r + 1, c + 2] == K));
+        }
+        static bool Prob07_Impl_Check_Bishop(char[,] board, int r, int c)
+        {
+            bool isBlack = Char.IsLower(board[r, c]);
+            char K = isBlack ? 'K' : 'k';
+
+            // 4 direction
+            //↗
+            for (int ir = r - 1, ic = c + 1; ir >= 0 && ic < 8; ir--, ic++)
+            {
+                if (board[ir, ic] == K)
+                    return true;
+                if (board[ir, ic] != '.')
+                    break;
+            }
+            //↙
+            for (int ir = r + 1, ic = c - 1; ir < 8 && ic >= 0; ir++, ic--)
+            {
+                if (board[ir, ic] == K)
+                    return true;
+                if (board[ir, ic] != '.')
+                    break;
+            }
+            //↖
+            for (int ir = r - 1, ic = c - 1; ir >= 0 && ic >= 0; ir--, ic--)
+            {
+                if (board[ir, ic] == K)
+                    return true;
+                if (board[ir, ic] != '.')
+                    break;
+            }
+            //↘
+            for (int ir = r + 1, ic = c + 1; ir < 8 && ic < 8; ir++, ic++)
+            {
+                if (board[ir, ic] == K)
+                    return true;
+                if (board[ir, ic] != '.')
+                    break;
+            }
+
+            return false;
+        }
+        static bool Prob07_Impl_Check_Rook(char[,] board, int r, int c)
+        {
+            bool isBlack = Char.IsLower(board[r, c]);
+            char K = isBlack ? 'K' : 'k';
+
+            // 4 direction
+            //→
+            for (int i = c + 1; i < 8; ++i)
+            {
+                if (board[r, i] == K)
+                    return true;
+                if (board[r, i] != '.')
+                    break;
+            }
+            //←
+            for (int i = c - 1; i >= 0; --i)
+            {
+                if (board[r, i] == K)
+                    return true;
+                if (board[r, i] != '.')
+                    break;
+            }
+            //↑
+            for (int i = r - 1; i >= 0; --i)
+            {
+                if (board[i, c] == K)
+                    return true;
+                if (board[i, c] != '.')
+                    break;
+            }
+            //↓
+            for (int i = r + 1; i < 8; ++i)
+            {
+                if (board[i, c] == K)
+                    return true;
+                if (board[i, c] != '.')
+                    break;
+            }
+
+            return false;
+        }
+        static bool Prob07_Impl_Check_Queen(char[,] board, int r, int c)
+        {
+            return Prob07_Impl_Check_Bishop(board, r, c)
+                || Prob07_Impl_Check_Rook(board, r, c);
+        }
+        static bool Prob07_Impl_Check_King(char[,] board, int r, int c)
+        {
+            bool isBlack = Char.IsLower(board[r, c]);
+            char K = isBlack ? 'K' : 'k';
+
+            return ((Prob07_Impl_VaildIndex(r - 1, c - 1) && board[r - 1, c - 1] == K))
+                || ((Prob07_Impl_VaildIndex(r - 1, c - 0) && board[r - 1, c - 0] == K))
+                || ((Prob07_Impl_VaildIndex(r - 1, c + 1) && board[r - 1, c + 1] == K))
+
+                || ((Prob07_Impl_VaildIndex(r + 0, c - 1) && board[r + 0, c - 1] == K))
+                || ((Prob07_Impl_VaildIndex(r + 0, c + 1) && board[r + 0, c + 1] == K))
+
+                || ((Prob07_Impl_VaildIndex(r + 1, c - 1) && board[r + 1, c - 1] == K))
+                || ((Prob07_Impl_VaildIndex(r + 1, c - 0) && board[r + 1, c - 0] == K))
+                || ((Prob07_Impl_VaildIndex(r + 1, c + 1) && board[r + 1, c + 1] == K));
+        }
     }
 }
