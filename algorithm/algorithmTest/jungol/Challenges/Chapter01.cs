@@ -15,7 +15,8 @@ namespace jungol.Challenges
             //Prob04();
             //Prob05();
             //Prob06();
-            Prob07();
+            //Prob07();
+            Prob08();
         }
 
         //--------------------------------
@@ -965,6 +966,143 @@ RNBQKB.R
                 || ((Prob07_Impl_VaildIndex(r + 1, c - 1) && board[r + 1, c - 1] == K))
                 || ((Prob07_Impl_VaildIndex(r + 1, c - 0) && board[r + 1, c - 0] == K))
                 || ((Prob07_Impl_VaildIndex(r + 1, c + 1) && board[r + 1, c + 1] == K));
+        }
+
+
+
+        //--------------------------------
+        // 8. Australian Voting
+        //--------------------------------
+        static void Prob08()
+        {
+            Prob08_Impl(@"1
+
+3
+John Doe
+Jane Smith
+Sirhan Sirhan
+1 2 3
+2 1 3
+2 3 1
+1 2 3
+3 1 2");
+        }
+        static void Prob08_Impl(string input)
+        {
+            string[] lines = input.Split('\n');
+
+            int iLine = 0;
+            while (lines[iLine].Trim().Length == 0) ++iLine;
+
+            int numCases = Convert.ToInt32(lines[iLine++]);
+            int numCands;
+            int numVotes;
+
+            string[] candidates;
+            int[] votePaper;
+            int[] votesWon;
+            int[] indexOf1stAlive;
+            List<int[]> votes = new List<int[]>();
+
+            for (; iLine < lines.Length; ++iLine)
+            {
+                while (lines[iLine].Trim().Length == 0) ++iLine;
+
+                numCands = Convert.ToInt32(lines[iLine++]);
+
+                candidates = new string[numCands];
+                votePaper = new int[numCands];
+                votesWon = new int[numCands];
+
+                for (int i=0; i<numCands; ++i)
+                {
+                    candidates[i] = lines[iLine++].TrimEnd();
+                }
+
+
+                votes.Clear();
+                while (iLine < lines.Length)
+                {
+                    string line = lines[iLine++].TrimEnd();
+                    if (line.Length == 0)
+                        break;
+                    string[] words = line.Split();
+                    for (int i = 0; i < numCands; ++i)
+                    {
+                        // -1 is for 0 base
+                        votePaper[i] = Convert.ToInt32(words[i]) - 1;
+                    }
+
+                    votes.Add(votePaper.Clone() as int[]);
+
+                    ++votesWon[votePaper[0]];
+                }
+
+                numVotes = votes.Count;
+                indexOf1stAlive = new int[numVotes];
+
+                int maxVotesWon, minVotesWon, winner = 0;
+                bool allTie = true;
+                while(true)
+                {
+                    maxVotesWon = int.MinValue;
+                    minVotesWon = int.MaxValue;
+
+                    allTie = true;
+
+                    for(int i=0; i<numCands; ++i)
+                    {
+                        if (votesWon[i] <= 0)
+                            continue;
+
+                        if (votesWon[i] > maxVotesWon)
+                        {
+                            maxVotesWon = votesWon[i];
+                            allTie = false;
+                            winner = i;
+                        }
+
+                        if (votesWon[i] < minVotesWon)
+                        {
+                            minVotesWon = votesWon[i];
+                            allTie = false;
+                        }
+                    }
+
+                    if (maxVotesWon * 2 > numVotes || allTie)
+                        break;
+
+                    for (int i=0; i<numVotes; ++i)
+                    {
+                        if (votesWon[votes[i][indexOf1stAlive[i]]] != minVotesWon)
+                            continue;
+
+                        for (indexOf1stAlive[i]++;
+                            votesWon[votes[i][indexOf1stAlive[i]]] <= minVotesWon;
+                            indexOf1stAlive[i]++) ;
+
+                        votesWon[votes[i][indexOf1stAlive[i]]]++;
+                    }
+
+                    for (int i=0; i<numCands; ++i)
+                    {
+                        if (votesWon[i] == minVotesWon)
+                            votesWon[i] = 0;
+                    }
+                }
+
+                if (maxVotesWon * 2 > numVotes)
+                    Console.WriteLine(candidates[winner]);
+                else
+                {
+                    for(int i=0; i<numCands; ++i)
+                    {
+                        if (votesWon[i] > 0)
+                            Console.WriteLine(candidates[i]);
+                    }    
+                }
+
+            }
         }
     }
 }
