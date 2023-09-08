@@ -1,11 +1,55 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 
 namespace jungol.UT
 {
     static class Util
     {
+        static void PrintInt(int n)
+        {
+            string bin = Convert.ToString(n, 2);
+            bin = bin.PadLeft(32, '0');
+
+            byte[] bytes = BitConverter.GetBytes(n);
+            string bin2 = BitConverter.ToString(bytes);
+
+            Array.Reverse(bytes);
+            string bin3 = BitConverter.ToString(bytes);
+
+            Console.WriteLine("{1}, {2} ({3}) : {0}", n, bin, bin2, bin3);
+        }
+
+        static void PrintFloat(float a)
+        {
+
+            byte[] bytes = BitConverter.GetBytes(a);
+            string bin2 = BitConverter.ToString(bytes);
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < bytes.Length; ++i)
+            {
+                byte b = bytes[i];
+                for (int j = 0; j < 8; ++j)
+                {
+                    sb.Insert(0, ((b >> j) & 1) == 1 ? "1" : "0");
+                }
+            }
+            string s = sb.ToString();
+            string exp = s.Substring(1, 8);
+            string man = s.Substring(9);
+            string bin = s.Substring(0, 1) + " " + s.Substring(1, 8) + " " + s.Substring(9); //sign exponent mantissa
+
+            int e = Convert.ToInt32(exp, 2);
+            int m = Convert.ToInt32(man, 2);
+
+            Array.Reverse(bytes);
+            string bin3 = BitConverter.ToString(bytes);
+
+            Console.WriteLine("{1}, {2} ({3}) : {0}, exponent = {4}, mantissa = {5}", a, bin, bin2, bin3, e, m);
+        }
+
         public static void PrintFunction()
         {
             Console.WriteLine();
