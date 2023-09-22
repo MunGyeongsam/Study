@@ -14,6 +14,7 @@ namespace jungol
             //Chapter01.Test();
             //Chapter02_Prob009_JollyJumpers.Run();
             Chapter02_Prob010_PokerHands.Run();
+            //Chapter02_Prob010_PokerHands.PrintTestCase();
 
             //_02_Array.Test();
             //_04_Enum.Test();
