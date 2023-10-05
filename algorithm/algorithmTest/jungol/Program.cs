@@ -17,7 +17,8 @@ namespace jungol
             //Chapter02_Prob010_PokerHands.Run();
             //Chapter02_Prob010_PokerHands.PrintTestCase();
 
-            Chapter02_Prob011_Hartal.Run();
+            //Chapter02_Prob011_Hartal.Run();
+            Chapter02_Prob012_CryptKicker.Run();
 
             //_02_Array.Test();
             //_04_Enum.Test();
