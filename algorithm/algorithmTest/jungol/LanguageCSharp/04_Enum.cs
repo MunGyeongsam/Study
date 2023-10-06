@@ -26,13 +26,13 @@ namespace jungol.LanguageCSharp
     [Flags]
     enum WorkingWeek : long
     {
-        Monday      = 1L << 0,
-        Tuesday     = 1L << 1,
-        Wednesday   = 1L << 2,
-        Thursday    = 1L << 3,
-        Friday      = 1L << 4,
-        Saturday    = 1L << 5,
-        Sunday      = 1L << 6,
+        Monday      = 1L << 0,  // 1
+        Tuesday     = 1L << 1,  // 2
+        Wednesday   = 1L << 2,  // 4
+        Thursday    = 1L << 3,  // 8
+        Friday      = 1L << 4,  // 16
+        Saturday    = 1L << 5,  // 32
+        Sunday      = 1L << 6,  // 64
     }
 
     static class Ext

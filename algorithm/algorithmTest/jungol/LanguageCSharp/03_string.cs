@@ -18,6 +18,14 @@ namespace jungol.LanguageCSharp
             string s6 = s5.Substring(2, 5);
             string s7 = s6.Trim();                  //TrimStart, TrimEnd
             string s8 = s7.PadLeft(20, '-');        //PadRight
+
+
+            Console.WriteLine(s8[0]);
+            //s8[0] = 'A'; // string is immutable
+
+            StringBuilder sb = new StringBuilder(s8);
+            sb[0] = 'A';
+            sb.ToString();
         }
     }
 }
