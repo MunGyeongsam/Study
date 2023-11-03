@@ -11,15 +11,4 @@ public class Tile : MonoBehaviour
     {
         sr.color = c ? _1 : _2;
     }
-    // Start is called before the first frame update
-    void Start()
-    {
-        //Init(true);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

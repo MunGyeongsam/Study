@@ -21,11 +21,6 @@ public class Map : MonoBehaviour
     private Transform _posTile;
     private Camera _camera;
     
-    Vector3 startVertex;
-    Vector3 mousePos;
-    
-    //private bool is
-    
     // Start is called before the first frame update
     void Start()
     {
@@ -35,6 +30,23 @@ public class Map : MonoBehaviour
         _screenWidth = _screenHeight * _camera.aspect;
         _tileSize = tilePrefab.GetComponent<SpriteRenderer>().bounds.size.x;
         
+        float mh = hInTiles * _tileSize;
+        float mw = wInTiles * _tileSize;
+
+        float sx = _screenWidth / mw;
+        float sy = _screenHeight / mh;
+        float s = MathF.Min(sx, sy);
+
+        _scaledTileSize = _tileSize * s;
+        
+        mh *= s;
+        mw *= s;
+
+        float offset = _scaledTileSize * 0.5F;
+
+        _max = new(mw * 0.5F - offset, mh * 0.5F - offset);
+        _min = -1F * _max;
+        
         if (null != posPrefab)
         {
             var posTile = Instantiate(posPrefab
@@ -43,55 +55,40 @@ public class Map : MonoBehaviour
                 , this.transform);
 
             _posTile = posTile.transform;
+            _posTile.localScale *= s;
         }
 
-        BuildMap();
+        BuildMap(s);
+
+        _max.x -= offset;
+        _max.y -= offset;
+        _min.x += offset;
+        _min.y += offset;
     }
 
-    void BuildMap()
+    void BuildMap(float s)
     {
         Transform parent = this.transform;
         Quaternion rot = Quaternion.identity;
-        Vector3 pos = Vector3.zero;
+        Vector3 pos = new (_min.x, _min.y, 0F);
+        Vector3 sv = new(s, s, s);
 
         for (int i = 0; i < hInTiles; ++i)
         {
             bool b = ((i & 0x1) == 1);
-            pos.x = 0F;
+            pos.x = _min.x;
             for (int j = 0; j < wInTiles; ++j)
             {
                 var g = Instantiate(tilePrefab, pos, rot, parent);
+                g.transform.localScale = sv;
                 g.name = string.Format($"tile {i}, {j}");
                 g.Init(b);
                 b = !b;
-                pos.x += _tileSize;
+                pos.x += _scaledTileSize;
             }
 
-            pos.y += _tileSize;
+            pos.y += _scaledTileSize;
         }
-
-        float mh = hInTiles * _tileSize;
-        float mw = wInTiles * _tileSize;
-
-        float sx = _screenWidth / mw;
-        float sy = _screenHeight / mh;
-        float s = MathF.Min(sx, sy);
-        parent.localScale = new Vector3(s,s,s);
-
-        _scaledTileSize = _tileSize * s;
-
-        float minx = _tileSize * s * -0.5F;
-        float maxx = _tileSize * s * wInTiles + minx;
-        float miny = _tileSize * s * -0.5F;
-        float maxy = _tileSize * s * hInTiles + miny;
-
-        _min = new(minx + _scaledTileSize, miny + _scaledTileSize);
-        _max = new(maxx - _scaledTileSize, maxy - _scaledTileSize);
-        
-        parent.localPosition = new Vector3((minx + maxx) * -.5F, (miny + maxy) * -.5F, 0F);
-
-        _min += (Vector2) parent.localPosition;
-        _max += (Vector2) parent.localPosition;
     }
 
     void UpdatePosTile()
@@ -103,6 +100,28 @@ public class Map : MonoBehaviour
             Input.mousePosition);
 
         //*
+        p.x = Math.Clamp(p.x, _min.x, _max.x);
+        p.y = Math.Clamp(p.y, _min.y, _max.y);
+        
+        Vector2 dist = p - _min;
+        dist.x += _scaledTileSize * 0.5F;
+        dist.y += _scaledTileSize * 0.5F;
+        
+        int rx = (int)(dist.x / _scaledTileSize);
+        int ry = (int)(dist.y / _scaledTileSize);
+        _posTile.position = _min + new Vector2(rx*_scaledTileSize, ry*_scaledTileSize);
+        //*/
+        
+        //_posTile.position = p;
+        
+        
+        /*
+        if (!_posTile)
+            return;
+        
+        Vector2 p = _camera.ScreenToWorldPoint(
+            Input.mousePosition);
+
         //p.x += _scaledTileSize * .5F;
         //p.y += _scaledTileSize * .5F;
 
@@ -114,18 +133,13 @@ public class Map : MonoBehaviour
 
         int rx = (int)(dist.x / _scaledTileSize);
         int ry = (int)(dist.y / _scaledTileSize);
-        //*/
         
         _posTile.position = _min + new Vector2(rx*_scaledTileSize, ry*_scaledTileSize);
+        //*/
     }
     // Update is called once per frame
     void Update()
     {
         UpdatePosTile();
-    }
-
-    private void OnPostRender()
-    {
-        
     }
 }
