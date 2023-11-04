@@ -20,10 +20,13 @@ public class Map : MonoBehaviour
     private float _scaledTileSize;
     private Transform _posTile;
     private Camera _camera;
+
+    private char[,] _map;
     
     // Start is called before the first frame update
     void Start()
     {
+        ReadMap("/04_Maps/map01.txt");
         _camera = Camera.main;
         
         _screenHeight = _camera!.orthographicSize * 2F;
@@ -66,6 +69,27 @@ public class Map : MonoBehaviour
         _min.y += offset;
     }
 
+    void ReadMap(string path)
+    {
+        var fullpath = Application.dataPath + path;
+        string[] lines = System.IO.File.ReadAllLines(fullpath);
+
+        string[] words = lines[0].Trim().Split();
+        wInTiles = Convert.ToInt32(words[0]);
+        hInTiles = Convert.ToInt32(words[1]);
+
+        _map = new char[hInTiles, wInTiles];
+        Debug.Log($"First line : {lines[0]}");
+        for(int i=1; i<lines.Length; ++i)
+        {
+            var line = lines[i];
+            for (int j = 0; j < wInTiles; ++j)
+            {
+                _map[i - 1, j] = line[j*2];
+            }
+        }
+    }
+
     void BuildMap(float s)
     {
         Transform parent = this.transform;
@@ -85,6 +109,21 @@ public class Map : MonoBehaviour
                 g.Init(b);
                 b = !b;
                 pos.x += _scaledTileSize;
+
+                switch (_map[hInTiles - i - 1, j])
+                {
+                    case '1': 
+                        g.Setcolor(new Color(.2F,.2F,.2F)); 
+                        break;
+                    case 's': 
+                    case 'S': 
+                        g.Setcolor(new Color(.2F,.8F,.2F)); 
+                        break;
+                    case 'e': 
+                    case 'E': 
+                        g.Setcolor(new Color(.8F,.2F,.2F)); 
+                        break;
+                }
             }
 
             pos.y += _scaledTileSize;

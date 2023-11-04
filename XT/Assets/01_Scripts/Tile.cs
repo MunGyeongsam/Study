@@ -11,4 +11,9 @@ public class Tile : MonoBehaviour
     {
         sr.color = c ? _1 : _2;
     }
+
+    public void Setcolor(Color c)
+    {
+        sr.color = c;
+    }
 }

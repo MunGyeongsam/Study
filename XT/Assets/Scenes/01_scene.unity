@@ -400,8 +400,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1fa204172f31457ca0122004be6e63a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wInTiles: 27
-  hInTiles: 22
+  wInTiles: 5
+  hInTiles: 5
   tilePrefab: {fileID: 206680451405912605, guid: 06fdfec08c54f468b9c4b26dfed3feb6, type: 3}
   posPrefab: {fileID: 5600693876349610154, guid: 1629612e0e7d1402ea9bde80c44f0eb9, type: 3}
 --- !u!4 &1999938062
