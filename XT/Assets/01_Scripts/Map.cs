@@ -94,7 +94,7 @@ public class Map : MonoBehaviour
     {
         Transform parent = this.transform;
         Quaternion rot = Quaternion.identity;
-        Vector3 pos = new (_min.x, _min.y, 0F);
+        Vector3 pos = new (_min.x, _max.y, 0F);
         Vector3 sv = new(s, s, s);
 
         for (int i = 0; i < hInTiles; ++i)
@@ -110,7 +110,7 @@ public class Map : MonoBehaviour
                 b = !b;
                 pos.x += _scaledTileSize;
 
-                switch (_map[hInTiles - i - 1, j])
+                switch (_map[i, j])
                 {
                     case '1': 
                         g.Setcolor(new Color(.2F,.2F,.2F)); 
@@ -126,7 +126,7 @@ public class Map : MonoBehaviour
                 }
             }
 
-            pos.y += _scaledTileSize;
+            pos.y -= _scaledTileSize;
         }
     }
 
@@ -138,13 +138,14 @@ public class Map : MonoBehaviour
         Vector2 p = _camera.ScreenToWorldPoint(
             Input.mousePosition);
 
+        float offset = _scaledTileSize * 0.5F;
         //*
-        p.x = Math.Clamp(p.x, _min.x, _max.x);
-        p.y = Math.Clamp(p.y, _min.y, _max.y);
+        p.x = Math.Clamp(p.x, _min.x + offset, _max.x - offset);
+        p.y = Math.Clamp(p.y, _min.y + offset, _max.y - offset);
         
         Vector2 dist = p - _min;
-        dist.x += _scaledTileSize * 0.5F;
-        dist.y += _scaledTileSize * 0.5F;
+        dist.x += offset;
+        dist.y += offset;
         
         int rx = (int)(dist.x / _scaledTileSize);
         int ry = (int)(dist.y / _scaledTileSize);
