@@ -7,7 +7,9 @@ Shader "Custom/sh01"
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
         
+        _ddd0 ("Vector", Vector) = (1,1,1,1)
         _ddd1 ("Color2", Color) = (1,1,0,1)
+        
         _ddd2 ("float1", Range(2.2, 4.0)) = 3.0
         _ddd3 ("float2", Float) = 1.2
         _ddd4 ("float3", int) = 3
@@ -47,6 +49,7 @@ Shader "Custom/sh01"
             // Albedo comes from a texture tinted by color
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
             o.Albedo = c.rgb;
+            o.Albedo = fixed3(1,0,0);
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
