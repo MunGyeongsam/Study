@@ -4,24 +4,19 @@ using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
-    [SerializeField] private Color _1, _2;
-    [SerializeField] private SpriteRenderer sr;
-
-    private Color _orgColor;
-
-    public void Init(bool c)
+    [SerializeField] private SpriteRenderer _sr;
+    Color _initColor;
+    public void SetColor(Color c)
     {
-        _orgColor = c ? _1 : _2;
-        sr.color = _orgColor;
+        _sr.color = c;
     }
-
-    public void Setcolor(Color c)
-    {
-        sr.color = c;
-    }
-
     public void ResetColor()
     {
-        sr.color = _orgColor;
+        _sr.color = _initColor;
+    }
+    public void InitColor(Color c)
+    {
+        _initColor = c;
+        _sr.color = c;
     }
 }
