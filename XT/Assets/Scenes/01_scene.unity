@@ -371,6 +371,37 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1383154832
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1383154833}
+  m_Layer: 0
+  m_Name: Main
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1383154833
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1383154832}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1999938060
 GameObject:
   m_ObjectHideFlags: 0
@@ -400,10 +431,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1fa204172f31457ca0122004be6e63a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wInTiles: 5
+  prefabTile2x2: {fileID: 5600693876349610154, guid: 1629612e0e7d1402ea9bde80c44f0eb9, type: 3}
+  prefabTile: {fileID: 1538700744041114687, guid: 06fdfec08c54f468b9c4b26dfed3feb6, type: 3}
+  color1: {r: 0.56377006, g: 0.6037736, b: 0.4756141, a: 1}
+  color2: {r: 0.7907792, g: 0.8207547, b: 0.7162246, a: 1}
   hInTiles: 5
-  tilePrefab: {fileID: 206680451405912605, guid: 06fdfec08c54f468b9c4b26dfed3feb6, type: 3}
-  posPrefab: {fileID: 5600693876349610154, guid: 1629612e0e7d1402ea9bde80c44f0eb9, type: 3}
+  wInTiles: 5
 --- !u!4 &1999938062
 Transform:
   m_ObjectHideFlags: 0

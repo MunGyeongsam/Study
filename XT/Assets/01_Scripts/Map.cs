@@ -19,10 +19,48 @@ public class Map : MonoBehaviour
     Vector2 _leftBottom;
     Vector2 _leftTop;
     float _scaledTileSize;
+    float _scale;
+
+    private System.Random _random = new System.Random();
+    private List<(int, int)> _F = new();
+    private List<(int, int)> _T = new();
+    private List<(int, int)> _f = new();
+    private List<(int, int)> _t = new();
 
     char[,] _map;
     bool[,] _mapProp;
     Tile[,] _mapTile;
+    
+    public float Scale
+    {
+        get { return _scale; }
+    }
+    
+    public bool[,] MapProp
+    {
+        get { return _mapProp; }
+    }
+
+    public Vector2 ToXy(int row, int col)
+    {
+        float halfTile = _scaledTileSize * 0.5F;
+        return new Vector2(
+            _leftTop.x + halfTile + col * _scaledTileSize,
+            _leftTop.y - halfTile - row * _scaledTileSize
+        );
+    }
+    
+    public (int, int, int, int) GetFromTo()
+    {
+        var n = _random.Next(10);
+        var lstf = (n < 5) ? _F : _f;
+        var lstt = (n < 5) ? _T : _t;
+        var fn = _random.Next(lstf.Count);
+        var tn = _random.Next(lstt.Count);
+        var (fi, fj) = lstf[fn];
+        var (ti, tj) = lstt[tn];
+        return (fi, fj, ti, tj);
+    }
 
 
     // Start is called before the first frame update
@@ -50,6 +88,8 @@ public class Map : MonoBehaviour
         float sy = sh / mh;
         float s = Mathf.Min(sx, sy);
 
+        _scale = s;
+
         _scaledTileSize = s * ts;
         _leftBottom = new Vector2(mw * 0.5F, mh * 0.5F) * -s;
         _leftTop = new Vector2(mw * 0.5F * -s, mh * 0.5F * s);
@@ -67,6 +107,7 @@ public class Map : MonoBehaviour
         var tmp = Instantiate(prefabTile2x2, pos, rot, parent);
         _cursor = tmp.transform;
 
+        _mapTile = new Tile[hInTiles, wInTiles];
         for (int i=0; i<hInTiles; ++i)
         {
             bool c1 = (i & 0x1) == 1;
@@ -83,7 +124,17 @@ public class Map : MonoBehaviour
                 t.InitColor(c1 ? color1 : color2);
                 char ch = _map[i, j];
                 if (ch != '0')
+                {
                     t.SetColor(Char2Color(ch));
+
+                    switch (ch)
+                    {
+                        case 'F': _F.Add((i, j)); break;
+                        case 'f': _f.Add((i, j)); break;
+                        case 'T': _T.Add((i, j)); break;
+                        case 't': _t.Add((i, j)); break;
+                    }
+                }
 
                 pos.x += ts;
 
@@ -107,11 +158,11 @@ public class Map : MonoBehaviour
         Vector2 pt = MousePosInWorldSpace();
         UpdateCursor(pt);
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButton(0))
         {
             SetProp(true);
         }
-        else if (Input.GetMouseButtonDown(1))
+        else if (Input.GetMouseButton(1))
         {
             SetProp(false);
         }
@@ -149,7 +200,6 @@ public class Map : MonoBehaviour
 
         _map = new char[hInTiles, wInTiles];
         _mapProp = new bool[hInTiles, wInTiles];
-        _mapTile = new Tile[hInTiles, wInTiles];
 
         for (int r=0; r<hInTiles; ++r)
         {
@@ -189,7 +239,6 @@ public class Map : MonoBehaviour
 
         int r = (int)(dy / _scaledTileSize);
         int c = (int)(dx / _scaledTileSize);
-
 
         if (val)
         {
