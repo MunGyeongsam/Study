@@ -13,7 +13,8 @@ Shader "Custom/sh01"
         _ddd2 ("float1", Range(2.2, 4.0)) = 3.0
         _ddd3 ("float2", Float) = 1.2
         _ddd4 ("float3", int) = 3
-        }
+    }
+    
     SubShader
     {
         Tags { "RenderType"="Opaque" }
