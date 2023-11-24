@@ -5,6 +5,22 @@ using System.Text;
 
 namespace jungol.LanguageCSharp
 {
+    class IndexerTest
+    {
+        int _i = 0;
+        public int this[int i]
+        {
+            private get { return _i; }
+            set { _i = value; }
+        }
+
+        public static void Swap<T>(ref T a, ref T b)
+        {
+            T temp = a;
+            a = b;
+            b = temp;
+        }
+    }
     internal class _08_Yield
     {
         static IEnumerable<int> GetNumber(int from, int to, int step=1)
@@ -13,6 +29,12 @@ namespace jungol.LanguageCSharp
             {
                 yield return i;
             }
+
+            IndexerTest a = new IndexerTest();
+            //Console.WriteLine(a[0]);
+            a[0] = 1;
+
+            Action<int> ac = (int a) => { Console.WriteLine(a); };
         }
 
         static void Test01()

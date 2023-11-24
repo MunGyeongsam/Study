@@ -58,12 +58,31 @@ xxxx yyy zzzz www yyyy aaa bbbb ccc dddddd");
 
         private static void Solve(string input)
         {
-            // and      3 123
-            // dick     4 1234
-            // jane     4 1234
-            // puff     4 1233
-            // spot     4 1234
-            // yertle   6 123452
+            // and      3 123       AND
+            // dick     4 1234      D234
+            // jane     4 1234      1ANE
+            // puff     4 1233      P2FF
+            // spot     4 1234      1P3T
+            // yertle   6 123452    1E3T5E
+
+            // a : *12, 1*23
+            // n : 1*2, 12*3
+            // d : 12*, *123
+            // i : 1*23
+            // c : 12*3
+            // k : 123*
+            // j : *123
+            // e : 123*, 1*234*
+            // p : *122, 1*23
+            // u : 1*22
+            // f : 12**
+            // s : *123
+            // o : 12*3
+            // t : 123*, 123*45
+            // y : *12341
+            // r : 12*342
+            // t : 123*42
+            // l : 1234*2
 
             Console.WriteLine(int.MaxValue);
 

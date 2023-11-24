@@ -4,30 +4,27 @@ using System;
 
 namespace jungol
 {
+    static class MyUtil
+    {
+        public static void Swap<T>(ref T a, ref T b)
+        {
+            T temp = a;
+            a = b;
+            b = temp;
+        }
+    }
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            //jungol.LCoder._01_Output.Test();
-            //jungol.LCoder._02_Input.Test();
-
-            //Chapter01.Test();
-            //Chapter02_Prob009_JollyJumpers.Run();
-
-            //Chapter02_Prob010_PokerHands.Run();
-            //Chapter02_Prob010_PokerHands.PrintTestCase();
-
-            //Chapter02_Prob011_Hartal.Run();
-            Chapter02_Prob012_CryptKicker.Run();
-
-            //_02_Array.Test();
-            //_04_Enum.Test();
-            //_08_Yield.Test();
-
-            //_15_Event.Test();
-            //_17_Indexer.Test();
-
-            //_19_Inheritance.Test();
+            int a1 = 1;
+            int a2 = 2;
+            char c1 = 'A';
+            char c2 = 'B';
+            MyUtil.Swap(ref a1, ref a2);
+            MyUtil.Swap(ref c1, ref c2);
+            Console.WriteLine($"a1 : {a1}, a2 : {a2}");
+            Console.WriteLine($"c1 : {c1}, c2 : {c2}");
         }
     }
 }
