@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace _01_Scripts
 {
-    ///*
+    /*
     struct Node
     {
         private int i;
