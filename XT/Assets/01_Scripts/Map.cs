@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using _01_Scripts;
 using UnityEngine;
 
 public class Map : MonoBehaviour
@@ -150,6 +151,8 @@ public class Map : MonoBehaviour
         parent.localScale *= s;
 
         _cursor.position = Vector3.zero;
+        
+        PathFinder.SetUp(_mapProp, _scaledTileSize);
     }
 
     // Update is called once per frame
