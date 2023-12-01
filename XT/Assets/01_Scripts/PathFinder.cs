@@ -6,6 +6,7 @@ static class PathFinder
 {
     static bool[,] _mapProps;
     static float _tileSize;
+    private static Grid _grid = new Grid();
 
     static Vector2 _leftTop;
 
@@ -14,8 +15,12 @@ static class PathFinder
     static List<Node> _T = new List<Node>();
     static List<Node> _t = new List<Node>();
 
+    public static int Algorithm { get; set; } = 0;
+
     public static void Init(char[,]map, bool[,] mapProps, float tileSize)
     {
+        _grid.Init(mapProps);
+        
         _mapProps = mapProps;
         _tileSize = tileSize;
 
@@ -50,10 +55,10 @@ static class PathFinder
             {
                 switch(map[i,j])
                 {
-                    case 'F': _F.Add(new Node(i, j)); break;
-                    case 'f': _f.Add(new Node(i, j)); break;
-                    case 'T': _T.Add(new Node(i, j)); break;
-                    case 't': _t.Add(new Node(i, j)); break;
+                    case 'F': _F.Add(_grid.GetNode(i, j)); break;
+                    case 'f': _f.Add(_grid.GetNode(i, j)); break;
+                    case 'T': _T.Add(_grid.GetNode(i, j)); break;
+                    case 't': _t.Add(_grid.GetNode(i, j)); break;
                 }
             }
         }
@@ -81,12 +86,30 @@ static class PathFinder
         );
     }
 
+    public static void GetOpenAndClosedList(List<Node> open, List<Node> close)
+    {
+        _grid.GetOpenAndClosedList(open, close);
+    }
+
     public static void Find(List<Node> path, Node from, Node to)
     {
+        ///*
+        _grid.Reset();
+        path.Clear();
+        switch (Algorithm)
+        {
+            case 1: Dijkstra.Find(path, from, to, _grid); break;
+            case 2: AStar.Find(path, from, to, _grid); break;
+            default: BestFirstSearch.Find(path, from, to, _grid); break;
+        }
+        return;
+        //*/
+        
+        _grid.Reset();
         path.Clear();
 
         path.Add(from);
-        if (from == to)
+        if (Node.IsEqual(from, to))
             return;
 
         int r0 = from.Row;
@@ -106,7 +129,7 @@ static class PathFinder
             stepy = Delta2Step(dy);
             stepx = Delta2Step(dx);
 
-            from = new Node(r0 + stepy, c0 + stepx);
+            from = _grid.GetNode(r0 + stepy, c0 + stepx);
             path.Add(from);
 
             r0 = from.Row;

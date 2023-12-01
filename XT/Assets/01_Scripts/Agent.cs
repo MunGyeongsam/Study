@@ -9,12 +9,12 @@ public class Agent : MonoBehaviour
     List<Node> _path;
     int _curr;
 
-    Vector2 _pt0;
-    Vector2 _pt1;
-    Vector2 _vel;
-    bool _move;
+    Vector2 _pt0 = Vector2.zero;
+    Vector2 _pt1 = Vector2.zero;
+    Vector2 _vel = Vector2.zero;
+    bool _move = false;
 
-    float _accum;
+    float _accum = 0F;
 
     Transform _transform;
 
@@ -22,8 +22,8 @@ public class Agent : MonoBehaviour
     void Start()
     {
         _transform = transform;
-        _move = false;
-        _accum = 0F;
+        //_move = false;
+        //_accum = 0F;
     }
 
     private void FixedUpdate()

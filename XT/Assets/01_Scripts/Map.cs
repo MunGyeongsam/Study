@@ -109,7 +109,7 @@ public class Map : MonoBehaviour
         Vector2 pt = MousePosInWorldSpace();
         UpdateCursor(pt);
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButton(0))
         {
             SetProp(true);
         }

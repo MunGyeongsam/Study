@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct Node
+public class Node
 {
     public Node(int row, int col)
     {
@@ -11,23 +11,30 @@ public struct Node
     }
     public int Row { get; }
     public int Col { get; }
+    public float G { get; set; }
+    public float H { get; set; }
+    public float F
+    {
+        get { return G + H; }
+    }
+    public Node Parent { get; set; }
+    public bool Walkable { get; private set; }
+    public bool Closed { get; set; }
+    public bool Opened { get; set; }
 
-    public static bool operator ==(Node lhs, Node rhs)
+    public void Reset(bool walkable)
+    {
+        G = 0F;
+        H = 0F;
+        Parent = null;
+        Walkable = false;
+        Closed = false;
+        Opened = false;
+        Walkable = walkable;
+    }
+
+    public static bool IsEqual(Node lhs, Node rhs)
     {
         return lhs.Row == rhs.Row && lhs.Col == rhs.Col;
-    }
-    public static bool operator !=(Node lhs, Node rhs)
-    {
-        return !(lhs == rhs);
-    }
-    
-    public override bool Equals(object obj)
-    {
-        Node? n = obj as Node?;
-        return n != null && n.Value == this;
-    }
-    public override int GetHashCode()
-    {
-        return Row << 8 + Col;
     }
 }
