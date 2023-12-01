@@ -70,6 +70,7 @@ static class Algorithm
 
       static void GetPath(List<Node> path, Node endNode)
       {
+            Debug.LogFormat("cost : {0}", endNode.G);
             path.Clear();
 
             do

@@ -17,6 +17,7 @@ public class Main : MonoBehaviour
     [SerializeField] private Transform hidePath;
 
     Transform _transform;
+    private LineRenderer _lineRenderer;
 
     List<Transform> closedList = new List<Transform>();
     List<Transform> openedList = new List<Transform>();
@@ -35,6 +36,7 @@ public class Main : MonoBehaviour
     void Start()
     {
         _transform = transform;
+        _lineRenderer = GetComponent<LineRenderer>();
         _agent = Instantiate(prefabAgent, Vector3.zero, Quaternion.identity, _transform).GetComponent<Agent>();
 
         _agent.enabled = false;
@@ -118,6 +120,16 @@ public class Main : MonoBehaviour
             ShowNodes(_pathNodes, pathList, hidePath, prefabPath, "path");
 
             _agent.SetPath(_pathNodes);
+
+            List<Vector3> pts = new();
+            foreach (var n in _pathNodes)
+            {
+                Vector3 pt = PathFinder.ToPos(n);
+                pts.Add(pt);
+            }
+
+            _lineRenderer.positionCount = pts.Count;
+            _lineRenderer.SetPositions(pts.ToArray());
         }
     }
 
@@ -162,4 +174,5 @@ public class Main : MonoBehaviour
             return rt;
         }
     }
+    
 }
