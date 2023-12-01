@@ -44,6 +44,9 @@ TagManager:
   - name: Tile
     uniqueID: 1792175301
     locked: 0
+  - name: Block
+    uniqueID: 2719100617
+    locked: 0
   - name: TileOverlay
     uniqueID: 3431372691
     locked: 0

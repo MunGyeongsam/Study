@@ -419,10 +419,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   map: {fileID: 1999938061}
   prefabAgent: {fileID: 2053284936255660412, guid: d35761d4645c9425b95e4233d6361c07, type: 3}
-  prefabClosedTile: {fileID: 6751111457695368334, guid: 844d0658d5fc64576a019b9d19af6a4d, type: 3}
-  prefabOpenedTile: {fileID: 8236270142490579044, guid: 001e52d519bb747a0af4c88a023ccd0f, type: 3}
-  hideClosedTile: {fileID: 1817802374}
-  hideOpenedTile: {fileID: 1508718039}
+  prefabClosed: {fileID: 6751111457695368334, guid: 844d0658d5fc64576a019b9d19af6a4d, type: 3}
+  prefabOpened: {fileID: 8236270142490579044, guid: 001e52d519bb747a0af4c88a023ccd0f, type: 3}
+  hideClosed: {fileID: 1817802374}
+  hideOpened: {fileID: 1508718039}
 --- !u!1 &1508718038
 GameObject:
   m_ObjectHideFlags: 0
