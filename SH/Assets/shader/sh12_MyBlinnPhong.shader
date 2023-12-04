@@ -6,7 +6,7 @@ Shader "Custom/sh12_MyBlinnPhong"
         
         _SpecColor ("Specualr Color", Color) = (1,1,1,1)
         
-        _SpecPow("Specualr Power", Range(-512, 512)) = 125
+        _SpecPow("Specualr Power", Range(0, 128)) = 60
     }
     SubShader
     {
@@ -23,6 +23,7 @@ Shader "Custom/sh12_MyBlinnPhong"
         struct Input
         {
             float2 uv_MainTex;
+            float3 viewDir;
         };
 
 
@@ -31,8 +32,10 @@ Shader "Custom/sh12_MyBlinnPhong"
             // Albedo comes from a texture tinted by color
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex);
             o.Albedo = c.rgb;
-
             o.Alpha = c.a;
+
+            float rim = 1 - dot(IN.viewDir, o.Normal);
+            o.Emission = rim*rim;
         }
 
         float4 LightingMyBlinnPhong(SurfaceOutput s, float3 lightDir, float3 viewDir, float atten)
@@ -46,15 +49,19 @@ Shader "Custom/sh12_MyBlinnPhong"
             
             float3 halfVec = normalize(lightDir + viewDir);
             
-            float spec = saturate(dot(halfVec, s.Normal));
-            spec = pow(spec, _SpecPow);
+            float spec = saturate(dot(halfVec, normalize(s.Normal)));
+            spec = pow(spec, _SpecPow) * 0.1;
             specular = spec * _SpecColor.rgb;
 
             final.rgb = specular.rgb + diffuse.rgb;
+            final.rgb = diffuse.rgb;
+            final.rgb = specular.rgb;
+            final.rgb = specular.rgb + diffuse.rgb;
+            final.rgb = diffuse.rgb;
             final.rgb = specular.rgb;
             final.a = s.Alpha;
 
-            return spec;
+            //return spec;
             return final;
             //return float4(halfVec, 1);
         }
