@@ -100,7 +100,8 @@ static class PathFinder
         {
             case 1: Dijkstra.Find(path, from, to, _grid); break;
             case 2: AStar.Find(path, from, to, _grid); break;
-            default: BestFirstSearch.Find(path, from, to, _grid); break;
+            case 3: BestFirstSearch.Find(path, from, to, _grid); break;
+            default: MyFinder.Find(path, from, to, _grid); break;
         }
         return;
         //*/

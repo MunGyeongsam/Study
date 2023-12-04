@@ -76,7 +76,7 @@ public class Main : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        bool chk = false;
+        bool chk = map.Updated;
         if (_from == null)
         {
             (_from, _to) = PathFinder.FromTo();
@@ -99,6 +99,12 @@ public class Main : MonoBehaviour
             PathFinder.Algorithm = 3;
             Debug.Log("BestFirst");
         }
+        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            chk = true;
+            PathFinder.Algorithm = 4;
+            Debug.Log("MyFinder");
+        }
         
         if (Input.GetKeyDown(KeyCode.S))
         {
@@ -108,6 +114,8 @@ public class Main : MonoBehaviour
 
         if (chk)
         {
+            map.Updated = false;
+            
             PathFinder.Find(_pathNodes, _from, _to);
             PathFinder.GetOpenAndClosedList(_openedNodes, _closedNodes);
 

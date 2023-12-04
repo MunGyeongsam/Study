@@ -121,3 +121,15 @@ static class BestFirstSearch
             Algorithm.Find(path, from, to, grid, Heuristic);
       }
 }
+
+static class MyFinder
+{
+      static float Heuristic(int dx, int dy)
+      {
+            return (float)(dx + dy) * 0.5F;
+      }
+      public static void Find(List<Node> path, Node from, Node to, Grid grid)
+      {            Algorithm.Find(path, from, to, grid, Heuristic);
+
+      }
+}

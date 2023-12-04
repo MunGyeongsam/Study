@@ -25,6 +25,7 @@ public class Map : MonoBehaviour
     Tile[,] _mapTile;
 
     public float Scale { get; private set; }
+    public bool Updated { get; set; }
 
 
     // Start is called before the first frame update
@@ -113,7 +114,7 @@ public class Map : MonoBehaviour
         {
             SetProp(true);
         }
-        else if (Input.GetMouseButtonDown(1))
+        else if (Input.GetMouseButton(1))
         {
             SetProp(false);
         }
@@ -197,5 +198,7 @@ public class Map : MonoBehaviour
         
         _mapTile[r - 1, c - 1].SetBlock(val); _mapTile[r - 1, c - 0].SetBlock(val);
         _mapTile[r - 0, c - 1].SetBlock(val); _mapTile[r - 0, c - 0].SetBlock(val);
+
+        Updated = true;
     }
 }
