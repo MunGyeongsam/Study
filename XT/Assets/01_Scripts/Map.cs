@@ -140,15 +140,19 @@ public class Map : MonoBehaviour
         _cursor.position = pt;
     }
 
+    (int row, int col) GetRowCol(string[] data)
+    {
+        return (data.Length, data[0].Split().Length);
+    }
     void ReadMap(string path)
     {
         string fullPath = Application.dataPath + path;
         var lines = System.IO.File.ReadAllLines(fullPath);
 
-        var words = lines[0].Trim().Split();
+        var (row, col) = GetRowCol(lines);
 
-        wInTiles = System.Convert.ToInt32(words[0]);
-        hInTiles = System.Convert.ToInt32(words[1]);
+        wInTiles = col;
+        hInTiles = row;
 
         _map = new char[hInTiles, wInTiles];
         _mapProp = new bool[hInTiles, wInTiles];
@@ -156,7 +160,7 @@ public class Map : MonoBehaviour
 
         for (int r=0; r<hInTiles; ++r)
         {
-            var line = lines[r + 1].Trim();
+            var line = lines[r].Trim();
             for (int c=0; c<wInTiles; ++c)
             {
                 char ch = line[c * 2];

@@ -43,6 +43,8 @@ public class Agent : MonoBehaviour
             {
                 pos = _pt1;
                 _move = false;
+                
+                SetPath(_path);
             }
             else
             {

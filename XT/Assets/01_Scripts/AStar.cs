@@ -126,10 +126,10 @@ static class MyFinder
 {
       static float Heuristic(int dx, int dy)
       {
-            return (float)(dx + dy) * 0.5F;
+            return (float)(dx*dx + dy*dy);
       }
       public static void Find(List<Node> path, Node from, Node to, Grid grid)
-      {            Algorithm.Find(path, from, to, grid, Heuristic);
-
+      {
+            Algorithm.Find(path, from, to, grid, Heuristic);
       }
 }
