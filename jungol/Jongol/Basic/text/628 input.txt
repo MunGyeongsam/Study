@@ -1,0 +1,10 @@
+﻿Hong 90
+Lim 85
+Park 88
+Gong 75
+Lee 100
+Seo 90
+Jang 75
+Song 90
+Kim 95
+Sung 60

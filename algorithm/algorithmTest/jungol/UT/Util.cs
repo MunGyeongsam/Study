@@ -150,7 +150,7 @@ namespace jungol.UT
             }
         }
 
-        public static void PrintArray<T>(T[][] arr, int width = 1, string SEP = "")
+        public static void PrintArray2<T>(T[][] arr, int width = 1, string SEP = "")
         {
             string FMT = string.Format("{{0,{0}}}{1}", width, SEP);
 

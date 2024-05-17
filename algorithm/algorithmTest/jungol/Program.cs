@@ -1,4 +1,5 @@
-﻿using jungol.Challenges;
+﻿using jungol.Beginner;
+using jungol.Challenges;
 using jungol.LanguageCSharp;
 using System;
 
@@ -17,14 +18,18 @@ namespace jungol
     {
         static void Main()
         {
-            int a1 = 1;
-            int a2 = 2;
-            char c1 = 'A';
-            char c2 = 'B';
-            MyUtil.Swap(ref a1, ref a2);
-            MyUtil.Swap(ref c1, ref c2);
-            Console.WriteLine($"a1 : {a1}, a2 : {a2}");
-            Console.WriteLine($"c1 : {c1}, c2 : {c2}");
+            //int a1 = 1;
+            //int a2 = 2;
+            //char c1 = 'A';
+            //char c2 = 'B';
+            //MyUtil.Swap(ref a1, ref a2);
+            //MyUtil.Swap(ref c1, ref c2);
+            //Console.WriteLine($"a1 : {a1}, a2 : {a2}");
+            //Console.WriteLine($"c1 : {c1}, c2 : {c2}");
+
+            //_01_Geo1.Run();
+            //_02_Math1.Run();
+            _03_Geo2.Run();
         }
     }
 }

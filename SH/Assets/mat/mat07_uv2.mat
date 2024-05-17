@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: mat07_uv2
-  m_Shader: {fileID: 4800000, guid: 41558bf35b93549d49d3dde02796e1a4, type: 3}
+  m_Shader: {fileID: 4800000, guid: 8c14544eb9c91cc4798ae1fe7ee3752e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -44,7 +44,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 56eb28a2b27b043298f6fed6596c7250, type: 3}
+        m_Texture: {fileID: 2800000, guid: 0f1f9c44480f8134f93740a32bccc978, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
