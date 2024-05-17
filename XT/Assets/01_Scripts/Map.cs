@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using _01_Scripts;
 using UnityEngine;
 
 public class Map : MonoBehaviour
@@ -20,48 +19,13 @@ public class Map : MonoBehaviour
     Vector2 _leftBottom;
     Vector2 _leftTop;
     float _scaledTileSize;
-    float _scale;
-
-    private System.Random _random = new System.Random();
-    private List<(int, int)> _F = new();
-    private List<(int, int)> _T = new();
-    private List<(int, int)> _f = new();
-    private List<(int, int)> _t = new();
 
     char[,] _map;
     bool[,] _mapProp;
     Tile[,] _mapTile;
-    
-    public float Scale
-    {
-        get { return _scale; }
-    }
-    
-    public bool[,] MapProp
-    {
-        get { return _mapProp; }
-    }
 
-    public Vector2 ToXy(int row, int col)
-    {
-        float halfTile = _scaledTileSize * 0.5F;
-        return new Vector2(
-            _leftTop.x + halfTile + col * _scaledTileSize,
-            _leftTop.y - halfTile - row * _scaledTileSize
-        );
-    }
-    
-    public (int, int, int, int) GetFromTo()
-    {
-        var n = _random.Next(10);
-        var lstf = (n < 5) ? _F : _f;
-        var lstt = (n < 5) ? _T : _t;
-        var fn = _random.Next(lstf.Count);
-        var tn = _random.Next(lstt.Count);
-        var (fi, fj) = lstf[fn];
-        var (ti, tj) = lstt[tn];
-        return (fi, fj, ti, tj);
-    }
+    public float Scale { get; private set; }
+    public bool Updated { get; set; }
 
 
     // Start is called before the first frame update
@@ -89,7 +53,7 @@ public class Map : MonoBehaviour
         float sy = sh / mh;
         float s = Mathf.Min(sx, sy);
 
-        _scale = s;
+        Scale = s;
 
         _scaledTileSize = s * ts;
         _leftBottom = new Vector2(mw * 0.5F, mh * 0.5F) * -s;
@@ -108,7 +72,6 @@ public class Map : MonoBehaviour
         var tmp = Instantiate(prefabTile2x2, pos, rot, parent);
         _cursor = tmp.transform;
 
-        _mapTile = new Tile[hInTiles, wInTiles];
         for (int i=0; i<hInTiles; ++i)
         {
             bool c1 = (i & 0x1) == 1;
@@ -122,23 +85,9 @@ public class Map : MonoBehaviour
 
                 t.name = string.Format($"tile {i,2} x {j,2}");
 
-                t.InitColor(c1 ? color1 : color2);
-                char ch = _map[i, j];
-                if (ch != '0')
-                {
-                    t.SetColor(Char2Color(ch));
-
-                    switch (ch)
-                    {
-                        case 'F': _F.Add((i, j)); break;
-                        case 'f': _f.Add((i, j)); break;
-                        case 'T': _T.Add((i, j)); break;
-                        case 't': _t.Add((i, j)); break;
-                    }
-                }
+                t.Init(c1 ? color1 : color2, _mapProp[i,j]);
 
                 pos.x += ts;
-
                 c1 = !c1;
             }
 
@@ -151,8 +100,8 @@ public class Map : MonoBehaviour
         parent.localScale *= s;
 
         _cursor.position = Vector3.zero;
-        
-        PathFinder.SetUp(_mapProp, _scaledTileSize);
+
+        PathFinder.Init(_map, _mapProp, _scaledTileSize);
     }
 
     // Update is called once per frame
@@ -191,27 +140,32 @@ public class Map : MonoBehaviour
         _cursor.position = pt;
     }
 
+    (int row, int col) GetRowCol(string[] data)
+    {
+        return (data.Length, data[0].Split().Length);
+    }
     void ReadMap(string path)
     {
         string fullPath = Application.dataPath + path;
         var lines = System.IO.File.ReadAllLines(fullPath);
 
-        var words = lines[0].Trim().Split();
+        var (row, col) = GetRowCol(lines);
 
-        wInTiles = System.Convert.ToInt32(words[0]);
-        hInTiles = System.Convert.ToInt32(words[1]);
+        wInTiles = col;
+        hInTiles = row;
 
         _map = new char[hInTiles, wInTiles];
         _mapProp = new bool[hInTiles, wInTiles];
+        _mapTile = new Tile[hInTiles, wInTiles];
 
         for (int r=0; r<hInTiles; ++r)
         {
-            var line = lines[r + 1].Trim();
+            var line = lines[r].Trim();
             for (int c=0; c<wInTiles; ++c)
             {
                 char ch = line[c * 2];
                 _map[r, c] = ch;
-                _mapProp[r, c] = ch != '1';
+                _mapProp[r, c] = (ch == '1');
             }
         }
     }
@@ -238,21 +192,17 @@ public class Map : MonoBehaviour
         Vector2 pt = _cursor.position;
 
         float dx = pt.x - _leftTop.x + _scaledTileSize * 0.5F;
-        float dy = _leftTop.y - pt.y;
+        float dy = _leftTop.y - pt.y + _scaledTileSize * 0.5F;
 
         int r = (int)(dy / _scaledTileSize);
         int c = (int)(dx / _scaledTileSize);
 
-        if (val)
-        {
-            var clr = new Color(0.4F, 0.4F, 0.4F);
-            _mapTile[r - 1, c - 1].SetColor(clr); _mapTile[r - 1, c - 0].SetColor(clr);
-            _mapTile[r - 0, c - 1].SetColor(clr); _mapTile[r - 0, c - 0].SetColor(clr);
-        }
-        else
-        {
-            _mapTile[r - 1, c - 1].ResetColor(); _mapTile[r - 1, c - 0].ResetColor();
-            _mapTile[r - 0, c - 1].ResetColor(); _mapTile[r - 0, c - 0].ResetColor();
-        }
+        _mapProp[r - 1, c - 1] = val; _mapProp[r - 1, c - 0] = val;
+        _mapProp[r - 0, c - 1] = val; _mapProp[r - 0, c - 0] = val;
+        
+        _mapTile[r - 1, c - 1].SetBlock(val); _mapTile[r - 1, c - 0].SetBlock(val);
+        _mapTile[r - 0, c - 1].SetBlock(val); _mapTile[r - 0, c - 0].SetBlock(val);
+
+        Updated = true;
     }
 }

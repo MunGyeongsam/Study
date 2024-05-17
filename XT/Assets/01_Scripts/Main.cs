@@ -1,7 +1,6 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using _01_Scripts;
+using System.Linq;
 using UnityEngine;
 
 public class Main : MonoBehaviour
@@ -9,77 +8,179 @@ public class Main : MonoBehaviour
     [SerializeField] private Map map;
 
     [SerializeField] private GameObject prefabAgent;
-    [SerializeField] private GameObject prefabClosedTile;
-    [SerializeField] private GameObject prefabOpenedTile;
-    [SerializeField] private Transform hideClosedTile;
-    [SerializeField] private Transform hideOpenedTile;
-    
-    private Transform _transform;
-    private Mesh _mesh;
+    [SerializeField] private GameObject prefabClosed;
+    [SerializeField] private GameObject prefabOpened;
+    [SerializeField] private GameObject prefabPath;
 
-    private List<Transform> _closedOlverays = new();
-    private List<Transform> _openedOlverays = new();
-    private List<Node> _closedNodes = new();
-    private List<Node> _openedNodes = new();
-    
+    [SerializeField] private Transform hideClosed;
+    [SerializeField] private Transform hideOpened;
+    [SerializeField] private Transform hidePath;
+
+    Transform _transform;
+    private LineRenderer _lineRenderer;
+
+    List<Transform> closedList = new List<Transform>();
+    List<Transform> openedList = new List<Transform>();
+    List<Transform> pathList = new List<Transform>();
+
+    List<Node> _closedNodes = new List<Node>();
+    List<Node> _openedNodes = new List<Node>();
+    List<Node> _pathNodes = new List<Node>();
+    private Node _from;
+    private Node _to;
+
+    Agent _agent;
+
+
     // Start is called before the first frame update
     void Start()
     {
-        _transform = this.transform;
+        _transform = transform;
+        _lineRenderer = GetComponent<LineRenderer>();
+        _agent = Instantiate(prefabAgent, Vector3.zero, Quaternion.identity, _transform).GetComponent<Agent>();
+
+        _agent.enabled = false;
+
+        /*
+        Queue<int> a = new();
+        
+        a.Enqueue(0);
+        a.Enqueue(1);
+        a.Enqueue(0);
+        a.Enqueue(9);
+        a.Enqueue(8);
+        a.Enqueue(5);
+        a.Enqueue(0);
+        a.Enqueue(8);
+        a.Enqueue(0);
+        a.Enqueue(5);
+        a.Enqueue(5);
+        
+        Debug.Log("--------1");
+        foreach (var n in a)
+        {
+            Debug.Log($"{n.ToString()}");
+        }
+        Debug.Log("--------2");
+        a = new(a.OrderBy((v) => v));
+        foreach (var n in a)
+        {
+            Debug.Log($"{n.ToString()}");
+        }
+        Debug.Log("--------3");
+        
+        //*/
+        
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (!prefabAgent || !map)
-            return;
+        bool chk = map.Updated;
+        if (_from == null)
+        {
+            (_from, _to) = PathFinder.FromTo();
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            chk = true;
+            PathFinder.Algorithm = 1;
+            Debug.Log("Dijkstra");
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            chk = true;
+            PathFinder.Algorithm = 2;
+            Debug.Log("Astar");
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            chk = true;
+            PathFinder.Algorithm = 3;
+            Debug.Log("BestFirst");
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            chk = true;
+            PathFinder.Algorithm = 4;
+            Debug.Log("MyFinder");
+        }
         
         if (Input.GetKeyDown(KeyCode.S))
         {
-            //var agent = Instantiate(prefabAgent, Vector3.zero, Quaternion.identity, _transform);
-            //agent.transform.localScale = Vector3.one * map.Scale;
+            chk = true;
+            (_from, _to) = PathFinder.FromTo();
+        }
 
-            var (fi, fj, ti, tj) = map.GetFromTo();
-            var xy = map.ToXy(fi, fj);
+        if (chk)
+        {
+            map.Updated = false;
+            
+            PathFinder.Find(_pathNodes, _from, _to);
+            PathFinder.GetOpenAndClosedList(_openedNodes, _closedNodes);
 
-            _closedNodes = PathFinder.Find(new Node(fi, fj), new Node(ti, tj));
+            ClearList(openedList, hideOpened);
+            ClearList(closedList, hideClosed);
+            ClearList(pathList, hidePath);
 
-            MakeOverays(_closedOlverays, _closedNodes, prefabClosedTile, hideClosedTile);
+            ShowNodes(_openedNodes, openedList, hideOpened, prefabOpened, "opened");
+            ShowNodes(_closedNodes, closedList, hideClosed, prefabClosed, "closed");
+            ShowNodes(_pathNodes, pathList, hidePath, prefabPath, "path");
 
-            //agent.transform.position = new Vector3(xy.x, xy.y, 0F);
+            _agent.SetPath(_pathNodes);
+
+            List<Vector3> pts = new();
+            foreach (var n in _pathNodes)
+            {
+                Vector3 pt = PathFinder.ToPos(n);
+                pts.Add(pt);
+            }
+
+            _lineRenderer.positionCount = pts.Count;
+            _lineRenderer.SetPositions(pts.ToArray());
         }
     }
 
-    void MakeOverays(List<Transform> overlays, List<Node> nodes, GameObject prefab, Transform pool)
+    void ShowNodes(List<Node> nodes, List<Transform> list, Transform pool, GameObject prefab, string prefix)
     {
-        foreach (var t in (overlays))
-        {
-            t.SetParent(pool);
-        }
-        overlays.Clear();
-
-        float scale = map.Scale * 0.8F;
+        
         foreach (var n in nodes)
         {
-            var child = GetInstance(prefab, pool, scale);
-            child.position = PathFinder.ToVector2(n);
-            overlays.Add(child);
+            var child = GetTile(pool, prefab);
+            var pos = PathFinder.ToPos(n);
+
+            child.name = string.Format("{0} {1},{2}", prefix, n.Row, n.Col);
+            list.Add(child);
+
+            child.position = pos;
         }
     }
 
-    Transform GetInstance(GameObject prefab, Transform pool, float scale)
+    void ClearList(List<Transform> list, Transform hideNode)
+    {
+        foreach (var child in list)
+        {
+            child.SetParent(hideNode);
+        }
+        list.Clear();
+    }
+
+    Transform GetTile(Transform pool, GameObject prefab)
     {
         if (pool.childCount > 0)
         {
-            Transform child = pool.GetChild(pool.childCount - 1);
-            child.SetParent(_transform);
-            return child;
+            var rt = pool.GetChild(pool.childCount - 1);
+            rt.SetParent(_transform);
+
+            return rt;
         }
         else
         {
-            var child = Instantiate(prefab, Vector3.zero, Quaternion.identity, _transform).transform;
-            child.localScale = Vector3.one * scale;
-            return child;
+            var rt = Instantiate(prefab, Vector3.zero, Quaternion.identity, _transform).transform;
+            rt.localScale = Vector3.one * map.Scale * 0.8F;
+
+            return rt;
         }
     }
+    
 }
