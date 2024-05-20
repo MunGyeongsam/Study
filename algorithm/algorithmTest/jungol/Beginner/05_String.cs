@@ -1,6 +1,7 @@
 ﻿using jungol.UT;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace jungol.Beginner
@@ -291,27 +292,89 @@ Kifq oua zarxa suar bti yaagrj fa xtfgrj");
         //--------------------------------------------------
         static void Impl_3699(string s)
         {
+            string[] lines = s.Split('\n');
+            for (int i = 0; i < lines.Length; ++i)
+            {
+                lines[i] = lines[i].Trim();
+            }
 
-            Impl_3699_GetCombinations(7, 1);
-            Impl_3699_GetCombinations(7, 2);
-            Impl_3699_GetCombinations(7, 3);
-            Impl_3699_GetCombinations(7, 4);
-            Impl_3699_GetCombinations(7, 5);
-            Impl_3699_GetCombinations(7, 6);
-            Impl_3699_GetCombinations(7, 7);
+            int index = 0;
+            int nCase = int.Parse(lines[index++]);
+
+            for(int i = 1; i <= nCase; ++i)
+            {
+                int n = int.Parse(lines[index++]);
+                Dictionary<string, int> lookup = new Dictionary<string, int>();
+                for (int j = 0; j < n; ++j)
+                {
+                    string[] words = lines[index++].Split();
+                    if (lookup.ContainsKey(words[1]))
+                        lookup[words[1]]++;
+                    else
+                        lookup[words[1]] = 1;
+                }
+
+                int cnt = lookup.Keys.Count;
+                var values = lookup.Values.ToArray();
+
+
+                int sum = 0;
+                for(int j=1; j<=cnt; ++j)
+                {
+                    //Console.WriteLine(lookup.Keys.ElementAt(i) + " " + lookup.Values.ElementAt(i));
+                    var arr = Impl_3699_GetCombinations(cnt, j);
+
+                    for(int k=0; k<arr.GetLength(0); ++k)
+                    {
+                        int mul = 1;
+                        for(int l=0; l<arr.GetLength(1); ++l)
+                        {
+                            mul *= values[arr[k, l]];
+                        }
+                        sum += mul;
+                    }
+                }
+
+                // 아래 코드는 위 코드와 동일한 결과를 출력한다.
+                // A,B,C,D 4가지 그룹의 조합을 생각해보면
+                // 4C1 + 4C2 + 4C3 + 4C4 = 15 가지의 조합이 나온다.
+                // 각 그룹의 갯수를 곱하면 된다.
+                // a + b + c + d + ab + ac + ad + bc + bd + cd + abc + abd + acd + bcd + abcd
+                //
+                // 인수분해의 특이한 형태로
+                // (a+1) * (b + 1) * (c + 1) * (d + 1) 을 전개하면
+                // a + b + c + d + ab + ac + ad + bc + bd + cd + abc + abd + acd + bcd + abcd + 1 이 나오고
+                // 따라서
+                // (a+1) * (b + 1) * (c + 1) * (d + 1) - 1
+                // 으로 같은 결과를 구할 수 있다.
+                int result = 1;
+                foreach (var pair in lookup)
+                {
+                    result *= (pair.Value + 1);
+                }
+                Console.WriteLine($"{result - 1}, {sum}");
+            }
+
+            //Impl_3699_GetCombinations(7, 1);
+            //Impl_3699_GetCombinations(7, 2);
+            //Impl_3699_GetCombinations(7, 3);
+            //Impl_3699_GetCombinations(7, 4);
+            //Impl_3699_GetCombinations(7, 5);
+            //Impl_3699_GetCombinations(7, 6);
+            //Impl_3699_GetCombinations(7, 7);
         }
         static int[,] Impl_3699_GetCombinations(int n, int r)
         {
             int numOfCombinations = Impl_3699_CalcCombination(n, r);
 
-            Console.WriteLine("n: {0}, r: {1}, numOfCombinations: {2}", n, r, numOfCombinations);
+            //Console.WriteLine("n: {0}, r: {1}, numOfCombinations: {2}", n, r, numOfCombinations);
             int[,] comb = new int[numOfCombinations, r];
 
             int[] arr = new int[r];
             int row = 0;
             Impl_3699_RecsvGenerateCombinations(n, r, arr, comb, ref row, 0, 0);
 
-            Util.PrintArray(comb, 3, " ");
+            //Util.PrintArray(comb, 3, " ");
             return comb;
         }
         static void Impl_3699_RecsvGenerateCombinations(int n, int r, int[] arr, int[,] comb, ref int row, int index, int start)
@@ -353,7 +416,15 @@ Kifq oua zarxa suar bti yaagrj fa xtfgrj");
 
         static void _3699()
         {
-            Impl_3699("3\nhat headgear\nsunglasses eyewear\nturban headgear\n5\nmask face\nsunglasses face\nmakeup face\nmask face\nmakeup face\n");
+            Impl_3699(@"2
+3
+hat headgear
+sunglasses eyewear
+turban headgear
+3
+mask face
+sunglasses face
+makeup face");
         }
     }
 }

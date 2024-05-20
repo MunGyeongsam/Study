@@ -4696,15 +4696,45 @@ c";
         {
             char[] arr = src.ToCharArray();
             System.Diagnostics.Debug.Assert(n == arr.Length);
-
-            int i = Array.LastIndexOf(arr, 'R');
-            while (i != 0)
+            
+            char ch1 = 'R';
+            char ch2 = 'B';
+            int cnt1 = 0;
+            int lastIndexOfCh2 = Array.LastIndexOf(arr, ch2);
+            for (int i = lastIndexOfCh2 - 1; i >= 0; --i)
             {
+                if (arr[i] == ch1)
+                {
+                    arr[lastIndexOfCh2] = ch1;
+                    arr[i] = ch2;
+                    lastIndexOfCh2 = i;
+                    ++cnt1;
+                }
             }
+
+            ch1 = 'B';
+            ch2 = 'R';
+            lastIndexOfCh2 = Array.LastIndexOf(arr, ch2);
+            int cnt2 = 0;
+            for (int i = lastIndexOfCh2 - 1; i >= 0; --i)
+            {
+                if (arr[i] == ch1)
+                {
+                    arr[lastIndexOfCh2] = ch1;
+                    arr[i] = ch2;
+                    lastIndexOfCh2 = i;
+                    ++cnt2;
+                }
+            }
+
+            //Console.WriteLine("{0}, {1}", cnt1, cnt2);
+            Console.WriteLine(Math.Min(cnt1, cnt2));
 
         }
         static void _3427()
         {
+            impl_3427(9, "RBBBRBRRR");
+            impl_3427(8, "BBRBBBBR");
         }
 
     }

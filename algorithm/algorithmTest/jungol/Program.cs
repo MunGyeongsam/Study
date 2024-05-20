@@ -31,7 +31,10 @@ namespace jungol
             //_02_Math1.Run();
             //_03_Geo2.Run();
             //_04_Math2.Run();
-            _05_String.Run();
+            //_05_String.Run();
+            //_06_Etc.Run();
+            //_07_DataStructure.Run();
+            _08_Recursive.Run();
         }
     }
 }
