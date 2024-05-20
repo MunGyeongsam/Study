@@ -29,7 +29,9 @@ namespace jungol
 
             //_01_Geo1.Run();
             //_02_Math1.Run();
-            _03_Geo2.Run();
+            //_03_Geo2.Run();
+            //_04_Math2.Run();
+            _05_String.Run();
         }
     }
 }
