@@ -1,4 +1,5 @@
 ﻿using jungol.Beginner;
+using jungol.Intermediate;
 using jungol.Challenges;
 using jungol.LanguageCSharp;
 using System;
@@ -34,7 +35,9 @@ namespace jungol
             //_05_String.Run();
             //_06_Etc.Run();
             //_07_DataStructure.Run();
-            _08_Recursive.Run();
+            //_08_Recursive.Run();
+
+            _01_DivideAndConquer.Run();
         }
     }
 }
