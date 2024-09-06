@@ -55,10 +55,10 @@ public class _01_draw_mesh : MonoBehaviour
         
         Vector2[] uv = new Vector2[4]
         {
-            new Vector2(0, 0),
-            new Vector2(1, 0),
             new Vector2(0, 1),
-            new Vector2(1, 1)
+            new Vector2(1, 1),
+            new Vector2(0, 0),
+            new Vector2(1, 0)
         };
         
         int[] triangles = new int[6]
@@ -70,6 +70,13 @@ public class _01_draw_mesh : MonoBehaviour
         _mesh.vertices = vertices;
         _mesh.uv = uv;
         _mesh.triangles = triangles;
+        _mesh.colors = new Color[4]
+        {
+            Color.red,
+            Color.green,
+            Color.blue,
+            Color.yellow
+        };
         
         Material material = new Material(Shader.Find("Standard"));
 
