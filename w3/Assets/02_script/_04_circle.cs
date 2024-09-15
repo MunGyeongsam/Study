@@ -5,7 +5,7 @@ using UnityEngine;
 public class _04_circle : DrawMeshBase
 {
     [SerializeField] private float radius = 1F;
-    [SerializeField] private int segments = 4;
+    [SerializeField, Range(3, 120)] private int segments = 4;
     
     protected override Mesh CreateMesh()
     {

@@ -2,7 +2,7 @@
 
 namespace _02_script
 {
-    public class _03_cube : DrawMeshBase
+    public class _02_cube : DrawMeshBase
     {
         
         [SerializeField] private float size = 1F;

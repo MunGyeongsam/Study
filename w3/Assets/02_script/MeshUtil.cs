@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public static class MeshUtil
@@ -271,16 +274,6 @@ public static class MeshUtil
         return mesh;
     }
 
-    public static Mesh Sphere(float radius)
-    {
-        var mesh = new Mesh();
-
-        //to be implemented
-
-        RecalcMesh(mesh);
-        return mesh;
-    }
-
     public static Mesh Circle(float radius, int numOfAngle)
     {
         var mesh = new Mesh();
@@ -343,6 +336,235 @@ public static class MeshUtil
 
         mesh.colors = colors;
 
+        RecalcMesh(mesh);
+        return mesh;
+    }
+    
+    public static Mesh Cylinder(float radius, float height, int numOfAngle, int numOfSlice, [CanBeNull] Func<float, float, float> func = null)
+    {
+        var mesh = new Mesh();
+        int numOfVtx = (numOfAngle * 2) * (numOfSlice + 1);
+        
+        //vertices
+        var vtx = new Vector3[numOfVtx];
+        float stepInRadians = Mathf.PI * 2F / numOfAngle;
+        float stepInHeight = height / numOfSlice;
+        
+        Vector3 pt = Vector3.zero;
+        int index = 0;
+        
+        for (int i = 0; i <= numOfSlice; i++)
+        {
+            pt.y = height * 0.5F - i * stepInHeight;
+            float r = func?.Invoke(radius, pt.y) ?? radius;
+            
+            pt.x = r;
+            pt.z = 0F;
+            vtx[index++] = pt;
+            
+            for (int j = 1; j < numOfAngle; j++)
+            {
+                pt.x = r * Mathf.Cos(j * stepInRadians);
+                pt.z = r * Mathf.Sin(j * stepInRadians);
+                vtx[index++] = pt;
+                vtx[index++] = pt;
+            }
+            
+            pt.x = r;
+            pt.z = 0F;
+            vtx[index++] = pt;
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.vertices = vtx;
+        
+        //triangles
+        var tri = new int[numOfAngle * 6 * numOfSlice];
+        int numOfVtxPerSlice = numOfAngle * 2;
+        index = 0;
+        for(int i=0; i<numOfSlice; i++)
+        {
+            int baseIndex = i * numOfVtxPerSlice;
+            for (int j = 0; j < numOfAngle; j++)
+            {
+                tri[index++] = baseIndex + j * 2;
+                tri[index++] = baseIndex + j * 2 + 1;
+                tri[index++] = baseIndex + j * 2 + numOfVtxPerSlice;
+                
+                tri[index++] = baseIndex + j * 2 + 1;
+                tri[index++] = baseIndex + j * 2 + 1 + numOfVtxPerSlice;
+                tri[index++] = baseIndex + j * 2 + numOfVtxPerSlice;
+            }
+        }
+        Debug.Assert(index == numOfAngle * 6 * numOfSlice);
+        mesh.triangles = tri;
+        
+        //uv
+        var uvs = new Vector2[numOfVtx];
+        Vector2 uv = Vector2.zero;
+        index = 0;
+        
+        for(int i=0; i<=numOfSlice; i++)
+        {
+            uv.y = 1F - i / (float)numOfSlice;
+            uv.x = 0F;
+            uvs[index++] = uv;
+            
+            for (int j = 1; j < numOfAngle; j++)
+            {
+                uv.x = j / (float)numOfAngle;
+                uvs[index++] = uv;
+                uvs[index++] = uv;
+            }
+            
+            uv.x = 1F;
+            uvs[index++] = uv;
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.uv = uvs;
+        
+        //colors
+        var colors = new Color[numOfVtx];
+        float colorStep = 1F / numOfSlice;
+        index = 0;
+        for (int i = 0; i <= numOfSlice; i++)
+        {
+            float v = i * colorStep;
+            colors[index++] = new Color(v, v, v, 1);
+            
+            for (int j = 1; j < numOfAngle; j++)
+            {
+                colors[index++] = new Color(v, v, v, 1);
+                colors[index++] = new Color(v, v, v, 1);
+            }
+            
+            colors[index++] = new Color(v, v, v, 1);
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.colors = colors;
+        
+        RecalcMesh(mesh);
+        return mesh;
+    }
+
+    public static Mesh Sphere1(float radius, int numOfAngle)
+    {
+        float CalcRadius(float raius, float y)
+        {
+            if (radius <= Mathf.Abs(y))
+                return 0F;
+            
+            return Mathf.Sqrt(radius * radius - y * y);
+        }
+        var mesh = Cylinder(radius, radius*2F, numOfAngle, numOfAngle-1, CalcRadius);
+        return mesh;
+    }
+    
+
+    public static Mesh Sphere2(float radius, int numOfAngle)
+    {
+        var mesh = new Mesh();
+
+        int numOfSlice = numOfAngle - 1;
+        
+        //vertices
+        int numOfVtx = (numOfAngle * 2) * (numOfSlice + 1);
+        var vtx = new Vector3[numOfVtx];
+        float stepInRadians = Mathf.PI * 2F / numOfAngle;
+        
+        Vector3 pt = Vector3.zero;
+        int index = 0;
+        
+        for (int i = 0; i <= numOfSlice; i++)
+        {
+            float y = radius * Mathf.Cos(i * Mathf.PI / numOfSlice);
+            float r = radius * Mathf.Sin(i * Mathf.PI / numOfSlice);
+            
+            pt.y = y;
+            pt.x = r;
+            pt.z = 0F;
+            vtx[index++] = pt;
+            
+            for (int j = 1; j < numOfAngle; j++)
+            {
+                pt.x = r * Mathf.Cos(j * stepInRadians);
+                pt.y = y;
+                pt.z = r * Mathf.Sin(j * stepInRadians);
+                vtx[index++] = pt;
+                vtx[index++] = pt;
+            }
+            
+            pt.x = r;
+            pt.z = 0F;
+            vtx[index++] = pt;
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.vertices = vtx;
+        
+        //triangles
+        var tri = new int[numOfAngle * 6 * numOfSlice];
+        int numOfVtxPerSlice = numOfAngle * 2;
+        index = 0;
+        for(int i=0; i<numOfSlice; i++)
+        {
+            int baseIndex = i * numOfVtxPerSlice;
+            for (int j = 0; j < numOfAngle; j++)
+            {
+                tri[index++] = baseIndex + j * 2;
+                tri[index++] = baseIndex + j * 2 + 1;
+                tri[index++] = baseIndex + j * 2 + numOfVtxPerSlice;
+                
+                tri[index++] = baseIndex + j * 2 + 1;
+                tri[index++] = baseIndex + j * 2 + 1 + numOfVtxPerSlice;
+                tri[index++] = baseIndex + j * 2 + numOfVtxPerSlice;
+            }
+        }
+        Debug.Assert(index == numOfAngle * 6 * numOfSlice);
+        mesh.triangles = tri;
+        
+        //uv
+        var uvs = new Vector2[numOfVtx];
+        Vector2 uv = Vector2.zero;
+        index = 0;
+        
+        for(int i=0; i<=numOfSlice; i++)
+        {
+            uv.y = 1F - i / (float)numOfSlice;
+            uv.x = 0F;
+            uvs[index++] = uv;
+            
+            for (int j = 1; j < numOfAngle; j++)
+            {
+                uv.x = j / (float)numOfAngle;
+                uvs[index++] = uv;
+                uvs[index++] = uv;
+            }
+            
+            uv.x = 1F;
+            uvs[index++] = uv;
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.uv = uvs;
+        
+        //colors
+        var colors = new Color[numOfVtx];
+        float colorStep = 1F / numOfSlice;
+        index = 0;
+        for (int i = 0; i <= numOfSlice; i++)
+        {
+            float v = i * colorStep;
+            colors[index++] = new Color(v, v, v, 1);
+            
+            for (int j = 1; j < numOfAngle; j++)
+            {
+                colors[index++] = new Color(v, v, v, 1);
+                colors[index++] = new Color(v, v, v, 1);
+            }
+            
+            colors[index++] = new Color(v, v, v, 1);
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.colors = colors;
+        
         RecalcMesh(mesh);
         return mesh;
     }

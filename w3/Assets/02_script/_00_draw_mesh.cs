@@ -33,7 +33,7 @@ using UnityEngine;
 // 0 *---* 1
 //   | / |
 // 2 *---* 3 -- +x
-public class _01_draw_mesh : MonoBehaviour
+public class _00_draw_mesh : MonoBehaviour
 {
     private Mesh _mesh;
     private Material _mat;

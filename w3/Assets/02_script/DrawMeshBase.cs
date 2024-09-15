@@ -26,6 +26,7 @@ public class DrawMeshBase : MonoBehaviour
         else if (Input.GetKeyUp(KeyCode.Alpha2))
             _mat = MeshUtil.CreateCustomMaterial(texture);
         
-        Graphics.DrawMesh(_mesh, transform.position, Quaternion.identity, _mat, 0);
+        Graphics.DrawMesh(_mesh, transform.localToWorldMatrix, _mat, 0);
+        //Graphics.DrawMesh(_mesh, transform.position, Quaternion.identity, _mat, 0);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace _02_script
 {
-    public class _02_rect : DrawMeshBase
+    public class _01_rect : DrawMeshBase
     {
         [SerializeField] private float width = 2F;
         [SerializeField] private float height = 1F;
