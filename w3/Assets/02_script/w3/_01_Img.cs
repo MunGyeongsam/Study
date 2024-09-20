@@ -170,7 +170,7 @@ public class _01_Img : MonoBehaviour
         Debug.Assert(_map.height % 2 == 0);
         
         _mesh = CreateMesh(_map);
-        _mat = W3Util.CreateCustomMaterial(_texture);
+        _mat = W3Util.CreateMaterial(_texture);
     }
 
     Mesh CreateMesh(Texture2D texture)
