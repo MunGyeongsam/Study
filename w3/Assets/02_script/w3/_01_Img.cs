@@ -44,10 +44,10 @@ public class _01_Img : MonoBehaviour
     
     (int row, int col) GetUvIndex(Texture2D texture, int r, int c)
     {
-        bool lb = texture.GetPixel(r+0, c+0)  != Color.white;
-        bool rb = texture.GetPixel(r+0, c+1)  != Color.white;
-        bool lt = texture.GetPixel(r+1, c+0)  != Color.white;
-        bool rt = texture.GetPixel(r+1, c+1)  != Color.white;
+        bool lb = texture.GetPixel(c+0, r+0)  != Color.white;
+        bool rb = texture.GetPixel(c+1, r+0)  != Color.white;
+        bool lt = texture.GetPixel(c+0, r+1)  != Color.white;
+        bool rt = texture.GetPixel(c+1, r+1)  != Color.white;
         
         if (!lb && !rb && !lt && !rt)
             return (-1, -1);
@@ -102,12 +102,12 @@ public class _01_Img : MonoBehaviour
             
             row = 3;
 
-            if (lb)
-                col = 2;
-            else if (rb)
-                col = 1;
-            else
+            if (lb && rb)
                 col = 3;
+            else if (lb)
+                col = 2;
+            else
+                col = 1;
         }
         
         return (row, col);
@@ -166,8 +166,8 @@ public class _01_Img : MonoBehaviour
     void Start()
     {
         Debug.Log($"map size : {_map.width} x {_map.height}");
-        Debug.Assert(_map.width % 4 == 0);
-        Debug.Assert(_map.height % 4 == 0);
+        Debug.Assert(_map.width % 2 == 0);
+        Debug.Assert(_map.height % 2 == 0);
         
         _mesh = CreateMesh(_map);
         _mat = W3Util.CreateCustomMaterial(_texture);
@@ -175,16 +175,16 @@ public class _01_Img : MonoBehaviour
 
     Mesh CreateMesh(Texture2D texture)
     {
-        int numOfRow = texture.height / 4;
-        int numOfCol = texture.width / 4;
+        int numOfRow = texture.height / 2;
+        int numOfCol = texture.width / 2;
         
         int numOfVtx = numOfRow * numOfCol * 4;
-        int numOfTri = numOfRow * numOfCol * 2;
+        int numOfTri = numOfRow * numOfCol * 6;
         
         List<Vector3> vtxList = new List<Vector3>(numOfVtx);
         List<Vector2> uvList = new List<Vector2>(numOfVtx);
         List<Color> colorList = new List<Color>(numOfVtx);
-        List<int> triList = new List<int>(numOfTri * 3);
+        List<int> triList = new List<int>(numOfTri);
         
         Span<Vector3> vtxBuffer = stackalloc Vector3[4];
         Span<Vector2> uvBuffer = stackalloc Vector2[4];
@@ -194,7 +194,7 @@ public class _01_Img : MonoBehaviour
         {
             for(int c=0; c<numOfCol; c++)
             {
-                (int row, int col) = GetUvIndex(texture, r*4, c*4);
+                (int row, int col) = GetUvIndex(texture, r*2, c*2);
                 if (row == -1 || col == -1)
                     continue;
                 
@@ -245,6 +245,8 @@ public class _01_Img : MonoBehaviour
             _mat = W3Util.CreateMaterial(_texture);
         else if (Input.GetKeyUp(KeyCode.Alpha2))
             _mat = W3Util.CreateCustomMaterial(_texture);
+        else if (Input.GetKeyUp(KeyCode.Alpha3))
+            _mesh = CreateMesh(_map);
         
         Graphics.DrawMesh(_mesh, transform.localToWorldMatrix, _mat, 0);
     }
