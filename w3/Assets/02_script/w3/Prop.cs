@@ -6,7 +6,10 @@ namespace _02_script.w3
     {
         private byte _flag;
         
-        public bool LB { get { return (_flag & 0x01) != 0; } set { _flag = (byte)(value ? _flag | 0x01 : _flag & 0xFE); } }
+        public bool LB { 
+            get => (_flag & 0x01) != 0;
+            set => _flag = (byte)(value ? _flag | 0x01 : _flag & 0xFE);
+        }
         public bool RB { get { return (_flag & 0x02) != 0; } set { _flag = (byte)(value ? _flag | 0x02 : _flag & 0xFD); } }
         public bool LT { get { return (_flag & 0x04) != 0; } set { _flag = (byte)(value ? _flag | 0x04 : _flag & 0xFB); } }
         public bool RT { get { return (_flag & 0x08) != 0; } set { _flag = (byte)(value ? _flag | 0x08 : _flag & 0xF7); } }
@@ -14,6 +17,11 @@ namespace _02_script.w3
         public bool IsEmpty => _flag == 0;
         public bool IsFull => _flag == 0x0F;
         public bool IsAny => _flag != 0;
+
+        public Prop(int i)
+        {
+            _flag = (byte)i;
+        }
         
         public Prop(bool lb, bool rb, bool lt, bool rt)
         {
@@ -22,6 +30,11 @@ namespace _02_script.w3
             RB = rb;
             LT = lt;
             RT = rt;
+        }
+
+        public static implicit operator int(Prop prop)
+        {
+            return prop._flag;
         }
         
         public void Clear()
