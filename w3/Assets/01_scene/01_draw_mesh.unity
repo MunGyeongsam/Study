@@ -230,7 +230,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &48584945
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,6 +244,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 402488b2475ef9c4fbaac8086d8e5af2, type: 3}
+  yawSpeed: 0
+  pitchSpeed: 0
+  rollSpeed: 0
   radius: 1
   segments: 110
 --- !u!4 &48584946
@@ -256,6 +259,56 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &189132929
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 189132932}
+  - component: {fileID: 189132930}
+  m_Layer: 0
+  m_Name: 06_sphere3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &189132930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 189132929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f256d44fab246b2bac439d518903b3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
+  yawSpeed: 11
+  pitchSpeed: 11
+  rollSpeed: 11
+  radius: 1
+  numOfAngle: 8
+--- !u!4 &189132932
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 189132929}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 6, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -336,6 +389,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 402488b2475ef9c4fbaac8086d8e5af2, type: 3}
+  yawSpeed: 0
+  pitchSpeed: 0
+  rollSpeed: 0
   width: 2
   height: 1
 --- !u!4 &654862215
@@ -400,7 +456,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1514074982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -414,8 +470,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
+  yawSpeed: 11
+  pitchSpeed: 11
+  rollSpeed: 11
   radius: 1
-  numOfAngle: 22
+  numOfAngle: 8
 --- !u!4 &1514074983
 Transform:
   m_ObjectHideFlags: 0
@@ -461,6 +520,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 402488b2475ef9c4fbaac8086d8e5af2, type: 3}
+  yawSpeed: 0
+  pitchSpeed: 0
+  rollSpeed: 0
   size: 1
 --- !u!4 &1729693087
 Transform:
@@ -507,6 +569,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
+  yawSpeed: 0
+  pitchSpeed: 0
+  rollSpeed: 0
   radius: 1
   height: 2
   numOfAngle: 32
@@ -542,7 +607,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1985345139
 Transform:
   m_ObjectHideFlags: 0
@@ -571,8 +636,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
+  yawSpeed: 11
+  pitchSpeed: 11
+  rollSpeed: 11
   radius: 1
-  numOfAngle: 22
+  numOfAngle: 8
 --- !u!1 &2042661215
 GameObject:
   m_ObjectHideFlags: 0
@@ -681,3 +749,4 @@ SceneRoots:
   - {fileID: 1982770281}
   - {fileID: 1985345139}
   - {fileID: 1514074983}
+  - {fileID: 189132932}

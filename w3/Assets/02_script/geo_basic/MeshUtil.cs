@@ -459,7 +459,6 @@ public static class MeshUtil
         return mesh;
     }
     
-
     public static Mesh Sphere2(float radius, int numOfAngle)
     {
         var mesh = new Mesh();
@@ -561,6 +560,130 @@ public static class MeshUtil
             }
             
             colors[index++] = new Color(v, v, v, 1);
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.colors = colors;
+        
+        RecalcMesh(mesh);
+        return mesh;
+    }
+
+    public static Mesh Sphere3(float radius, int numOfAngle)
+    {
+        var mesh = new Mesh();
+
+        //int numOfSlice = numOfAngle - 1;
+        int numOfSlice = numOfAngle / 2;
+        int numOfRect = numOfAngle * numOfSlice;
+        int numOfVtx = numOfRect * 4;
+
+        //vertices
+        var vtx = new Vector3[numOfVtx];
+        float stepInRadians = Mathf.PI * 2F / numOfAngle;
+        
+        Vector3 pt = Vector3.zero;
+        int index = 0;
+        
+        for (int i = 0; i < numOfSlice; ++i)
+        {
+            for (int i2 = 0; i2 < 2; ++i2)
+            {
+                float y = radius * Mathf.Cos((i+i2) * Mathf.PI / numOfSlice);
+                float r = radius * Mathf.Sin((i+i2) * Mathf.PI / numOfSlice);
+
+                pt.y = y;
+                pt.x = r;
+                pt.z = 0F;
+                vtx[index++] = pt;
+
+                for (int j = 1; j < numOfAngle; j++)
+                {
+                    pt.x = r * Mathf.Cos(j * stepInRadians);
+                    pt.y = y;
+                    pt.z = r * Mathf.Sin(j * stepInRadians);
+                    vtx[index++] = pt;
+                    vtx[index++] = pt;
+                }
+
+                pt.x = r;
+                pt.z = 0F;
+                vtx[index++] = pt;
+            }
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.vertices = vtx;
+        
+        //triangles
+        var tri = new int[numOfRect * 6];
+        int numOfVtxPerSlice = numOfAngle * 2;
+        index = 0;
+        for(int i=0; i<numOfSlice; i++)
+        {
+            int baseIndex = i * numOfVtxPerSlice * 2;
+            for (int j = 0; j < numOfAngle; j++)
+            {
+                tri[index++] = baseIndex + j * 2;
+                tri[index++] = baseIndex + j * 2 + 1;
+                tri[index++] = baseIndex + j * 2 + numOfVtxPerSlice;
+                
+                tri[index++] = baseIndex + j * 2 + 1;
+                tri[index++] = baseIndex + j * 2 + 1 + numOfVtxPerSlice;
+                tri[index++] = baseIndex + j * 2 + numOfVtxPerSlice;
+            }
+        }
+        Debug.Assert(index == numOfAngle * 6 * numOfSlice);
+        mesh.triangles = tri;
+        
+        //uv
+        var uvs = new Vector2[numOfVtx];
+        Vector2 uv = Vector2.zero;
+        index = 0;
+        
+        for(int i=0; i<numOfSlice; i++)
+        {
+            for (int i2 = 0; i2 < 2; ++i2)
+            {
+                float y = 0.5F + 0.5F * Mathf.Cos((i+i2) * Mathf.PI / numOfSlice);
+                
+                
+                //uv.y = 1F - (i+i2) / (float)numOfSlice;
+                uv.y = y;
+                uv.x = 0F;
+                uvs[index++] = uv;
+
+                for (int j = 1; j < numOfAngle; j++)
+                {
+                    uv.x = j / (float)numOfAngle;
+                    uvs[index++] = uv;
+                    uvs[index++] = uv;
+                }
+
+                uv.x = 1F;
+                uvs[index++] = uv;
+            }
+        }
+        Debug.Assert(index == numOfVtx);
+        mesh.uv = uvs;
+        
+        //colors
+        var colors = new Color[numOfVtx];
+        float colorStep = 1F / numOfSlice;
+        index = 0;
+        for (int i = 0; i < numOfSlice; i++)
+        {
+            for (int i2 = 0; i2 < 2; ++i2)
+            {
+                float v = (i+i2) * colorStep;
+                colors[index++] = new Color(v, v, v, 1);
+
+                for (int j = 1; j < numOfAngle; j++)
+                {
+                    colors[index++] = new Color(v, v, v, 1);
+                    colors[index++] = new Color(v, v, v, 1);
+                }
+
+                colors[index++] = new Color(v, v, v, 1);
+            }
         }
         Debug.Assert(index == numOfVtx);
         mesh.colors = colors;
