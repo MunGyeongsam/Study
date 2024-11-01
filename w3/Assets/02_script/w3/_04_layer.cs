@@ -13,6 +13,8 @@ public class _04_layer : MonoBehaviour
 
     Material[] _mat;
     Mesh[] _mesh;
+    
+    BitArray _show;
     // Start is called before the first frame update
     void Start()
     {
@@ -20,7 +22,16 @@ public class _04_layer : MonoBehaviour
         _mat = new Material[nLayer];
         for(int i=0; i<nLayer; ++i)
             _mat[i] = W3Util.CreateMaterial(_texture[i], i);
+        _show = new BitArray(nLayer, true);
         
+        ResetMesh();
+    }
+
+
+    void ResetMesh()
+    {
+        int nLayer = _texture.Length;
+
         byte[,] map = Gen(128, nLayer);
         _mesh = GetMeshs(map, nLayer);
     }
@@ -28,10 +39,25 @@ public class _04_layer : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        int n = _mesh.Length;
-        for (int i = 0; i < n; ++i)
+        if (Input.GetKeyDown(KeyCode.Space))
+            ResetMesh();
+
+        if (_show != null)
         {
-            Graphics.DrawMesh(_mesh[i], transform.localToWorldMatrix, _mat[i], i);
+            if (_show.Count > 0 && Input.GetKeyDown(KeyCode.Alpha0)) _show.Set(0, !_show[0]);
+            if (_show.Count > 1 && Input.GetKeyDown(KeyCode.Alpha1)) _show.Set(1, !_show[1]);
+            if (_show.Count > 2 && Input.GetKeyDown(KeyCode.Alpha2)) _show.Set(2, !_show[2]);
+            if (_show.Count > 3 && Input.GetKeyDown(KeyCode.Alpha3)) _show.Set(3, !_show[3]);
+            if (_show.Count > 4 && Input.GetKeyDown(KeyCode.Alpha4)) _show.Set(4, !_show[4]);
+            if (_show.Count > 5 && Input.GetKeyDown(KeyCode.Alpha5)) _show.Set(5, !_show[5]);
+        }
+
+        int nLayer = _texture.Length;
+        Matrix4x4 m = transform.localToWorldMatrix;
+        for (int i = 0; i < nLayer; ++i)
+        {
+            if (_show[i])
+                Graphics.DrawMesh(_mesh[i], m, _mat[i], nLayer - i);
         }
     }
     
