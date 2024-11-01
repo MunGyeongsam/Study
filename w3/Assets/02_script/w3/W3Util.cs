@@ -193,14 +193,18 @@ public static class W3Util
     }
     
     
-    public static Material CreateMaterial(Texture texture)
+    public static Material CreateMaterial(Texture texture, int rq = 0)
     {
         Material material = new Material(Shader.Find("Standard"));
 
         material.mainTexture = texture;
         material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
         material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+        material.SetInt("_ZWrite", 1);
         material.EnableKeyword("_ALPHATEST_ON");
+        material.DisableKeyword("_ALPHABLEND_ON");
+        material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        material.renderQueue = rq;
         material.SetPass(0);
 
         return material;
