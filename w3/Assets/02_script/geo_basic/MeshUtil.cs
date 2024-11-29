@@ -691,4 +691,152 @@ public static class MeshUtil
         RecalcMesh(mesh);
         return mesh;
     }
+
+    public static Mesh Cone(float height, float radius, int numOfAngle)
+    {
+        var mesh = new Mesh();
+
+        // Vertices
+        var vertices = new List<Vector3>();
+        var uv = new List<Vector2>();
+        var colors = new List<Color>();
+        var normals = new List<Vector3>();
+
+        // Bottom center vertex
+        vertices.Add(Vector3.zero);
+        uv.Add(new Vector2(0.5f, 0.5f));
+        colors.Add(Color.white);
+        normals.Add(Vector3.down);
+
+        // Bottom circle vertices
+        float step = 2 * Mathf.PI / numOfAngle;
+        for (int i = 0; i < numOfAngle; i++)
+        {
+            float angle = i * step;
+            float x = radius * Mathf.Cos(angle);
+            float z = radius * Mathf.Sin(angle);
+            vertices.Add(new Vector3(x, 0, z));
+            uv.Add(new Vector2((x / radius + 1) * 0.5f, (z / radius + 1) * 0.5f));
+            colors.Add(Color.white);
+            normals.Add(Vector3.down);
+        }
+
+        // Top vertex
+        vertices.Add(new Vector3(0, height, 0));
+        uv.Add(new Vector2(0.5f, 1f));
+        colors.Add(Color.white);
+        normals.Add(Vector3.up);
+
+        // Triangles
+        var triangles = new List<int>();
+
+        // Bottom circle triangles
+        for (int i = 1; i <= numOfAngle; i++)
+        {
+            triangles.Add(0);
+            triangles.Add(i);
+            triangles.Add(i % numOfAngle + 1);
+        }
+
+        // Side triangles
+        int topVertexIndex = vertices.Count - 1;
+        for (int i = 1; i <= numOfAngle; i++)
+        {
+            int nextIndex = i % numOfAngle + 1;
+            triangles.Add(i);
+            triangles.Add(topVertexIndex);
+            triangles.Add(nextIndex);
+
+            // Calculate normals for side faces
+            Vector3 normal = Vector3.Cross(vertices[nextIndex] - vertices[i], vertices[topVertexIndex] - vertices[i]).normalized;
+            normals[i] = normal;
+            normals[nextIndex] = normal;
+            normals[topVertexIndex] = normal;
+
+            // Assign different colors to each face
+            colors[i] = new Color(i / (float)numOfAngle, 0, 1 - i / (float)numOfAngle, 1);
+        }
+
+        mesh.vertices = vertices.ToArray();
+        mesh.uv = uv.ToArray();
+        mesh.colors = colors.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.normals = normals.ToArray();
+
+        RecalcMesh(mesh);
+        return mesh;
+    }
+    
+    public static Mesh Torus(float radius, float tubeRadius, int numOfAngle, int numOfTube)
+    {
+        var mesh = new Mesh();
+
+        // Vertices
+        var vertices = new List<Vector3>();
+        var uv = new List<Vector2>();
+        var colors = new List<Color>();
+        var normals = new List<Vector3>();
+
+        float step = 2 * Mathf.PI / numOfAngle;
+        float tubeStep = 2 * Mathf.PI / numOfTube;
+
+        for (int i = 0; i < numOfAngle; i++)
+        {
+            float angle = i * step;
+            float x = Mathf.Cos(angle);
+            float z = Mathf.Sin(angle);
+
+            for (int j = 0; j < numOfTube; j++)
+            {
+                float tubeAngle = j * tubeStep;
+                float tubeX = Mathf.Cos(tubeAngle);
+                float tubeZ = Mathf.Sin(tubeAngle);
+
+                Vector3 vertex = new Vector3(
+                    (radius + tubeRadius * tubeX) * x,
+                    tubeRadius * tubeZ,
+                    (radius + tubeRadius * tubeX) * z
+                );
+
+                vertices.Add(vertex);
+                uv.Add(new Vector2(i / (float)numOfAngle, j / (float)numOfTube));
+                colors.Add(Color.white);
+                normals.Add(vertex.normalized);
+            }
+        }
+
+        // Triangles
+        var triangles = new List<int>();
+
+        for (int i = 0; i < numOfAngle; i++)
+        {
+            int nextI = (i + 1) % numOfAngle;
+            for (int j = 0; j < numOfTube; j++)
+            {
+                int nextJ = (j + 1) % numOfTube;
+
+                int index = i * numOfTube + j;
+                int nextIndex = nextI * numOfTube + j;
+                int nextJIndex = i * numOfTube + nextJ;
+                int nextIJIndex = nextI * numOfTube + nextJ;
+
+                triangles.Add(index);
+                triangles.Add(nextJIndex);
+                triangles.Add(nextIndex);
+
+                triangles.Add(nextIndex);
+                triangles.Add(nextJIndex);
+                triangles.Add(nextIJIndex);
+            }
+        }
+
+        mesh.vertices = vertices.ToArray();
+        mesh.uv = uv.ToArray();
+        mesh.colors = colors.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.normals = normals.ToArray();
+
+        RecalcMesh(mesh);
+        return mesh;
+    }
 }
