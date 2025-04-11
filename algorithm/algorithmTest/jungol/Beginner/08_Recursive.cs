@@ -623,17 +623,45 @@ namespace jungol.Beginner
             int N = int.Parse(words[0]);
             int P = int.Parse(words[1]);
 
-            var list = new List<int>();
+            //var list = new List<int>();
+            //
+            //int n = N * N % P;
+            //while (list.IndexOf(n) == -1)
+            //{
+            //    list.Add(n);
+            //    //Console.Write($"{n} ");
+            //    n = n * N % P;
+            //}
+            ////Console.Write("--");
+            //Console.WriteLine(list.Count);
 
-            int n = N * N % P;
-            while (list.IndexOf(n) == -1)
+            //Impl_2567_NonRcsv(N, P);
+
+            int first = (N * N) % P;
+            Impl_2567_Rcsv(N, P, first, first * N % P, 1);
+        }
+        static void Impl_2567_NonRcsv(int N, int P)
+        {
+            int first = (N * N) % P;
+            int newN = first * N % P;
+            int cnt = 1;
+            while (first != newN)
             {
-                list.Add(n);
-                //Console.Write($"{n} ");
-                n = n * N % P;
+                //Console.WriteLine($"{newN} {cnt}");
+                newN = newN * N % P;
+                ++cnt;
             }
-            //Console.Write("--");
-            Console.WriteLine(list.Count);
+            Console.WriteLine($"{cnt}");
+        }
+        static void Impl_2567_Rcsv(int N, int P, int first, int newN, int cnt = 0)
+        {
+            if (first == newN)
+            {
+                Console.WriteLine($"{cnt}");
+                return;
+            }
+            //Console.WriteLine($"{newN} {cnt}");
+            Impl_2567_Rcsv(N, P, first, newN * N % P, cnt + 1);
         }
         static void _2567()
         {

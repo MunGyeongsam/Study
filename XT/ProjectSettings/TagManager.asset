@@ -47,6 +47,9 @@ TagManager:
   - name: TileOverlay
     uniqueID: 4042811653
     locked: 0
+  - name: Path
+    uniqueID: 381280959
+    locked: 0
   - name: SelectTile
     uniqueID: 965004977
     locked: 0
@@ -55,7 +58,4 @@ TagManager:
     locked: 0
   - name: Enemy
     uniqueID: 3704798291
-    locked: 0
-  - name: New Layer 5
-    uniqueID: 381280959
     locked: 0
