@@ -104,6 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,6 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,6 +129,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="00_thiscall1_basic1.cpp" />
+    <ClCompile Include="00_thiscall2_ptr_to_mf1.cpp" />
+    <ClCompile Include="00_thiscall2_ptr_to_mf2.cpp" />
+    <ClCompile Include="00_thiscall3_ptr_to_md1.cpp" />
+    <ClCompile Include="00_thiscall3_ptr_to_md2.cpp" />
+    <ClCompile Include="00_thiscall4_max1.cpp" />
+    <ClCompile Include="00_thiscall4_max2.cpp" />
+    <ClCompile Include="00_thiscall4_max3.cpp" />
+    <ClCompile Include="00_thiscall4_max4.cpp" />
     <ClCompile Include="cpp_intermediate.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
