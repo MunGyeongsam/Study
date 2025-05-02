@@ -45,5 +45,26 @@
     <ClCompile Include="00_thiscall4_max4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="00_thiscall4_max6.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="00_thiscall4_max7.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="00_thiscall4_max5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="00_thiscall5_decuding_this1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="00_thiscall5_decuding_this2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="00_thiscall5_decuding_this3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="00_thiscall5_decuding_this4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

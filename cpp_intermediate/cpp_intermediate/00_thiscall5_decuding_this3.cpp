@@ -1,50 +1,37 @@
-//*
-
+/*
 #include <iostream>
-#include <string>
-#include <functional>
 
-using namespace std;
-
-struct identity
+class Object
 {
+public:
+	// C++23 이전 스타일
+	void foo() {}	// void foo(Object* obj)       {}
+	void foo() const {} // void foo(const Object* obj) {}
+
+	// C++23 스타일.!
+	void goo(this Object& self) {}
+	void goo(this const Object& self) {}
+
+	// deducing this
+	// C++23 부터는 템플릿을 사용하면 const, non-const 멤버 함수의 자동생성이 가능해 집니다.
 	template<typename T>
-	constexpr T&& operator() (T&& obj) const noexcept
-	{
-		return std::forward<T>(obj);
-	}
+	void hoo(this T& self)
+	{}
 };
-
-// identity f;
-// f(10) -> 10
-// f(n) -> n
-
-
-// 위에 만든 identity 가 c++20 부터 표준에 도입.
-template<typename T, typename Projection = std::identity>
-const T& mymax(const T& t1, const T& t2, Projection proj = {})
-{
-	return invoke(proj, t1) < invoke(proj, t2) ? t2 : t1;
-}
 
 int main()
 {
-	string s1 = "abcd";
-	string s2 = "xyz";
+	Object obj1;
+	const Object obj2;
 
-	std::identity f;
-	auto& r = f(s1);	//s1
+	obj1.foo();
+	obj2.foo();
 
-	cout << &s1 << endl;
-	cout << &r << endl;
+	obj1.goo();
+	obj2.goo();
 
-	auto rt1 = mymax(s1, s2);
-	cout << rt1 << endl;
-
-	auto rt2 = mymax(s1, s2, &std::string::size);
-	cout << rt2 << endl;
-
-	return 0;
+	obj1.hoo();
+	obj2.hoo();
 }
 
 //*/

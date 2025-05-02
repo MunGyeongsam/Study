@@ -1,50 +1,39 @@
-//*
+/*
 
 #include <iostream>
 #include <string>
 #include <functional>
 
-using namespace std;
-
-struct identity
+struct Point
 {
-	template<typename T>
-	constexpr T&& operator() (T&& obj) const noexcept
-	{
-		return std::forward<T>(obj);
-	}
+	int x, y;
 };
 
-// identity f;
-// f(10) -> 10
-// f(n) -> n
-
-
-// 위에 만든 identity 가 c++20 부터 표준에 도입.
-template<typename T, typename Projection = std::identity>
-const T& mymax(const T& t1, const T& t2, Projection proj = {})
+template<class T, class Proj = std::identity >
+const T& mymax(const T& obj1, const T& obj2, Proj proj = {})
 {
-	return invoke(proj, t1) < invoke(proj, t2) ? t2 : t1;
+	return std::invoke(proj, obj1) < std::invoke(proj, obj2) ? obj2 : obj1;
 }
 
 int main()
 {
-	string s1 = "abcd";
-	string s2 = "xyz";
+	std::string s1 = "abcd";
+	std::string s2 = "xyz";
 
-	std::identity f;
-	auto& r = f(s1);	//s1
+	// #5. projection 사용법 정리
+	auto ret1 = mymax(s1, s2);
+	auto ret2 = mymax(s1, s2, [](auto& a) { return a.size(); });
+	auto ret3 = mymax(s1, s2, &std::string::size);
 
-	cout << &s1 << endl;
-	cout << &r << endl;
+	Point p1 = { 0, 0 };
+	Point p2 = { 1, 1 };
 
-	auto rt1 = mymax(s1, s2);
-	cout << rt1 << endl;
+	// projection 으로 멤버 데이타도 사용가능
+	auto ret4 = mymax(p1, p2, &Point::y);
 
-	auto rt2 = mymax(s1, s2, &std::string::size);
-	cout << rt2 << endl;
-
-	return 0;
+	std::cout << ret4.x << std::endl;
 }
+
+
 
 //*/

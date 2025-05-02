@@ -1,50 +1,27 @@
-//*
+/*
 
 #include <iostream>
 #include <string>
 #include <functional>
+#include <ranges>
 
-using namespace std;
-
-struct identity
-{
-	template<typename T>
-	constexpr T&& operator() (T&& obj) const noexcept
-	{
-		return std::forward<T>(obj);
-	}
-};
-
-// identity f;
-// f(10) -> 10
-// f(n) -> n
-
-
-// 위에 만든 identity 가 c++20 부터 표준에 도입.
-template<typename T, typename Projection = std::identity>
-const T& mymax(const T& t1, const T& t2, Projection proj = {})
-{
-	return invoke(proj, t1) < invoke(proj, t2) ? t2 : t1;
-}
+// #1. C++20 std::ranges::max
 
 int main()
 {
-	string s1 = "abcd";
-	string s2 = "xyz";
+	std::string s1 = "abcd";
+	std::string s2 = "xyz";
 
-	std::identity f;
-	auto& r = f(s1);	//s1
+	// g++ source.cpp -std=c++20 으로 빌드하면 됩니다.
+	auto ret1 = std::ranges::max(s1, s2);
+	auto ret2 = std::ranges::max(s1, s2, std::greater{});
+	auto ret3 = std::ranges::max(s1, s2, {}, &std::string::size);
+	auto ret4 = std::ranges::max(s1, s2, std::greater{}, &std::string::size);
 
-	cout << &s1 << endl;
-	cout << &r << endl;
-
-	auto rt1 = mymax(s1, s2);
-	cout << rt1 << endl;
-
-	auto rt2 = mymax(s1, s2, &std::string::size);
-	cout << rt2 << endl;
-
-	return 0;
+	std::cout << ret1 << std::endl;
+	std::cout << ret2 << std::endl;
+	std::cout << ret3 << std::endl;
+	std::cout << ret4 << std::endl;
 }
 
 //*/
