@@ -22,6 +22,13 @@
 //	
 
 
+// 이번 단계 요약
+// 요소					역할
+// Entity				ID만 갖는 존재, 데이터를 직접 보유하지 않음
+// ComponentManager		ID별 컴포넌트를 저장 / 관리
+// System				조건에 맞는 Entity의 Component를 사용해 동작 수행
+
+
 
 #include <unordered_map>
 #include <iostream>
