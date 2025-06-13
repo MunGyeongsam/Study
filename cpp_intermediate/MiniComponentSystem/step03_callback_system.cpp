@@ -1,41 +1,41 @@
-// 3´Ü°è ¸ñÇ¥
-// ¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ¿Í ±× È£Ãâ ¹æ½Ä ÀÌÇØ
-// °´Ã¼ ±â¹İÀÇ Äİ¹é ½Ã½ºÅÛ ±¸Çö
-// Entity, Component, System °£ ÀÌº¥Æ®¸¦ ±¸Á¶ÀûÀ¸·Î Ã³¸®
+// 3ë‹¨ê³„ ëª©í‘œ
+// ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„°ì™€ ê·¸ í˜¸ì¶œ ë°©ì‹ ì´í•´
+// ê°ì²´ ê¸°ë°˜ì˜ ì½œë°± ì‹œìŠ¤í…œ êµ¬í˜„
+// Entity, Component, System ê°„ ì´ë²¤íŠ¸ë¥¼ êµ¬ì¡°ì ìœ¼ë¡œ ì²˜ë¦¬
 
-// ¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ
+// ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„°
 // class MyClass {
 // public:
 // 	void sayHello() { std::cout << "Hello\n"; }
 // };
 // 
-// // ¼±¾ğ
+// // ì„ ì–¸
 // void (MyClass::* funcPtr)() = &MyClass::sayHello;
 // 
-// // È£Ãâ
+// // í˜¸ì¶œ
 // (MyObject.*funcPtr)();
 
 
-//¿äÁ¡ Á¤¸®
-//°³³ä	¼³¸í
-//void (T::*)(Args...)		¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍÀÇ ¹®¹ı
-//obj.*ptr					¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ¸¦ °´Ã¼¿Í ÇÔ²² È£Ãâ
-//std::function				´Ù¾çÇÑ Äİ¹éÀ» ÅëÇÕ °ü¸®
-//Ä¸Ã³µÈ						¶÷´Ù	°´Ã¼ + ¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ¸¦ ¶÷´Ù·Î ·¡ÇÎ
+//ìš”ì  ì •ë¦¬
+//ê°œë…	ì„¤ëª…
+//void (T::*)(Args...)		ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„°ì˜ ë¬¸ë²•
+//obj.*ptr					ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„°ë¥¼ ê°ì²´ì™€ í•¨ê»˜ í˜¸ì¶œ
+//std::function				ë‹¤ì–‘í•œ ì½œë°±ì„ í†µí•© ê´€ë¦¬
+//ìº¡ì²˜ëœ						ëŒë‹¤	ê°ì²´ + ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„°ë¥¼ ëŒë‹¤ë¡œ ë˜í•‘
 
 
 #include <iostream>
 #include <functional>
 #include <vector>
 
-// °£´ÜÇÑ Entity Å¬·¡½º
+// ê°„ë‹¨í•œ Entity í´ë˜ìŠ¤
 class Entity {
 public:
 	std::string name;
 	Entity(const std::string& n) : name(n) {}
 };
 
-// ÀÌº¥Æ® ¸®½º³Ê ¿ªÇÒÀ» ÇÒ ÄÄÆ÷³ÍÆ®
+// ì´ë²¤íŠ¸ ë¦¬ìŠ¤ë„ˆ ì—­í• ì„ í•  ì»´í¬ë„ŒíŠ¸
 class HealthComponent {
 public:
 	int hp = 100;
@@ -46,14 +46,14 @@ public:
 	}
 };
 
-// ½Ã½ºÅÛ: ÀÌº¥Æ®¸¦ Ã³¸®ÇÒ ¼ö ÀÖ´Â ´Ü¼ø Äİ¹é ½Ã½ºÅÛ
+// ì‹œìŠ¤í…œ: ì´ë²¤íŠ¸ë¥¼ ì²˜ë¦¬í•  ìˆ˜ ìˆëŠ” ë‹¨ìˆœ ì½œë°± ì‹œìŠ¤í…œ
 class EventSystem {
 public:
 	using Callback = void (HealthComponent::*)(Entity&, int);
 
 	void registerCallback(HealthComponent* listener, Callback func) {
 		callbacks.push_back([=](Entity& e, int amt) {
-			(listener->*func)(e, amt);  // ¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ È£Ãâ
+			(listener->*func)(e, amt);  // ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„° í˜¸ì¶œ
 			});
 	}
 
@@ -73,8 +73,8 @@ int main() {
 	EventSystem damageSystem;
 	damageSystem.registerCallback(&knightHealth, &HealthComponent::onDamage);
 
-	damageSystem.emit(knight, 30);  // Ãâ·Â: Knight took 30 damage. HP is now 70
-	damageSystem.emit(knight, 20);  // Ãâ·Â: Knight took 20 damage. HP is now 50
+	damageSystem.emit(knight, 30);  // ì¶œë ¥: Knight took 30 damage. HP is now 70
+	damageSystem.emit(knight, 20);  // ì¶œë ¥: Knight took 20 damage. HP is now 50
 
 	return 0;
 }

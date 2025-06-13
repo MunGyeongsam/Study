@@ -1,77 +1,77 @@
-/*
-
-#include <iostream>
-#include <stdio.h>
-
-using namespace std;
-
-
-void cout_operator(void*);
-void cout_operator(bool);
-
-struct Point
-{
-	//bool b1;
-	//bool b11;
-	//bool b12;
-	int x;
-	//bool b2;
-	int y;
-};
-
-int main()
-{
-	int a = 3;
-
-	// #1. pointer to member data
-	
-	//? = &a;
-	//? = &Point::x;
-
-	int* p1 = &a;
-	//int(Point::* p2) = &Point::y;
-	int Point::* p2 = &Point::y;		// ¸â¹ö º¯¼ö¿¡ ´ëÇÑ Æ÷ÀÎÅÍ
-										// y ¶ó´Â ¸â¹ö°¡ Point ¿¡¼­ ¾ó¸¶³ª ¶³¾îÁø °÷¿¡?
-										// 4
-
-	cout << p2 << endl;
-	printf("p2 : %d\n", p2);
-
-
-	//cout_operator(p1);
-	//cout_operator(p2);
-	// 
-	//std::cout << "p1 : " << p1 << ", sizeof(p1) : " << sizeof(p1) << ", type : " << typeid(p1).name() << std::endl;
-	//std::cout << "p2 : " << p2 << ", sizeof(p2) : " << sizeof(p2) << ", type : " << typeid(p2).name() << std::endl;
-
-
-	// »ı°¢ÇØ º¾½Ã´Ù
-	//int& r1 = a;
-	//int(Point::& r2) = &Point::y;
-
-
-	// #2. using pointer to member data
-	// 
-	//*p1 = 10;	// ok
-	//*p2 = 10;	// ?
-
-	Point pt;
-	pt.*p2 = 10;
-	(&pt)->*p2 = 10;
-
-
-	return 0;
-}
-
-
-// void* ¿¡ ¸â¹öµ¥ÀÌÅÍ È¤Àº ¸â¹öÇÔ¼öÀÇ ÁÖ¼Ò¸¦ ´ãÀ» ¼ö ¾øÀ½.
-void cout_operator(void*)
-{
-	std::cout << "cout_operator(void*)" << std::endl;
-}
-void cout_operator(bool)
-{
-	std::cout << "cout_operator(bool)" << std::endl;
-}
-
+/*
+
+#include <iostream>
+#include <stdio.h>
+
+using namespace std;
+
+
+void cout_operator(void*);
+void cout_operator(bool);
+
+struct Point
+{
+	//bool b1;
+	//bool b11;
+	//bool b12;
+	int x;
+	//bool b2;
+	int y;
+};
+
+int main()
+{
+	int a = 3;
+
+	// #1. pointer to member data
+	
+	//? = &a;
+	//? = &Point::x;
+
+	int* p1 = &a;
+	//int(Point::* p2) = &Point::y;
+	int Point::* p2 = &Point::y;		// ë©¤ë²„ ë³€ìˆ˜ì— ëŒ€í•œ í¬ì¸í„°
+										// y ë¼ëŠ” ë©¤ë²„ê°€ Point ì—ì„œ ì–¼ë§ˆë‚˜ ë–¨ì–´ì§„ ê³³ì—?
+										// 4
+
+	cout << p2 << endl;
+	printf("p2 : %d\n", p2);
+
+
+	//cout_operator(p1);
+	//cout_operator(p2);
+	// 
+	//std::cout << "p1 : " << p1 << ", sizeof(p1) : " << sizeof(p1) << ", type : " << typeid(p1).name() << std::endl;
+	//std::cout << "p2 : " << p2 << ", sizeof(p2) : " << sizeof(p2) << ", type : " << typeid(p2).name() << std::endl;
+
+
+	// ìƒê°í•´ ë´…ì‹œë‹¤
+	//int& r1 = a;
+	//int(Point::& r2) = &Point::y;
+
+
+	// #2. using pointer to member data
+	// 
+	//*p1 = 10;	// ok
+	//*p2 = 10;	// ?
+
+	Point pt;
+	pt.*p2 = 10;
+	(&pt)->*p2 = 10;
+
+
+	return 0;
+}
+
+
+// void* ì— ë©¤ë²„ë°ì´í„° í˜¹ì€ ë©¤ë²„í•¨ìˆ˜ì˜ ì£¼ì†Œë¥¼ ë‹´ì„ ìˆ˜ ì—†ìŒ.
+void cout_operator(void*)
+{
+	std::cout << "cout_operator(void*)" << std::endl;
+}
+void cout_operator(bool)
+{
+	std::cout << "cout_operator(bool)" << std::endl;
+}
+
 //*/

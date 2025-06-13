@@ -1,38 +1,38 @@
-/*
-
-#include <iostream>
-#include <string>
-
-using namespace std;
-
-// #1. max µµÀÔ
-
-template<typename T>
-const T& mymax(const T& t1, const T& t2)
-{
-	return t1 < t2 ? t2 : t1;
-}
-
-int main()
-{
-	string s1 = "abcd";
-	string s2 = "xyz";
-
-	auto rt1 = mymax(s1, s2);
-	cout << rt1 << endl;
-
-	// »çÀü¼ø ºñ±³°¡ ¾Æ´Ñ ±ÛÀÚ¼ö·Î ºñ±³ÇÏ°í ½ÍÀ½
-	auto rt2 = mymax(s1.size(), s2.size());
-	cout << rt2 << endl;
-
-	//// ´ÙÀ½ Áß ÁÁ¾Æ º¸ÀÌ´Â °Í?
-	//auto rt3 = mymax(s1, s2, [](auto& a, auto& b) {return a.size() < a.size(); });
-	//						// #1. ÀÌÇ× Á¶°ÇÀÚ »ç¿ë - c++98 style	
-	//auto rt4 = mymax(s1, s2, [](auto& a) {return a.size(); });
-	//						// #2. ´ÜÇ× Á¶°ÇÀÚ »ç¿ë. - python style
-
-
-	return 0;
-}
-
+/*
+
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+// #1. max ë„ì…
+
+template<typename T>
+const T& mymax(const T& t1, const T& t2)
+{
+	return t1 < t2 ? t2 : t1;
+}
+
+int main()
+{
+	string s1 = "abcd";
+	string s2 = "xyz";
+
+	auto rt1 = mymax(s1, s2);
+	cout << rt1 << endl;
+
+	// ì‚¬ì „ìˆœ ë¹„êµê°€ ì•„ë‹Œ ê¸€ììˆ˜ë¡œ ë¹„êµí•˜ê³  ì‹¶ìŒ
+	auto rt2 = mymax(s1.size(), s2.size());
+	cout << rt2 << endl;
+
+	//// ë‹¤ìŒ ì¤‘ ì¢‹ì•„ ë³´ì´ëŠ” ê²ƒ?
+	//auto rt3 = mymax(s1, s2, [](auto& a, auto& b) {return a.size() < a.size(); });
+	//						// #1. ì´í•­ ì¡°ê±´ì ì‚¬ìš© - c++98 style	
+	//auto rt4 = mymax(s1, s2, [](auto& a) {return a.size(); });
+	//						// #2. ë‹¨í•­ ì¡°ê±´ì ì‚¬ìš©. - python style
+
+
+	return 0;
+}
+
 //*/

@@ -1,7 +1,7 @@
-#pragma once
-#include <set>
-
-class System {
-public:
-	std::set<std::uint32_t> entities;  // ÃßÀûÇÒ ¿£Æ¼Æ¼ ¸ñ·Ï
+#pragma once
+#include <set>
+
+class System {
+public:
+	std::set<std::uint32_t> entities;  // ì¶”ì í•  ì—”í‹°í‹° ëª©ë¡
 };

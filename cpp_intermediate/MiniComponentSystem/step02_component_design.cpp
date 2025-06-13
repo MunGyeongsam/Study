@@ -1,22 +1,22 @@
-//2´Ü°è ¸ñÇ¥
-//¸â¹ö µ¥ÀÌÅÍ Æ÷ÀÎÅÍ »ç¿ë¹ı ÀÌÇØ
-//´Ù¾çÇÑ Æ÷ÀÎÅÍ ¼±¾ğ(T*, T**, T&, T&&, const T*, T* const) °æÇè
-//Entity¿Í Component °£ ±¸Á¶¸¦ ´õ À¯¿¬ÇÏ°Ô ¸¸µé±â
+//2ë‹¨ê³„ ëª©í‘œ
+//ë©¤ë²„ ë°ì´í„° í¬ì¸í„° ì‚¬ìš©ë²• ì´í•´
+//ë‹¤ì–‘í•œ í¬ì¸í„° ì„ ì–¸(T*, T**, T&, T&&, const T*, T* const) ê²½í—˜
+//Entityì™€ Component ê°„ êµ¬ì¡°ë¥¼ ë” ìœ ì—°í•˜ê²Œ ë§Œë“¤ê¸°
 
 
-//°³³ä						¿¹½Ã							¼³¸í
-//¸â¹ö µ¥ÀÌÅÍ Æ÷ÀÎÅÍ			int Entity::* ptr			°´Ã¼ÀÇ Æ¯Á¤ ¸â¹ö º¯¼ö¿¡ ´ëÇÑ Æ÷ÀÎÅÍ
-//T*						int* p						int¸¦ °¡¸®Å°´Â Æ÷ÀÎÅÍ
-//T**						int** p						Æ÷ÀÎÅÍ¸¦ °¡¸®Å°´Â Æ÷ÀÎÅÍ
-//T&						int& r = x					ÂüÁ¶ÀÚ(lvalue reference)
+//ê°œë…						ì˜ˆì‹œ							ì„¤ëª…
+//ë©¤ë²„ ë°ì´í„° í¬ì¸í„°			int Entity::* ptr			ê°ì²´ì˜ íŠ¹ì • ë©¤ë²„ ë³€ìˆ˜ì— ëŒ€í•œ í¬ì¸í„°
+//T*						int* p						intë¥¼ ê°€ë¦¬í‚¤ëŠ” í¬ì¸í„°
+//T**						int** p						í¬ì¸í„°ë¥¼ ê°€ë¦¬í‚¤ëŠ” í¬ì¸í„°
+//T&						int& r = x					ì°¸ì¡°ì(lvalue reference)
 //T &&						int&& r = std::move(x)		rvalue reference
-//const T *					ÀĞ±â Àü¿ë Æ÷ÀÎÅÍ
-//T* const					»ó¼ö Æ÷ÀÎÅÍ(ÀÚÃ¼´Â ºÒº¯, °¡¸®Å°´Â °ªÀº º¯°æ °¡´É)
+//const T *					ì½ê¸° ì „ìš© í¬ì¸í„°
+//T* const					ìƒìˆ˜ í¬ì¸í„°(ìì²´ëŠ” ë¶ˆë³€, ê°€ë¦¬í‚¤ëŠ” ê°’ì€ ë³€ê²½ ê°€ëŠ¥)
 
-//¿¬½À ¹®Á¦
-//int Entity::* ptr°ú int* ptrÀÇ Â÷ÀÌÁ¡À» ¼³¸íÇØº¸¼¼¿ä.
-//modifyMember ÇÔ¼ö¸¦ float Entity::* ·Îµµ ÀÛµ¿ÇÏµµ·Ï ÅÛÇÃ¸´À¸·Î ¸¸µé¾îº¸¼¼¿ä.
-//T* const¿Í const T* ÀÇ Â÷ÀÌ¸¦ ÄÚµå ¿¹Á¦·Î ½ÇÇèÇØº¸¼¼¿ä.
+//ì—°ìŠµ ë¬¸ì œ
+//int Entity::* ptrê³¼ int* ptrì˜ ì°¨ì´ì ì„ ì„¤ëª…í•´ë³´ì„¸ìš”.
+//modifyMember í•¨ìˆ˜ë¥¼ float Entity::* ë¡œë„ ì‘ë™í•˜ë„ë¡ í…œí”Œë¦¿ìœ¼ë¡œ ë§Œë“¤ì–´ë³´ì„¸ìš”.
+//T* constì™€ const T* ì˜ ì°¨ì´ë¥¼ ì½”ë“œ ì˜ˆì œë¡œ ì‹¤í—˜í•´ë³´ì„¸ìš”.
 
 #include <iostream>
 #include <string>
@@ -31,23 +31,23 @@ public:
 	}
 };
 
-// ¸â¹ö µ¥ÀÌÅÍ Æ÷ÀÎÅÍ¸¦ ÀÌ¿ëÇÑ ÇÔ¼ö
+// ë©¤ë²„ ë°ì´í„° í¬ì¸í„°ë¥¼ ì´ìš©í•œ í•¨ìˆ˜
 void modifyMember(Entity& entity, int Entity::* memberPtr, int newValue) {
-	entity.*memberPtr = newValue;  // ¸â¹ö Æ÷ÀÎÅÍ¸¦ ÅëÇØ Á¢±Ù
+	entity.*memberPtr = newValue;  // ë©¤ë²„ í¬ì¸í„°ë¥¼ í†µí•´ ì ‘ê·¼
 }
 
 int main() {
 	Entity player;
 
-	int Entity::* hpPtr = &Entity::hp;      // EntityÀÇ hp¿¡ ´ëÇÑ Æ÷ÀÎÅÍ
-	int Entity::* manaPtr = &Entity::mana;  // EntityÀÇ mana¿¡ ´ëÇÑ Æ÷ÀÎÅÍ
+	int Entity::* hpPtr = &Entity::hp;      // Entityì˜ hpì— ëŒ€í•œ í¬ì¸í„°
+	int Entity::* manaPtr = &Entity::mana;  // Entityì˜ manaì— ëŒ€í•œ í¬ì¸í„°
 
-	player.print();  // Ãâ·Â: HP: 100, Mana: 50
+	player.print();  // ì¶œë ¥: HP: 100, Mana: 50
 
-	modifyMember(player, hpPtr, 80);       // HP ¼öÁ¤
-	modifyMember(player, manaPtr, 120);    // Mana ¼öÁ¤
+	modifyMember(player, hpPtr, 80);       // HP ìˆ˜ì •
+	modifyMember(player, manaPtr, 120);    // Mana ìˆ˜ì •
 
-	player.print();  // Ãâ·Â: HP: 80, Mana: 120
+	player.print();  // ì¶œë ¥: HP: 80, Mana: 120
 
 	return 0;
 }

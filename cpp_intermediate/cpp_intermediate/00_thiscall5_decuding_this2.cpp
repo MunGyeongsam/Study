@@ -1,27 +1,27 @@
-/*
-#include <iostream>
-
-class MyArray
-{
-	int buff[5] = { 1,2,3,4,5 };
-public:
-	using iterator = int*;
-	using const_iterator = const int*;
-
-	iterator begin() { return buff; }
-	//	iterator begin() const { return buff;} // error
-	const_iterator begin() const { return buff; } // ok
-
-	// ÇÙ½É : ¸â¹ö ÇÔ¼ö ÀÛ¼º½Ã "µ¿ÀÏÀÌ¸§ÀÇ const, non-const ÇÔ¼ö" ¸¦ ¸¸µå´Â °æ¿ì°¡ ¸¹½À´Ï´Ù.
-};
-
-int main()
-{
-	MyArray arr1;		// container
-	const MyArray arr2;	// const container
-
-	auto it1 = arr1.begin();
-	auto it2 = arr2.begin();
-}
-
+/*
+#include <iostream>
+
+class MyArray
+{
+	int buff[5] = { 1,2,3,4,5 };
+public:
+	using iterator = int*;
+	using const_iterator = const int*;
+
+	iterator begin() { return buff; }
+	//	iterator begin() const { return buff;} // error
+	const_iterator begin() const { return buff; } // ok
+
+	// í•µì‹¬ : ë©¤ë²„ í•¨ìˆ˜ ì‘ì„±ì‹œ "ë™ì¼ì´ë¦„ì˜ const, non-const í•¨ìˆ˜" ë¥¼ ë§Œë“œëŠ” ê²½ìš°ê°€ ë§ìŠµë‹ˆë‹¤.
+};
+
+int main()
+{
+	MyArray arr1;		// container
+	const MyArray arr2;	// const container
+
+	auto it1 = arr1.begin();
+	auto it2 = arr2.begin();
+}
+
 //*/

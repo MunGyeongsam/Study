@@ -1,50 +1,50 @@
-/*
-
-#include <functional>
-#include <iostream>
-
-using namespace std;
-
-struct Point
-{
-	int x;
-	int y;
-};
-
-int main()
-{
-	int Point::* p = &Point::y;		// 4
-
-	Point pt;
-
-	pt.*p = 10;
-	(&pt)->*p = 10;
-
-	// #1. ╦Б╧Ж ╣╔юлем╦╕ ╟║╦ёе╟╢б фВюнем╣╣ std::invoke ╣и ╪Ж южю╫
-	// p ╢б гт╪Ж╟║ ╬ф╢я ╦Б╧Ж ╣╔юлемюг аж╪р(х╓ю╨ offset)
-
-	cout << pt.y << endl;
-
-	invoke(p, pt) = 20;		// pt.*p = 10, pt.y = 10
-	cout << pt.y << endl;
-	auto a1 = invoke(p, pt);	// ok. auto a = obj.y юг юг╧л
-	auto& a2 = invoke(p, pt);	// ok. auto& a = obj.y юг юг╧л
-	a1 = 30;
-	cout << a1 << endl;
-	cout << pt.y << endl;
-
-	a2 = 30;
-	cout << a2 << endl;
-	cout << pt.y << endl;
-	
-	// callable object : std::invoke ╥н хёцБ╟║╢игя ╦П╣Г ╟м
-	//	- гт╪Ж фВюнем
-	//	- гт╪Ж ╟╢ц╪
-	//	- ╤В╢ы г╔гЖ╫д
-	//	- ╦Б╧Ж гт╪Ж фВюнем
-	//	- ╦Б╧Ж ╣╔юлем фВюнем
-
-	return 0;
-}
-
+/*
+
+#include <functional>
+#include <iostream>
+
+using namespace std;
+
+struct Point
+{
+	int x;
+	int y;
+};
+
+int main()
+{
+	int Point::* p = &Point::y;		// 4
+
+	Point pt;
+
+	pt.*p = 10;
+	(&pt)->*p = 10;
+
+	// #1. К╘╓К╡└ К█╟Л²╢М└╟К╔╪ Й╟─К╔╢М┌╓К┼■ М▐╛Л²╦М└╟К▐└ std::invoke К░═ Л┬≤ Л·┬Л²▄
+	// p К┼■ М∙╗Л┬≤Й╟─ Л∙└К▀▄ К╘╓К╡└ К█╟Л²╢М└╟Л²≤ Лё╪Л├▄(М≤╧Л²─ offset)
+
+	cout << pt.y << endl;
+
+	invoke(p, pt) = 20;		// pt.*p = 10, pt.y = 10
+	cout << pt.y << endl;
+	auto a1 = invoke(p, pt);	// ok. auto a = obj.y Л²≤ Л²≤К╞╦
+	auto& a2 = invoke(p, pt);	// ok. auto& a = obj.y Л²≤ Л²≤К╞╦
+	a1 = 30;
+	cout << a1 << endl;
+	cout << pt.y << endl;
+
+	a2 = 30;
+	cout << a2 << endl;
+	cout << pt.y << endl;
+	
+	// callable object : std::invoke К║° М≤╦Л╤°Й╟─К┼╔М∙° К╙╗К⌠═ Й╡┐
+	//	- М∙╗Л┬≤ М▐╛Л²╦М└╟
+	//	- М∙╗Л┬≤ Й╟²Л╡╢
+	//	- К·▄К▀╓ М▒°М≤└Л▀²
+	//	- К╘╓К╡└ М∙╗Л┬≤ М▐╛Л²╦М└╟
+	//	- К╘╓К╡└ К█╟Л²╢М└╟ М▐╛Л²╦М└╟
+
+	return 0;
+}
+
 //*/

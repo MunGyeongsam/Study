@@ -1,36 +1,36 @@
-/*
-
-#include <functional>
-
-class X
-{
-public:
-	void mf1(int a) {}				// void mf1(X* this, int a) {}
-	static void mf2(int a) {}		// void mf2(int a) {}
-};
-
-void foo(int a) {}
-
-int main()
-{
-	X x;
-
-	// #1. ÀÏ¹Ý ÇÔ¼ö Æ÷ÀÎÅÍ & ¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ
-
-	void(*f1)(int) = &foo;
-	void(X::*f2)(int) = &X::mf1;
-
-	// #2. ÇÔ¼ö Æ÷ÀÎÅÍ¸¦ »ç¿ëÇÑ ÇÔ¼ö È£Ãâ
-	f1(10);			// ÇÔ¼ö Æ÷ÀÎÅÍ »ç¿ë
-	(x.*f2)(10);	// ¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ »ç¿ë
-
-
-	// #3. »ç¿ë¹ýÀ» µ¿ÀÏÇÏ°Ô
-	// => c++17 std::invoke
-	std::invoke(f1, 10);
-	std::invoke(f2, x, 10);
-	std::invoke(f2, &x, 10);
-
-	return 0;
-}
+/*
+
+#include <functional>
+
+class X
+{
+public:
+	void mf1(int a) {}				// void mf1(X* this, int a) {}
+	static void mf2(int a) {}		// void mf2(int a) {}
+};
+
+void foo(int a) {}
+
+int main()
+{
+	X x;
+
+	// #1. ì¼ë°˜ í•¨ìˆ˜ í¬ì¸í„° & ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„°
+
+	void(*f1)(int) = &foo;
+	void(X::*f2)(int) = &X::mf1;
+
+	// #2. í•¨ìˆ˜ í¬ì¸í„°ë¥¼ ì‚¬ìš©í•œ í•¨ìˆ˜ í˜¸ì¶œ
+	f1(10);			// í•¨ìˆ˜ í¬ì¸í„° ì‚¬ìš©
+	(x.*f2)(10);	// ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„° ì‚¬ìš©
+
+
+	// #3. ì‚¬ìš©ë²•ì„ ë™ì¼í•˜ê²Œ
+	// => c++17 std::invoke
+	std::invoke(f1, 10);
+	std::invoke(f2, x, 10);
+	std::invoke(f2, &x, 10);
+
+	return 0;
+}
 //*/

@@ -1,14 +1,14 @@
-// 6´Ü°è ¸ñÇ¥
-// Entity¶ó´Â ID ±â¹İÀÇ °´Ã¼ »ı¼º
-// ComponentManager¸¦ ÅëÇØ ÄÄÆ÷³ÍÆ®¸¦ °ü¸®
-// SystemÀÌ¶ó´Â ·ÎÁ÷ ÁıÇÕÀ» µµÀÔ(¿¹: MovementSystem)
-// °¢ ¸ğµâÀÇ ¿ªÇÒ°ú °ü°è¸¦ ÀÌÇØÇÏ°í ¼³°è ±¸Á¶¸¦ ÆÄ¾Ç
+// 6ë‹¨ê³„ ëª©í‘œ
+// Entityë¼ëŠ” ID ê¸°ë°˜ì˜ ê°ì²´ ìƒì„±
+// ComponentManagerë¥¼ í†µí•´ ì»´í¬ë„ŒíŠ¸ë¥¼ ê´€ë¦¬
+// Systemì´ë¼ëŠ” ë¡œì§ ì§‘í•©ì„ ë„ì…(ì˜ˆ: MovementSystem)
+// ê° ëª¨ë“ˆì˜ ì—­í• ê³¼ ê´€ê³„ë¥¼ ì´í•´í•˜ê³  ì„¤ê³„ êµ¬ì¡°ë¥¼ íŒŒì•…
 
 
 
 //	+--------------------+          +----------------------+
 //	| Entity			 | <------> | ComponentManager     |
-//	|  (ID only)         |          | -ID ¡ê Components     |
+//	|  (ID only)         |          | -ID â†” Components     |
 //	+--------------------+          +----------------------+
 //	
 //	|
@@ -22,11 +22,11 @@
 //	
 
 
-// ÀÌ¹ø ´Ü°è ¿ä¾à
-// ¿ä¼Ò					¿ªÇÒ
-// Entity				ID¸¸ °®´Â Á¸Àç, µ¥ÀÌÅÍ¸¦ Á÷Á¢ º¸À¯ÇÏÁö ¾ÊÀ½
-// ComponentManager		IDº° ÄÄÆ÷³ÍÆ®¸¦ ÀúÀå / °ü¸®
-// System				Á¶°Ç¿¡ ¸Â´Â EntityÀÇ Component¸¦ »ç¿ëÇØ µ¿ÀÛ ¼öÇà
+// ì´ë²ˆ ë‹¨ê³„ ìš”ì•½
+// ìš”ì†Œ					ì—­í• 
+// Entity				IDë§Œ ê°–ëŠ” ì¡´ì¬, ë°ì´í„°ë¥¼ ì§ì ‘ ë³´ìœ í•˜ì§€ ì•ŠìŒ
+// ComponentManager		IDë³„ ì»´í¬ë„ŒíŠ¸ë¥¼ ì €ì¥ / ê´€ë¦¬
+// System				ì¡°ê±´ì— ë§ëŠ” Entityì˜ Componentë¥¼ ì‚¬ìš©í•´ ë™ì‘ ìˆ˜í–‰
 
 
 
@@ -107,7 +107,7 @@ int main() {
 
 	MovementSystem movement(posManager, velManager);
 
-	movement.update(1.0f); // 1ÃÊ °æ°ú
+	movement.update(1.0f); // 1ì´ˆ ê²½ê³¼
 
 	std::cout << "Player Position: ("
 		<< posManager.getComponent(player.id)->x << ", "

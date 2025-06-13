@@ -1,33 +1,33 @@
-///*
-class X
-{
-public:
-	void mf1(int a) {}				// void mf1(X* this, int a) {}
-	static void mf2(int a) {}		// void mf2(int a) {}
-};
-
-void foo(int a) {}
-
-int main()
-{
-	// #1. ¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ
-	// => ´ÙÀ½ Áß ¿¡·¯´Â?
-	// => ÀÏ¹İ ÇÔ¼ö Æ÷ÀÎÅÍ¿¡ ¸â¹ö ÇÔ¼ö¸¦ ´ãÀ» ¼ö ¾ø´Ù.
-	// => ÀÏ¹İ ÇÔ¼ö Æ÷ÀÎÅÍ¿¡ static ¸â¹ö ÇÔ¼ö¸¦ ´ãÀ» ¼ö ¾ø´Ù.
-
-	void(*f1)(int) = &foo;		// ok
-	//void(*f2)(int) = &X::mf1;	// error. this °¡ Ãß°¡µÇ´Â ÇÔ¼ö.
-	void(*f3)(int) = &X::mf2;	// ok
-
-	void (X:: * f2)(int) = &X::mf1;	// ok. ¸â¹öÇÔ¼öÀÇ ÁÖ¼Ò¸¦ ´ã´Â ¸â¹ö ÇÔ¼ö Æ÷ÀÎÅÍ!.
-	// &foo == foo
-	// &X::mf1 != X::mf1
-
-	// #2. pointer to member operator
-	f1(10);
-	//f2(10);
-	f3(10);
-
-	return 0;
-}
+///*
+class X
+{
+public:
+	void mf1(int a) {}				// void mf1(X* this, int a) {}
+	static void mf2(int a) {}		// void mf2(int a) {}
+};
+
+void foo(int a) {}
+
+int main()
+{
+	// #1. ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„°
+	// => ë‹¤ìŒ ì¤‘ ì—ëŸ¬ëŠ”?
+	// => ì¼ë°˜ í•¨ìˆ˜ í¬ì¸í„°ì— ë©¤ë²„ í•¨ìˆ˜ë¥¼ ë‹´ì„ ìˆ˜ ì—†ë‹¤.
+	// => ì¼ë°˜ í•¨ìˆ˜ í¬ì¸í„°ì— static ë©¤ë²„ í•¨ìˆ˜ë¥¼ ë‹´ì„ ìˆ˜ ì—†ë‹¤.
+
+	void(*f1)(int) = &foo;		// ok
+	//void(*f2)(int) = &X::mf1;	// error. this ê°€ ì¶”ê°€ë˜ëŠ” í•¨ìˆ˜.
+	void(*f3)(int) = &X::mf2;	// ok
+
+	void (X:: * f2)(int) = &X::mf1;	// ok. ë©¤ë²„í•¨ìˆ˜ì˜ ì£¼ì†Œë¥¼ ë‹´ëŠ” ë©¤ë²„ í•¨ìˆ˜ í¬ì¸í„°!.
+	// &foo == foo
+	// &X::mf1 != X::mf1
+
+	// #2. pointer to member operator
+	f1(10);
+	//f2(10);
+	f3(10);
+
+	return 0;
+}
 //*/

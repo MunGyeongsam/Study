@@ -1,16 +1,16 @@
-// ¸ñÇ¥
-//   - ÄÄÆ÷³ÍÆ® Å¸ÀÔÀ» µî·Ï
-//   - ¿£Æ¼Æ¼¿¡ ÄÄÆ÷³ÍÆ® Ãß°¡ / »èÁ¦ / Á¶È¸
-//   - °¢ ÄÄÆ÷³ÍÆ®´Â Å¸ÀÔº° ¹è¿­·Î ÀúÀå
-//   - °¢ Å¸ÀÔÀº º°µµÀÇ ComponentArray<T>·Î ÀúÀåµÊ
+// ëª©í‘œ
+//   - ì»´í¬ë„ŒíŠ¸ íƒ€ìž…ì„ ë“±ë¡
+//   - ì—”í‹°í‹°ì— ì»´í¬ë„ŒíŠ¸ ì¶”ê°€ / ì‚­ì œ / ì¡°íšŒ
+//   - ê° ì»´í¬ë„ŒíŠ¸ëŠ” íƒ€ìž…ë³„ ë°°ì—´ë¡œ ì €ìž¥
+//   - ê° íƒ€ìž…ì€ ë³„ë„ì˜ ComponentArray<T>ë¡œ ì €ìž¥ë¨
 
 
-// ÇÙ½É ±¸Á¶
+// í•µì‹¬ êµ¬ì¡°
 //   - ComponentArray<T>
-//     - Æ¯Á¤ Å¸ÀÔ TÀÇ ÄÄÆ÷³ÍÆ®¸¦ ¿£Æ¼Æ¼ ID¿¡ µû¶ó ÀúÀåÇÏ°í Á¶È¸ÇÏ´Â Å¬·¡½º
+//     - íŠ¹ì • íƒ€ìž… Tì˜ ì»´í¬ë„ŒíŠ¸ë¥¼ ì—”í‹°í‹° IDì— ë”°ë¼ ì €ìž¥í•˜ê³  ì¡°íšŒí•˜ëŠ” í´ëž˜ìŠ¤
 //   - ComponentManager
-//     - ´Ù¾çÇÑ Å¸ÀÔÀÇ ÄÄÆ÷³ÍÆ®¸¦ µî·ÏÇÏ°í ComponentArray<T>¸¦ °ü¸®
-//     - T ¡æ ComponentType ID ¡æ ComponentArray<T> ¸ÅÇÎ
+//     - ë‹¤ì–‘í•œ íƒ€ìž…ì˜ ì»´í¬ë„ŒíŠ¸ë¥¼ ë“±ë¡í•˜ê³  ComponentArray<T>ë¥¼ ê´€ë¦¬
+//     - T â†’ ComponentType ID â†’ ComponentArray<T> ë§¤í•‘
 
 
 #include <unordered_map>

@@ -1,13 +1,13 @@
-// 5´Ü°è ¸ñÇ¥
-// ÄÄÆ÷³ÍÆ®¸¦ º¹»ç / ÀÌµ¿ ¸ğµÎ Áö¿øÇÏ´Â ÇÏ³ªÀÇ ÇÔ¼ö·Î ÅëÇÕ
-// ÅÛÇÃ¸´ + universal reference¸¦ »ç¿ëÇÑ ¿Ïº® Àü´Ş
-// std::forward·Î rvalue / lvalueÀÇ Æ¯¼ºÀ» À¯ÁöÇÏ¸ç Àü´Ş
+// 5ë‹¨ê³„ ëª©í‘œ
+// ì»´í¬ë„ŒíŠ¸ë¥¼ ë³µì‚¬ / ì´ë™ ëª¨ë‘ ì§€ì›í•˜ëŠ” í•˜ë‚˜ì˜ í•¨ìˆ˜ë¡œ í†µí•©
+// í…œí”Œë¦¿ + universal referenceë¥¼ ì‚¬ìš©í•œ ì™„ë²½ ì „ë‹¬
+// std::forwardë¡œ rvalue / lvalueì˜ íŠ¹ì„±ì„ ìœ ì§€í•˜ë©° ì „ë‹¬
 
-// ÇÙ½É ÀÌ·Ğ ¿ä¾à
-// °³³ä						¼³¸í
-// T&&						ÅÛÇÃ¸´¿¡¼­ ³ª¿Ã °æ¿ì ¡æ universal reference(lvalue& rvalue ¸ğµÎ ¹ŞÀ» ¼ö ÀÖÀ½)
-// std::forward<T>(arg)		argÀÇ °ª Æ¯¼º(lvalue / rvalue)À» ±×´ë·Î Àü´ŞÇÔ
-// ¸ñÀû						ÇÏ³ªÀÇ ÇÔ¼ö¿¡¼­ º¹»ç¿Í ÀÌµ¿À» ¸ğµÎ ÃÖÀûÈ­ÇÏ°í, Áßº¹À» ÁÙÀÓ
+// í•µì‹¬ ì´ë¡  ìš”ì•½
+// ê°œë…						ì„¤ëª…
+// T&&						í…œí”Œë¦¿ì—ì„œ ë‚˜ì˜¬ ê²½ìš° â†’ universal reference(lvalue& rvalue ëª¨ë‘ ë°›ì„ ìˆ˜ ìˆìŒ)
+// std::forward<T>(arg)		argì˜ ê°’ íŠ¹ì„±(lvalue / rvalue)ì„ ê·¸ëŒ€ë¡œ ì „ë‹¬í•¨
+// ëª©ì 						í•˜ë‚˜ì˜ í•¨ìˆ˜ì—ì„œ ë³µì‚¬ì™€ ì´ë™ì„ ëª¨ë‘ ìµœì í™”í•˜ê³ , ì¤‘ë³µì„ ì¤„ì„
 
 
 #include <iostream>
@@ -53,7 +53,7 @@ public:
 	template <typename T>
 	void addComponent(T&& c) {
 		std::cout << "Perfect forwarding version\n";
-		components.emplace_back(std::forward<T>(c));  // º¹»ç or ÀÌµ¿ ÀÚµ¿ °áÁ¤
+		components.emplace_back(std::forward<T>(c));  // ë³µì‚¬ or ì´ë™ ìë™ ê²°ì •
 	}
 };
 
@@ -64,13 +64,13 @@ int main() {
 	HeavyComponent c1(std::vector<int>(1000, 42));  // big data
 	std::cout << std::endl;
 
-	manager.addComponent(c1);                // º¹»ç
+	manager.addComponent(c1);                // ë³µì‚¬
 	std::cout << std::endl;
 
-	manager.addComponent(std::move(c1));     // ÀÌµ¿
+	manager.addComponent(std::move(c1));     // ì´ë™
 	std::cout << std::endl;
 
-	manager.addComponent(HeavyComponent(std::vector<int>(500, 1))); // ÀÓ½Ã °´Ã¼ ¡æ ÀÌµ¿
+	manager.addComponent(HeavyComponent(std::vector<int>(500, 1))); // ì„ì‹œ ê°ì²´ â†’ ì´ë™
 	std::cout << std::endl;
 
 	return 0;

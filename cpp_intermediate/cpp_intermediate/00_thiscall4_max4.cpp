@@ -1,50 +1,50 @@
-/*
-
-#include <iostream>
-#include <string>
-#include <functional>
-
-using namespace std;
-
-struct identity
-{
-	template<typename T>
-	constexpr T&& operator() (T&& obj) const noexcept
-	{
-		return std::forward<T>(obj);
-	}
-};
-
-// identity f;
-// f(10) -> 10
-// f(n) -> n
-
-
-// À§¿¡ ¸¸µç identity °¡ c++20 ºÎÅÍ Ç¥ÁØ¿¡ µµÀÔ.
-template<typename T, typename Projection = std::identity>
-const T& mymax(const T& t1, const T& t2, Projection proj = {})
-{
-	return invoke(proj, t1) < invoke(proj, t2) ? t2 : t1;
-}
-
-int main()
-{
-	string s1 = "abcd";
-	string s2 = "xyz";
-
-	std::identity f;
-	auto& r = f(s1);	//s1
-
-	cout << &s1 << endl;
-	cout << &r << endl;
-
-	auto rt1 = mymax(s1, s2);
-	cout << rt1 << endl;
-
-	auto rt2 = mymax(s1, s2, &std::string::size);
-	cout << rt2 << endl;
-
-	return 0;
-}
-
+/*
+
+#include <iostream>
+#include <string>
+#include <functional>
+
+using namespace std;
+
+struct identity
+{
+	template<typename T>
+	constexpr T&& operator() (T&& obj) const noexcept
+	{
+		return std::forward<T>(obj);
+	}
+};
+
+// identity f;
+// f(10) -> 10
+// f(n) -> n
+
+
+// ìœ„ì— ë§Œë“  identity ê°€ c++20 ë¶€í„° í‘œì¤€ì— ë„ì….
+template<typename T, typename Projection = std::identity>
+const T& mymax(const T& t1, const T& t2, Projection proj = {})
+{
+	return invoke(proj, t1) < invoke(proj, t2) ? t2 : t1;
+}
+
+int main()
+{
+	string s1 = "abcd";
+	string s2 = "xyz";
+
+	std::identity f;
+	auto& r = f(s1);	//s1
+
+	cout << &s1 << endl;
+	cout << &r << endl;
+
+	auto rt1 = mymax(s1, s2);
+	cout << rt1 << endl;
+
+	auto rt2 = mymax(s1, s2, &std::string::size);
+	cout << rt2 << endl;
+
+	return 0;
+}
+
 //*/

@@ -1,14 +1,14 @@
-// ¸ñÇ¥
-//   - EntityÀÇ ID¸¦ ºÎ¿©ÇÏ°í ÀúÀå
-//   - EntityManager¸¦ ÅëÇØ »ı¼º / »èÁ¦ °ü¸®
-//   - ÄÄÆ÷³ÍÆ® Ãß°¡ / Á¦°Å / Á¶È¸ ±â´ÉÀº ComponentManager¿Í Çù·Â
+// ëª©í‘œ
+//   - Entityì˜ IDë¥¼ ë¶€ì—¬í•˜ê³  ì €ì¥
+//   - EntityManagerë¥¼ í†µí•´ ìƒì„± / ì‚­ì œ ê´€ë¦¬
+//   - ì»´í¬ë„ŒíŠ¸ ì¶”ê°€ / ì œê±° / ì¡°íšŒ ê¸°ëŠ¥ì€ ComponentManagerì™€ í˜‘ë ¥
 
 
-// ¼³¸í
-//   - Entity´Â ±×³É ¼ıÀÚÁö¸¸, Signature¸¦ ÅëÇØ ¾î¶² Component Á¶ÇÕÀ» °®´ÂÁö Ç¥ÇöµË´Ï´Ù.
-//   - mSignatures´Â ¿£Æ¼Æ¼¿Í ÄÄÆ÷³ÍÆ® Á¶ÇÕÀ» ¿¬°áÇÏ´Â ÇÙ½ÉÀÔ´Ï´Ù.
-//   - CreateEntity()´Â »ç¿ë °¡´ÉÇÑ ID¸¦ ÇÏ³ª ²¨³»°í °³¼ö¸¦ Áõ°¡½ÃÅµ´Ï´Ù.
-//   - DestroyEntity()´Â ID¸¦ ¹İÈ¯ÇÏ°í ½Ã±×´ÏÃ³¸¦ ÃÊ±âÈ­ÇÕ´Ï´Ù.
+// ì„¤ëª…
+//   - EntityëŠ” ê·¸ëƒ¥ ìˆ«ìì§€ë§Œ, Signatureë¥¼ í†µí•´ ì–´ë–¤ Component ì¡°í•©ì„ ê°–ëŠ”ì§€ í‘œí˜„ë©ë‹ˆë‹¤.
+//   - mSignaturesëŠ” ì—”í‹°í‹°ì™€ ì»´í¬ë„ŒíŠ¸ ì¡°í•©ì„ ì—°ê²°í•˜ëŠ” í•µì‹¬ì…ë‹ˆë‹¤.
+//   - CreateEntity()ëŠ” ì‚¬ìš© ê°€ëŠ¥í•œ IDë¥¼ í•˜ë‚˜ êº¼ë‚´ê³  ê°œìˆ˜ë¥¼ ì¦ê°€ì‹œí‚µë‹ˆë‹¤.
+//   - DestroyEntity()ëŠ” IDë¥¼ ë°˜í™˜í•˜ê³  ì‹œê·¸ë‹ˆì²˜ë¥¼ ì´ˆê¸°í™”í•©ë‹ˆë‹¤.
 
 #include <queue>
 #include <bitset>
@@ -23,7 +23,7 @@ using Signature = std::bitset<64>;
 class EntityManager {
 public:
 	EntityManager() {
-		// Entity ID¸¦ ¸ğµÎ Å¥¿¡ ÃÊ±âÈ­
+		// Entity IDë¥¼ ëª¨ë‘ íì— ì´ˆê¸°í™”
 		for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
 			mAvailableEntities.push(entity);
 		}

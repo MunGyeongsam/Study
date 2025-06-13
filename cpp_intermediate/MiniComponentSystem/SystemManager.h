@@ -1,57 +1,57 @@
-// SystemManager.hpp
-#pragma once
-
-#include <memory>
-#include <unordered_map>
-#include <typeindex>
-#include <cassert>
-#include "System.h"
-#include "Types.h"
-#include "Entity.h"
-
-class SystemManager {
-public:
-	// ½Ã½ºÅÛ µî·Ï
-	template<typename T>
-	std::shared_ptr<T> RegisterSystem() {
-		const std::type_index typeName = typeid(T);
-		assert(systems.find(typeName) == systems.end() && "System already registered");
-
-		auto system = std::make_shared<T>();
-		systems[typeName] = system;
-		return system;
-	}
-
-	// ½Ã½ºÅÛÀÇ °ü½É ÄÄÆ÷³ÍÆ® ½Ã±×´ÏÃ³ ¼³Á¤
-	template<typename T>
-	void SetSignature(Signature signature) {
-		const std::type_index typeName = typeid(T);
-		assert(systems.find(typeName) != systems.end() && "System not registered");
-
-		signatures[typeName] = signature;
-	}
-
-	// Entity°¡ Á¦°ÅµÇ¸é ¸ğµç ½Ã½ºÅÛ¿¡¼­ Á¦°Å
-	void EntityDestroyed(Entity entity) {
-		for (auto& [type, system] : systems) {
-			system->entities.erase(entity);
-		}
-	}
-
-	// EntityÀÇ Signature°¡ ¹Ù²î¸é, ¾î¶² ½Ã½ºÅÛ¿¡ Æ÷ÇÔµÉÁö ´Ù½Ã ÆÇ´Ü
-	void EntitySignatureChanged(Entity entity, Signature entitySignature) {
-		for (auto& [type, system] : systems) {
-			const Signature& systemSig = signatures[type];
-			if ((entitySignature & systemSig) == systemSig) {
-				system->entities.insert(entity);
-			}
-			else {
-				system->entities.erase(entity);
-			}
-		}
-	}
-
-private:
-	std::unordered_map<std::type_index, std::shared_ptr<System>> systems;
-	std::unordered_map<std::type_index, Signature> signatures;
-};
+// SystemManager.hpp
+#pragma once
+
+#include <memory>
+#include <unordered_map>
+#include <typeindex>
+#include <cassert>
+#include "System.h"
+#include "Types.h"
+#include "Entity.h"
+
+class SystemManager {
+public:
+	// ì‹œìŠ¤í…œ ë“±ë¡
+	template<typename T>
+	std::shared_ptr<T> RegisterSystem() {
+		const std::type_index typeName = typeid(T);
+		assert(systems.find(typeName) == systems.end() && "System already registered");
+
+		auto system = std::make_shared<T>();
+		systems[typeName] = system;
+		return system;
+	}
+
+	// ì‹œìŠ¤í…œì˜ ê´€ì‹¬ ì»´í¬ë„ŒíŠ¸ ì‹œê·¸ë‹ˆì²˜ ì„¤ì •
+	template<typename T>
+	void SetSignature(Signature signature) {
+		const std::type_index typeName = typeid(T);
+		assert(systems.find(typeName) != systems.end() && "System not registered");
+
+		signatures[typeName] = signature;
+	}
+
+	// Entityê°€ ì œê±°ë˜ë©´ ëª¨ë“  ì‹œìŠ¤í…œì—ì„œ ì œê±°
+	void EntityDestroyed(Entity entity) {
+		for (auto& [type, system] : systems) {
+			system->entities.erase(entity);
+		}
+	}
+
+	// Entityì˜ Signatureê°€ ë°”ë€Œë©´, ì–´ë–¤ ì‹œìŠ¤í…œì— í¬í•¨ë ì§€ ë‹¤ì‹œ íŒë‹¨
+	void EntitySignatureChanged(Entity entity, Signature entitySignature) {
+		for (auto& [type, system] : systems) {
+			const Signature& systemSig = signatures[type];
+			if ((entitySignature & systemSig) == systemSig) {
+				system->entities.insert(entity);
+			}
+			else {
+				system->entities.erase(entity);
+			}
+		}
+	}
+
+private:
+	std::unordered_map<std::type_index, std::shared_ptr<System>> systems;
+	std::unordered_map<std::type_index, Signature> signatures;
+};

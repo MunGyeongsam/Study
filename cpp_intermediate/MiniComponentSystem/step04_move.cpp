@@ -1,16 +1,16 @@
-// 4´Ü°è ¸ñÇ¥
-// rvalue / lvalueÀÇ ½ÇÁ¦ ±¸ºÐ°ú È°¿ë
-// std::move¿Í ÀÌµ¿ »ý¼ºÀÚ / ÀÌµ¿ ´ëÀÔ ¿¬»êÀÚ Àû¿ë
-// ÄÄÆ÷³ÍÆ® µî·Ï ½Ã º¹»ç ´ë½Å ÀÌµ¿À» »ç¿ëÇÏ´Â ¹æ½Ä ±¸Çö
+// 4ë‹¨ê³„ ëª©í‘œ
+// rvalue / lvalueì˜ ì‹¤ì œ êµ¬ë¶„ê³¼ í™œìš©
+// std::moveì™€ ì´ë™ ìƒì„±ìž / ì´ë™ ëŒ€ìž… ì—°ì‚°ìž ì ìš©
+// ì»´í¬ë„ŒíŠ¸ ë“±ë¡ ì‹œ ë³µì‚¬ ëŒ€ì‹  ì´ë™ì„ ì‚¬ìš©í•˜ëŠ” ë°©ì‹ êµ¬í˜„
 
 
-// ÇÙ½É	°³³ä Á¤¸®
-// °³³ä								¼³¸í
-// lvalue							ÀÌ¸§ÀÌ ÀÖ°í, ÁÖ¼Ò¸¦ ÂüÁ¶ÇÒ ¼ö ÀÖ´Â °´Ã¼
-// rvalue							ÀÏ½ÃÀû °ª, ÀÌ¸§ÀÌ ¾ø´Â ÀÓ½Ã °´Ã¼(¿¹: MyData(5))
-// std::move						lvalue¸¦ rvalue·Î Ä³½ºÆÃÇØ, ÀÌµ¿ ¿¬»êÀÚ¸¦ È£Ãâ °¡´ÉÇÏ°Ô ÇÔ
-// ÀÌµ¿ »ý¼ºÀÚ						ÀÚ¿øÀÇ ¼ÒÀ¯±ÇÀ» ÀÌÀüÇÏ°í, ¿øº»Àº ºñ¿ö ³õÀ½
-// ¿Ïº® Àü´Þ(perfect forwarding)		std::forward<T>(arg)·Î ¿ø·¡ÀÇ °ª Æ¯¼ºÀ» À¯ÁöÇÏ¸ç ÀÎÀÚ Àü´Þ
+// í•µì‹¬	ê°œë… ì •ë¦¬
+// ê°œë…								ì„¤ëª…
+// lvalue							ì´ë¦„ì´ ìžˆê³ , ì£¼ì†Œë¥¼ ì°¸ì¡°í•  ìˆ˜ ìžˆëŠ” ê°ì²´
+// rvalue							ì¼ì‹œì  ê°’, ì´ë¦„ì´ ì—†ëŠ” ìž„ì‹œ ê°ì²´(ì˜ˆ: MyData(5))
+// std::move						lvalueë¥¼ rvalueë¡œ ìºìŠ¤íŒ…í•´, ì´ë™ ì—°ì‚°ìžë¥¼ í˜¸ì¶œ ê°€ëŠ¥í•˜ê²Œ í•¨
+// ì´ë™ ìƒì„±ìž						ìžì›ì˜ ì†Œìœ ê¶Œì„ ì´ì „í•˜ê³ , ì›ë³¸ì€ ë¹„ì›Œ ë†“ìŒ
+// ì™„ë²½ ì „ë‹¬(perfect forwarding)		std::forward<T>(arg)ë¡œ ì›ëž˜ì˜ ê°’ íŠ¹ì„±ì„ ìœ ì§€í•˜ë©° ì¸ìž ì „ë‹¬
 
 
 
@@ -72,13 +72,13 @@ int main() {
 	HeavyComponent c1(std::vector<int>(1000, 42));  // big data
 	std::cout << std::endl;
 
-	manager.addComponent(c1);                // º¹»ç
+	manager.addComponent(c1);                // ë³µì‚¬
 	std::cout << std::endl;
 
-	manager.addComponent(std::move(c1));     // ÀÌµ¿
+	manager.addComponent(std::move(c1));     // ì´ë™
 	std::cout << std::endl;
 
-	manager.addComponent(HeavyComponent(std::vector<int>(500, 1))); // ÀÓ½Ã °´Ã¼ ¡æ ÀÌµ¿
+	manager.addComponent(HeavyComponent(std::vector<int>(500, 1))); // ìž„ì‹œ ê°ì²´ â†’ ì´ë™
 	std::cout << std::endl;
 
 	return 0;

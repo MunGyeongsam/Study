@@ -1,51 +1,51 @@
-#include <iostream>
-#include "Coordinator.h"
-#include "Components.h"
-#include "MovementSystem.h"
-#include "EventBus.h"
-
-Coordinator gCoordinator;
-
-int main() {
-	gCoordinator.Init();
-
-	// ÄÄÆ÷³ÍÆ® µî·Ï
-	gCoordinator.RegisterComponent<Position>();
-	gCoordinator.RegisterComponent<Velocity>();
-
-	// ½Ã½ºÅÛ µî·Ï ¹× ½Ã±×´ÏÃ³ ¼³Á¤
-	auto movementSystem = gCoordinator.RegisterSystem<MovementSystem>();
-	Signature sig;
-	sig.set(gCoordinator.GetComponentType<Position>());
-	sig.set(gCoordinator.GetComponentType<Velocity>());
-	gCoordinator.SetSystemSignature<MovementSystem>(sig);
-
-	// ¿£Æ¼Æ¼ »ı¼º ¹× ÄÄÆ÷³ÍÆ® Ãß°¡
-	Entity e1 = gCoordinator.CreateEntity();
-	gCoordinator.AddComponent(e1, Position{ 0.0f, 0.0f });
-	gCoordinator.AddComponent(e1, Velocity{ 1.0f, 1.5f });
-
-	// ¾÷µ¥ÀÌÆ® ·çÇÁ (¿¹: 3ÇÁ·¹ÀÓ ½Ã¹Ä·¹ÀÌ¼Ç)
-	for (int i = 0; i < 3; ++i) {
-		movementSystem->Update(1.0f); // 1ÃÊ ´ÜÀ§
-		auto& pos = gCoordinator.GetComponent<Position>(e1);
-		std::cout << "Frame " << i << ": Position = (" << pos.x << ", " << pos.y << ")\n";
-	}
-
-	{
-		EventBus eventBus;
-
-		eventBus.subscribe<CollisionEvent>([](const CollisionEvent& e) {
-			std::cout << "Collision detected: " << e.entityA << " vs " << e.entityB << "\n";
-			});
-
-		eventBus.subscribe<ScoreEvent>([](const ScoreEvent& e) {
-			std::cout << "Entity " << e.entity << " gained " << e.scoreGained << " points.\n";
-			});
-
-		eventBus.publish(CollisionEvent{ 1, 2 });
-		eventBus.publish(ScoreEvent{ 1, 50 });
-	}
-
-	return 0;
+#include <iostream>
+#include "Coordinator.h"
+#include "Components.h"
+#include "MovementSystem.h"
+#include "EventBus.h"
+
+Coordinator gCoordinator;
+
+int main() {
+	gCoordinator.Init();
+
+	// ì»´í¬ë„ŒíŠ¸ ë“±ë¡
+	gCoordinator.RegisterComponent<Position>();
+	gCoordinator.RegisterComponent<Velocity>();
+
+	// ì‹œìŠ¤í…œ ë“±ë¡ ë° ì‹œê·¸ë‹ˆì²˜ ì„¤ì •
+	auto movementSystem = gCoordinator.RegisterSystem<MovementSystem>();
+	Signature sig;
+	sig.set(gCoordinator.GetComponentType<Position>());
+	sig.set(gCoordinator.GetComponentType<Velocity>());
+	gCoordinator.SetSystemSignature<MovementSystem>(sig);
+
+	// ì—”í‹°í‹° ìƒì„± ë° ì»´í¬ë„ŒíŠ¸ ì¶”ê°€
+	Entity e1 = gCoordinator.CreateEntity();
+	gCoordinator.AddComponent(e1, Position{ 0.0f, 0.0f });
+	gCoordinator.AddComponent(e1, Velocity{ 1.0f, 1.5f });
+
+	// ì—…ë°ì´íŠ¸ ë£¨í”„ (ì˜ˆ: 3í”„ë ˆì„ ì‹œë®¬ë ˆì´ì…˜)
+	for (int i = 0; i < 3; ++i) {
+		movementSystem->Update(1.0f); // 1ì´ˆ ë‹¨ìœ„
+		auto& pos = gCoordinator.GetComponent<Position>(e1);
+		std::cout << "Frame " << i << ": Position = (" << pos.x << ", " << pos.y << ")\n";
+	}
+
+	{
+		EventBus eventBus;
+
+		eventBus.subscribe<CollisionEvent>([](const CollisionEvent& e) {
+			std::cout << "Collision detected: " << e.entityA << " vs " << e.entityB << "\n";
+			});
+
+		eventBus.subscribe<ScoreEvent>([](const ScoreEvent& e) {
+			std::cout << "Entity " << e.entity << " gained " << e.scoreGained << " points.\n";
+			});
+
+		eventBus.publish(CollisionEvent{ 1, 2 });
+		eventBus.publish(ScoreEvent{ 1, 50 });
+	}
+
+	return 0;
 }

@@ -1,36 +1,36 @@
-
-/*
-
-struct Point
-{
-	int x;
-	int y;
-
-	// #1. ¸â¹ö ÇÔ¼öÀÇ È£Ãâ ¿ø¸®
-	// thiscall »ç¿ë : °´Ã¼ÀÇ ÁÖ¼Ò°¡ Ãß°¡·Î Àü´ŞµÇ´Â ÇÔ¼ö.
-	void set(int a, int b)		// void set(Point* this, int a, int b)
-	{
-		x = a;					// this->x = a;
-		y = b;					// this->y = b;
-	}
-
-	// #2. static ¸â¹ö ÇÔ¼öÀÇ È£Ãâ¿ø¸®
-	static void foo(int a)		// void foo(int a) ·Î ÄÄÆÄÀÏ, this Ãß°¡ ¾ÈµÊ.
-	{
-		//x = a;
-	}
-};
-
-int main()
-{
-	Point pt1;
-	Point pt2;
-
-	pt1.set(10, 20);	// Point::set(&pt1, 10, 20)
-	pt2.set(10, 20);	// Point::set(&pt2, 10, 20)
-
-	Point::foo(10);		// Point::foo(10);
-	pt1.foo(10);		// Point::foo(10);
-}
-
+
+/*
+
+struct Point
+{
+	int x;
+	int y;
+
+	// #1. ë©¤ë²„ í•¨ìˆ˜ì˜ í˜¸ì¶œ ì›ë¦¬
+	// thiscall ì‚¬ìš© : ê°ì²´ì˜ ì£¼ì†Œê°€ ì¶”ê°€ë¡œ ì „ë‹¬ë˜ëŠ” í•¨ìˆ˜.
+	void set(int a, int b)		// void set(Point* this, int a, int b)
+	{
+		x = a;					// this->x = a;
+		y = b;					// this->y = b;
+	}
+
+	// #2. static ë©¤ë²„ í•¨ìˆ˜ì˜ í˜¸ì¶œì›ë¦¬
+	static void foo(int a)		// void foo(int a) ë¡œ ì»´íŒŒì¼, this ì¶”ê°€ ì•ˆë¨.
+	{
+		//x = a;
+	}
+};
+
+int main()
+{
+	Point pt1;
+	Point pt2;
+
+	pt1.set(10, 20);	// Point::set(&pt1, 10, 20)
+	pt2.set(10, 20);	// Point::set(&pt2, 10, 20)
+
+	Point::foo(10);		// Point::foo(10);
+	pt1.foo(10);		// Point::foo(10);
+}
+
 //*/

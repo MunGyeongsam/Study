@@ -1,67 +1,67 @@
-//1´Ü°è ¸ñÇ¥
-//Entity¿Í Component¶ó´Â ±âº» ±¸Á¶ ¸¸µé±â
-//ÄÄÆ÷³ÍÆ®¸¦ Æ÷ÀÎÅÍ·Î ´Ù·ç´Â ¹ı ÀÍÈ÷±â
-//Å¬·¡½º¿Í ±¸Á¶Ã¼ÀÇ ¸Ş¸ğ¸® °ü°è ÀÌÇØ
-
-//°³³ä				¼³¸í
-//struct / class	C++¿¡¼­ »ç¿ëÀÚ Á¤ÀÇ Å¸ÀÔ
-//Æ÷ÀÎÅÍ(T*)			¸Ş¸ğ¸® ÁÖ¼Ò¸¦ ÀúÀå, °´Ã¼¸¦ µ¿ÀûÀ¸·Î ´Ù·ê ¶§ »ç¿ë
-//new / delete		Èü ¸Ş¸ğ¸® ÇÒ´ç / ÇØÁ¦
-//»ı¼ºÀÚ / ¼Ò¸êÀÚ		°´Ã¼ »ı¼º°ú ÆÄ±« ½Ã ÀÚµ¿ È£Ãâ
-
-
-//PositionComponent ¸»°í HealthComponent(int hp)¸¦ Ãß°¡ÇØº¸¼¼¿ä.
-//Entity ÀÌ¸§À» °¡Á®¿À´Â getName() ÇÔ¼ö¸¦ ¸¸µé¾îº¸¼¼¿ä.
-//¼Ò¸êÀÚ°¡ ¾øÀ¸¸é ¹«½¼ ¹®Á¦°¡ »ı±æÁö ¼³¸íÇØº¸¼¼¿ä.
-
-#include <iostream>
-#include <vector>
-#include <string>
-
-// Base Component class
-struct Component {
-	virtual ~Component() {}
-	virtual void info() = 0;
-};
-
-// PositionComponent
-struct PositionComponent : public Component {
-	int x, y;
-	PositionComponent(int x, int y) : x(x), y(y) {}
-
-	void info() override {
-		std::cout << "Position: (" << x << ", " << y << ")\n";
-	}
-};
-
-// Entity class
-class Entity {
-	std::string name;
-	std::vector<Component*> components;
-
-public:
-	Entity(const std::string& name) : name(name) {}
-
-	~Entity() {
-		for (auto comp : components)
-			delete comp;  // ÄÄÆ÷³ÍÆ® ¸Ş¸ğ¸® ÇØÁ¦
-	}
-
-	void addComponent(Component* c) {
-		components.push_back(c);
-	}
-
-	void showComponents() {
-		std::cout << "Entity: " << name << "\n";
-		for (auto comp : components)
-			comp->info();
-	}
-};
-
-int main() {
-	Entity player("Player1");
-	player.addComponent(new PositionComponent(10, 20));
-	player.showComponents();
-
-	return 0;
+//1ë‹¨ê³„ ëª©í‘œ
+//Entityì™€ Componentë¼ëŠ” ê¸°ë³¸ êµ¬ì¡° ë§Œë“¤ê¸°
+//ì»´í¬ë„ŒíŠ¸ë¥¼ í¬ì¸í„°ë¡œ ë‹¤ë£¨ëŠ” ë²• ìµíˆê¸°
+//í´ë˜ìŠ¤ì™€ êµ¬ì¡°ì²´ì˜ ë©”ëª¨ë¦¬ ê´€ê³„ ì´í•´
+
+//ê°œë…				ì„¤ëª…
+//struct / class	C++ì—ì„œ ì‚¬ìš©ì ì •ì˜ íƒ€ì…
+//í¬ì¸í„°(T*)			ë©”ëª¨ë¦¬ ì£¼ì†Œë¥¼ ì €ì¥, ê°ì²´ë¥¼ ë™ì ìœ¼ë¡œ ë‹¤ë£° ë•Œ ì‚¬ìš©
+//new / delete		í™ ë©”ëª¨ë¦¬ í• ë‹¹ / í•´ì œ
+//ìƒì„±ì / ì†Œë©¸ì		ê°ì²´ ìƒì„±ê³¼ íŒŒê´´ ì‹œ ìë™ í˜¸ì¶œ
+
+
+//PositionComponent ë§ê³  HealthComponent(int hp)ë¥¼ ì¶”ê°€í•´ë³´ì„¸ìš”.
+//Entity ì´ë¦„ì„ ê°€ì ¸ì˜¤ëŠ” getName() í•¨ìˆ˜ë¥¼ ë§Œë“¤ì–´ë³´ì„¸ìš”.
+//ì†Œë©¸ìê°€ ì—†ìœ¼ë©´ ë¬´ìŠ¨ ë¬¸ì œê°€ ìƒê¸¸ì§€ ì„¤ëª…í•´ë³´ì„¸ìš”.
+
+#include <iostream>
+#include <vector>
+#include <string>
+
+// Base Component class
+struct Component {
+	virtual ~Component() {}
+	virtual void info() = 0;
+};
+
+// PositionComponent
+struct PositionComponent : public Component {
+	int x, y;
+	PositionComponent(int x, int y) : x(x), y(y) {}
+
+	void info() override {
+		std::cout << "Position: (" << x << ", " << y << ")\n";
+	}
+};
+
+// Entity class
+class Entity {
+	std::string name;
+	std::vector<Component*> components;
+
+public:
+	Entity(const std::string& name) : name(name) {}
+
+	~Entity() {
+		for (auto comp : components)
+			delete comp;  // ì»´í¬ë„ŒíŠ¸ ë©”ëª¨ë¦¬ í•´ì œ
+	}
+
+	void addComponent(Component* c) {
+		components.push_back(c);
+	}
+
+	void showComponents() {
+		std::cout << "Entity: " << name << "\n";
+		for (auto comp : components)
+			comp->info();
+	}
+};
+
+int main() {
+	Entity player("Player1");
+	player.addComponent(new PositionComponent(10, 20));
+	player.showComponents();
+
+	return 0;
 }
