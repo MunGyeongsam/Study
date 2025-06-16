@@ -71,7 +71,7 @@ class ComponentManager {
 public:
 	template <typename T>
 	void RegisterComponent() {
-		const char* typeName = typeid(T).name();
+		std::type_index typeName = typeid(T);
 		assert(componentTypes.find(typeName) == componentTypes.end() && "Component already registered!");
 		componentTypes[typeName] = ComponentTypeManager::GetTypeID<T>();
 		componentArrays[typeName] = std::make_shared<ComponentArray<T>>();
@@ -90,7 +90,7 @@ public:
 	}
 	template <typename T>
 	ComponentType GetComponentType() {
-		const char* typeName = typeid(T).name();
+		std::type_index typeName = typeid(T);
 		assert(componentTypes.find(typeName) != componentTypes.end() && "Component not registered!");
 		return componentTypes[typeName];
 	}
@@ -101,11 +101,11 @@ public:
 		}
 	}
 private:
-	std::unordered_map<const char*, ComponentType> componentTypes{};
-	std::unordered_map<const char*, std::shared_ptr<IComponentArray>> componentArrays{};
+	std::unordered_map<std::type_index, ComponentType> componentTypes{};
+	std::unordered_map<std::type_index, std::shared_ptr<IComponentArray>> componentArrays{};
 	template <typename T>
 	std::shared_ptr<ComponentArray<T>> GetComponentArray() {
-		const char* typeName = typeid(T).name();
+		std::type_index typeName = typeid(T);
 		assert(componentTypes.find(typeName) != componentTypes.end() && "Component not registered!");
 		return std::static_pointer_cast<ComponentArray<T>>(componentArrays[typeName]);
 	}

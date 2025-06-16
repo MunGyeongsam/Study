@@ -9,12 +9,14 @@ int main() {
 	// 컴포넌트 등록
 	gCoordinator.RegisterComponent<Position>();
 	gCoordinator.RegisterComponent<Velocity>();
+
 	// 시스템 등록 및 시그니처 설정
 	auto movementSystem = gCoordinator.RegisterSystem<MovementSystem>();
 	Signature sig;
 	sig.set(gCoordinator.GetComponentType<Position>());
 	sig.set(gCoordinator.GetComponentType<Velocity>());
 	gCoordinator.SetSystemSignature<MovementSystem>(sig);
+
 	// 엔티티 생성 및 컴포넌트 추가
 	Entity e1 = gCoordinator.CreateEntity();
 	gCoordinator.AddComponent(e1, Position{ 0.0f, 0.0f });
