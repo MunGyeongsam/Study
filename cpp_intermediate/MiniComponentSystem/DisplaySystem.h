@@ -5,19 +5,18 @@
 #include "Coordinator.h"
 
 extern Coordinator gCoordinator;
-
-class MovementSystem : public System {
+class DisplaySystem : public System {
 public:
-	void Update(float dt) {
+	void Display() {
 		for (auto const& entity : entities) {
 			auto* pos = gCoordinator.GetComponent<Position>(entity);
 			auto* vel = gCoordinator.GetComponent<Velocity>(entity);
-			if (!pos || !vel) {
-				continue; // Skip if the entity does not have Position or Velocity components
-			}
 
-			pos->x += vel->dx * dt;
-			pos->y += vel->dy * dt;
+			std::cout << "Entity ID: " << entity << "\n";
+			if(pos)
+				std::cout << "  - Position: (" << pos->x << ", " << pos->y << ")\n";
+			if(vel)
+				std::cout << "  - Velocity: (" << vel->dx << ", " << vel->dy << ")\n";
 		}
 	}
 };

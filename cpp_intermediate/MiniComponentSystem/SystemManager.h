@@ -35,7 +35,8 @@ public:
 	void EntitySignatureChanged(Entity entity, Signature entitySignature) {
 		for (auto& [type, system] : systems) {
 			const Signature& systemSig = signatures[type];
-			if ((entitySignature & systemSig) == systemSig) {
+			//if ((entitySignature & systemSig) == systemSig) {
+			if ((entitySignature & systemSig).any()) {
 				system->entities.insert(entity);
 			}
 			else {

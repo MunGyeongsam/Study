@@ -80,5 +80,8 @@
     <ClInclude Include="EventBus.h">
       <Filter>ECS</Filter>
     </ClInclude>
+    <ClInclude Include="DisplaySystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

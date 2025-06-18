@@ -51,9 +51,9 @@ public:
 		indexToEntity.erase(lastIndex);
 		--size;
 	}
-	T& GetData(Entity entity) {
-		assert(entityToIndex.find(entity) != entityToIndex.end() && "No such component!");
-		return data[entityToIndex[entity]];
+	T* GetData(Entity entity) {
+		//assert(entityToIndex.find(entity) != entityToIndex.end() && "No such component!");
+		return entityToIndex.find(entity) != entityToIndex.end() ? &data[entityToIndex[entity]] : nullptr;
 	}
 	void EntityDestroyed(Entity entity) override {
 		if (entityToIndex.find(entity) != entityToIndex.end()) {
@@ -85,7 +85,7 @@ public:
 		GetComponentArray<T>()->RemoveData(entity);
 	}
 	template <typename T>
-	T& GetComponent(Entity entity) {
+	T* GetComponent(Entity entity) {
 		return GetComponentArray<T>()->GetData(entity);
 	}
 	template <typename T>

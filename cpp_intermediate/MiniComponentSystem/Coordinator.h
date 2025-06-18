@@ -51,7 +51,7 @@ public:
 		systemManager->EntitySignatureChanged(entity, signature);
 	}
 	template<typename T>
-	T& GetComponent(Entity entity) {
+	T* GetComponent(Entity entity) {
 		return componentManager->GetComponent<T>(entity);
 	}
 	template<typename T>

@@ -167,6 +167,7 @@
     <ClInclude Include="ComponentManager.h" />
     <ClInclude Include="Components.h" />
     <ClInclude Include="Coordinator.h" />
+    <ClInclude Include="DisplaySystem.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityManager.h" />
     <ClInclude Include="Event.h" />
