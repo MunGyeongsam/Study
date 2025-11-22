@@ -64,3 +64,6 @@ TagManager:
   - name: Cloud2
     uniqueID: 861908233
     locked: 0
+  - name: New Layer 8
+    uniqueID: 452532699
+    locked: 0

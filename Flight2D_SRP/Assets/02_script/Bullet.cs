@@ -32,7 +32,7 @@ public class Bullet : PoolElement
         var dir = (pos - (Vector2)_transform.position).normalized;
         var tarRot = Toward(dir);
         var curRot = transform.rotation;
-        transform.rotation = Quaternion.RotateTowards(curRot, tarRot, 6F);
+        transform.rotation = Quaternion.RotateTowards(curRot, tarRot, 26F);
 
         _rigidbody2D.velocity = _transform.up * _speed;
     }

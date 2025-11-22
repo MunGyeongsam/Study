@@ -1,14 +1,16 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Pool;
+using UnityEngine.UI;
 
 public class Enemy : PoolElement
 {
+    [SerializeField] Slider _lifeBar;
+    
     Rigidbody2D _rigidbody2D;
     Transform _transform;
     Vector2 _halfSize;
     int _Hp = 100;
+    float _maxHp = 100F;
+    float _hpYScale = 1F;
 
     protected override void OnCreateImpl()
     { 
@@ -18,6 +20,7 @@ public class Enemy : PoolElement
         _rigidbody2D.velocity = transform.up * Random.Range(3F, 10F);
 
         _halfSize = GetComponent<SpriteRenderer>().size * 0.5F;
+        _hpYScale = _lifeBar.transform.localScale.y;
     }
     public void Reset(float x, float scale)
     {
@@ -33,7 +36,13 @@ public class Enemy : PoolElement
         _transform.position = pos;
         _rigidbody2D.velocity = transform.up * Random.Range(3F, 10F);
 
-        _Hp = 100;
+        _maxHp = Mathf.Ceil(100F * scale);
+        _Hp = (int)_maxHp;
+        _lifeBar.value = 1F;
+
+        var hpScale = _lifeBar.transform.localScale;
+        hpScale.y = _hpYScale / scale;
+        _lifeBar.transform.localScale = hpScale;
     }
 
     // Update is called once per frame
@@ -74,6 +83,7 @@ public class Enemy : PoolElement
             eff.Reset(collision.transform.position, 1F);
 
             _Hp -= 10;
+            _lifeBar.value = _Hp / _maxHp;
             if (_Hp <= 0)
             {
                 Release();

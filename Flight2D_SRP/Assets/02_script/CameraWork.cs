@@ -36,7 +36,7 @@ public class CameraWork : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         Trace(Time.deltaTime);
     }

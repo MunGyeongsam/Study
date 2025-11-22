@@ -31,7 +31,7 @@ public class EnemySpot : MonoBehaviour
 
         var e = ObjectPoolManager.Get(_poolNames[i]);
 
-        float s = Random.Range(0.2F, 1.2F);
+        float s = Random.Range(0.5F, 2.2F);
         float x = Random.Range(GlobalEnvironment.Instance.WorldMin.x, GlobalEnvironment.Instance.WorldMax.x);
         (e as Enemy).Reset(x, s);
     }
