@@ -36,5 +36,11 @@
     <ClCompile Include="06_Adapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="07_Facade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="08_Command.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
