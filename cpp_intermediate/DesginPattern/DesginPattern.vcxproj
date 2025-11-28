@@ -135,6 +135,8 @@
     <ClCompile Include="04_Strategy.cpp" />
     <ClCompile Include="05_Decorator.cpp" />
     <ClCompile Include="06_Adapter.cpp" />
+    <ClCompile Include="07_Facade.cpp" />
+    <ClCompile Include="08_Command.cpp" />
     <ClCompile Include="DesginPattern.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

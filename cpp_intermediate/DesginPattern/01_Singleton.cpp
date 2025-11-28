@@ -164,3 +164,5 @@ static int main()
 	MyManager::Instance().doSomething();
 	return 0;
 }
+
+
