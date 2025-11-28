@@ -48,6 +48,8 @@ public class Enemy : PoolElement
     // Update is called once per frame
     void Update()
     {
+        GlobalEnvironment.Instance.ControlPhysics(_rigidbody2D);
+        
         Vector2 pos = _transform.position;
 
         if (pos.y + _halfSize.y < GlobalEnvironment.Instance.WorldMin.y)
@@ -82,17 +84,19 @@ public class Enemy : PoolElement
 
             eff.Reset(collision.transform.position, 1F);
 
-            _Hp -= 10;
+            _Hp -= 20;
             _lifeBar.value = _Hp / _maxHp;
             if (_Hp <= 0)
             {
+                GlobalEnvironment.Instance.UI.AddScore(_maxHp);
                 Release();
             }
         }
         else if (collision.CompareTag("Player"))
         {
+            GlobalEnvironment.Instance.UI.AddScore(_maxHp);
+            collision.GetComponent<Player>().TakeDamage(_Hp);
             Release();
-            GlobalEnvironment.Instance.OnTakeDamage();
         }
     }
 }

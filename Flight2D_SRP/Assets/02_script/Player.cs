@@ -6,6 +6,7 @@ public class Player : MonoBehaviour
     [SerializeField] private Rigidbody2D _rigidbody2D = null!;
     [SerializeField] private float _speed = 5F;
     [SerializeField] private GlobalEnvironment _ge;
+    [SerializeField] private GameObject[] _itemPrefabs;
 
     Camera _mainCamera;
     Transform _transform;
@@ -13,6 +14,46 @@ public class Player : MonoBehaviour
     Vector2 _min;
     Vector2 _max;
     bool _uiHold;
+    
+    int _currentItemIndex = -1;
+    GameObject _currentItem = null;
+
+    const float MaxHp = 100F;
+    private float _hp = MaxHp;
+    
+    public bool IsAlive => _hp > 0F;
+    
+    public void Revive()
+    {
+        _hp = MaxHp;
+        GlobalEnvironment.Instance.UI.HpChange(_hp, MaxHp);
+        gameObject.SetActive(true);
+    }
+    
+    public void SetItem(int index)
+    {
+        if (index < 0 || index >= _itemPrefabs.Length || _currentItemIndex == index)
+            return;
+        
+        if (_currentItem != null)
+            Destroy(_currentItem);
+
+        _currentItem = Instantiate(_itemPrefabs[index], _transform);
+    }
+    
+    public void TakeDamage(float damage)
+    {
+        _hp -= damage;
+        if (_hp < 0F)
+        {
+            _hp = 0F;
+            
+            gameObject.SetActive(false);
+            GlobalEnvironment.Instance.GameState.ChangeState(GameStateType.GameOver);
+        }
+        GlobalEnvironment.Instance.UI.HpChange(_hp, MaxHp);
+        GlobalEnvironment.Instance.OnTakeDamage();
+    }
 
     void Start()
     {
@@ -20,6 +61,10 @@ public class Player : MonoBehaviour
         _transform = transform;
         _max = _ge.WorldMax;
         _min = -_max;
+        
+        GlobalEnvironment.Instance.UI.HpChange(_hp, MaxHp);
+        
+        SetItem(0);
     }
 
     void Update()

@@ -64,6 +64,10 @@ public class Bullet : PoolElement
 
     private void Update()
     {
+        GlobalEnvironment.Instance.ControlPhysics(_rigidbody2D);
+        if (GlobalEnvironment.Instance.GameState.CurrentState == GameStateType.Pause)
+            return;
+        
         _accum += Time.deltaTime;
 
         if (_accum > _LifeSpan)

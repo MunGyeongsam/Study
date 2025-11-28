@@ -21,6 +21,9 @@ public class Gun : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (GlobalEnvironment.Instance.GameState.CurrentState == GameStateType.Pause)
+            return;
+        
         _accum += Time.fixedDeltaTime;
 
         while (_accum >= _freq)

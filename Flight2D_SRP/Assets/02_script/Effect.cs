@@ -21,6 +21,9 @@ public class Effect : PoolElement
 
     private void Update()
     {
+        if (GlobalEnvironment.Instance.GameState.CurrentState == GameStateType.Pause)
+            return;
+        
         _accum += Time.deltaTime;
 
         while(_accum >= _step)
