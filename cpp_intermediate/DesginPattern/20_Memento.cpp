@@ -2,14 +2,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
 class TextMemento {
     std::string state;
 public:
     TextMemento(const std::string& s) : state(s) {}
     std::string getState() const { return state; }
 };
-
 class TextEditor {
     std::string text;
 public:
@@ -18,7 +16,6 @@ public:
     TextMemento save() const { return TextMemento(text); }
     void restore(const TextMemento& m) { text = m.getState(); }
 };
-
 void mementoTextEditorExample() {
     TextEditor editor;
     std::vector<TextMemento> history;
@@ -29,11 +26,9 @@ void mementoTextEditorExample() {
     editor.restore(history.back());
     editor.show(); // Hello 
 }
-
 // 2. 게임 캐릭터의 상태 저장/복원
 #include <iostream>
 #include <vector>
-
 class PlayerMemento {
     int hp, x, y;
 public:
@@ -42,7 +37,6 @@ public:
     int getX() const { return x; }
     int getY() const { return y; }
 };
-
 class Player {
     int hp, x, y;
 public:
@@ -53,7 +47,6 @@ public:
     PlayerMemento save() const { return PlayerMemento(hp, x, y); }
     void restore(const PlayerMemento& m) { hp = m.getHp(); x = m.getX(); y = m.getY(); }
 };
-
 void mementoPlayerExample() {
     Player p(100, 0, 0);
     std::vector<PlayerMemento> history;
@@ -64,12 +57,9 @@ void mementoPlayerExample() {
     p.restore(history.back());
     p.show(); // HP:100 위치:(0,0)
 }
-
-
 // 3. 그림판의 도형 상태(Undo/Redo)
 #include <iostream>
 #include <vector>
-
 class ShapeMemento {
     int x, y;
 public:
@@ -77,7 +67,6 @@ public:
     int getX() const { return x; }
     int getY() const { return y; }
 };
-
 class Shape {
     int x, y;
 public:
@@ -87,7 +76,6 @@ public:
     ShapeMemento save() const { return ShapeMemento(x, y); }
     void restore(const ShapeMemento& m) { x = m.getX(); y = m.getY(); }
 };
-
 void mementoShapeExample() {
     Shape s(0, 0);
     std::vector<ShapeMemento> history;
@@ -97,13 +85,11 @@ void mementoShapeExample() {
     s.restore(history.back());
     s.show(); // (0,0)
 }
-
 // 4. 커맨드(Command) 패턴과 함께 사용하는 Undo/Redo
 #include <iostream>
 #include <vector>
 #include <stack>
 #include <string>
-
 // Memento
 class EditorMemento {
     std::string text;
@@ -111,7 +97,6 @@ public:
     EditorMemento(const std::string& t) : text(t) {}
     std::string getText() const { return text; }
 };
-
 // Originator
 class Editor {
     std::string text;
@@ -121,7 +106,6 @@ public:
     EditorMemento save() const { return EditorMemento(text); }
     void restore(const EditorMemento& m) { text = m.getText(); }
 };
-
 // Command
 class Command {
 public:
@@ -129,7 +113,6 @@ public:
     virtual void undo() = 0;
     virtual ~Command() = default;
 };
-
 class WriteCommand : public Command {
     Editor& editor;
     std::string newText;
@@ -140,29 +123,22 @@ public:
     void execute() override { editor.setText(newText); }
     void undo() override { editor.restore(backup); }
 };
-
 void mementoCommandExample() {
     Editor editor;
     std::stack<Command*> history;
-
     Command* cmd1 = new WriteCommand(editor, "First line");
     cmd1->execute();
     history.push(cmd1);
-
     Command* cmd2 = new WriteCommand(editor, "Second line");
     cmd2->execute();
     history.push(cmd2);
-
     std::cout << "현재: " << editor.getText() << std::endl; // Second line
-
     // Undo
     history.top()->undo(); history.pop();
     std::cout << "Undo 후: " << editor.getText() << std::endl; // First line
-
     // Undo
     history.top()->undo(); history.pop();
     std::cout << "Undo 후: " << editor.getText() << std::endl; // (빈 문자열)
-
     delete cmd1;
     delete cmd2;
 }

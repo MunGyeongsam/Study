@@ -36,7 +36,6 @@ public:
 		std::cout << name << " received update: " << value << std::endl;
 	}
 };
-
 // 사용 예시
 // Subject subject;
 // ConcreteObserver obs1, obs2;

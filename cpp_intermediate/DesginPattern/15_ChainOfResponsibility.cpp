@@ -16,7 +16,6 @@ class AbstractHandler : public Handler {
    */
  private:
   Handler *next_handler_;
-
  public:
   AbstractHandler() : next_handler_(nullptr) {
   }
@@ -31,7 +30,6 @@ class AbstractHandler : public Handler {
     if (this->next_handler_) {
       return this->next_handler_->Handle(request);
     }
-
     return {};
   }
 };
@@ -93,7 +91,6 @@ int main() {
   SquirrelHandler *squirrel = new SquirrelHandler;
   DogHandler *dog = new DogHandler;
   monkey->SetNext(squirrel)->SetNext(dog);
-
   /**
    * The client should be able to send a request to any handler, not just the
    * first one in the chain.
@@ -103,20 +100,14 @@ int main() {
   std::cout << "\n";
   std::cout << "Subchain: Squirrel > Dog\n\n";
   ClientCode(*squirrel);
-
   delete monkey;
   delete squirrel;
   delete dog;
-
   return 0;
 }
-
-
-
 // 2. 예시: 모든 핸들러가 처리하는 필터 체인
 #include <iostream>
 #include <string>
-
 class Handler {
 protected:
     Handler* next = nullptr;
@@ -127,7 +118,6 @@ public:
     }
     virtual ~Handler() = default;
 };
-
 class UppercaseHandler : public Handler {
 public:
     void handle(std::string& msg) override {
@@ -135,7 +125,6 @@ public:
         if (next) next->handle(msg);
     }
 };
-
 class ExclamationHandler : public Handler {
 public:
     void handle(std::string& msg) override {
@@ -143,17 +132,14 @@ public:
         if (next) next->handle(msg);
     }
 };
-
 // 사용 예시
 void filterChainExample() {
     UppercaseHandler upper;
     ExclamationHandler exclaim;
     upper.setNext(&exclaim);
-
     std::string msg = "hello";
     upper.handle(msg);
     std::cout << msg << std::endl; // HELLO!
 }
-
 // “모든 단계가 반드시 호출되어야 한다면 Decorator,
 //처리 후 멈출 수 있다면 Chain of Responsibility”

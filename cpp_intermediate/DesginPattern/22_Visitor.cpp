@@ -31,7 +31,6 @@ void visitorShapeExample() {
     for (auto s : shapes) s->accept(&draw);
     for (auto s : shapes) delete s;
 }
-
 // 2. 파일 시스템(Composite 구조) + Visitor
 class FileVisitor;
 class FileSystemNode {
@@ -81,7 +80,6 @@ void visitorFileSystemExample() {
     root->accept(&printer);
     // 메모리 해제 생략
 }
-
 // 3. 수식 트리(Interpreter/Composite)에서 Visitor로 평가
 class ExprVisitor;
 class Expr {
@@ -131,7 +129,6 @@ void visitorExprExample() {
     std::cout << "결과: " << eval.getResult() << std::endl; // 7
     delete expr;
 }
-
 // 4. HTML/XML 트리에서 Visitor로 렌더링/검증
 class NodeVisitor;
 class Node {
@@ -181,7 +178,6 @@ void visitorHtmlExample() {
     root->accept(&render); // <p>Hello, <b>world!</b></p>
     // 메모리 해제 생략
 }
-
 // 5. 금융 상품(Composite)에서 Visitor로 수익률/위험 평가
 class ProductVisitor;
 class Product {

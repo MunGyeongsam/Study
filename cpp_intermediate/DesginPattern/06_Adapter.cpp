@@ -27,12 +27,8 @@ public:
 //	Adapter adapter(&adaptee);
 //	adapter.request(); // "Adaptee specific request" 출력
 //}
-
-
-
 // 1. 레거시 클래스 인터페이스 변환 (클래스 어댑터)
 #include <iostream>
-
 // 기존(레거시) 클래스
 class OldPrinter {
 public:
@@ -40,14 +36,12 @@ public:
 		std::cout << "OldPrinter: " << msg << std::endl;
 	}
 };
-
 // 새 인터페이스
 class IPrinter {
 public:
 	virtual void print(const std::string& msg) = 0;
 	virtual ~IPrinter() = default;
 };
-
 // 어댑터
 class PrinterAdapter : public IPrinter {
 	OldPrinter* oldPrinter;
@@ -57,31 +51,24 @@ public:
 		oldPrinter->oldPrint(msg);
 	}
 };
-
 // 사용 예시
 // OldPrinter old;
 // PrinterAdapter adapter(&old);
 // adapter.print("Hello"); // OldPrinter: Hello
-
-
-
 // 2. 좌표계 변환(객체 어댑터)
 #include <iostream>
-
 // 타사 라이브러리: 2D 좌표
 class Point2D {
 public:
 	int x, y;
 	Point2D(int x, int y) : x(x), y(y) {}
 };
-
 // 우리 시스템: 3D 좌표 인터페이스
 class IPoint3D {
 public:
 	virtual void print3D() = 0;
 	virtual ~IPoint3D() = default;
 };
-
 // 어댑터: 2D를 3D로 변환
 class Point2DTo3DAdapter : public IPoint3D {
 	Point2D* point2d;
@@ -91,16 +78,12 @@ public:
 		std::cout << "3D Point: (" << point2d->x << ", " << point2d->y << ", 0)" << std::endl;
 	}
 };
-
 // 사용 예시
 // Point2D p2d(1, 2);
 // Point2DTo3DAdapter adapter(&p2d);
 // adapter.print3D(); // 3D Point: (1, 2, 0)
-
-
 // 3. 호환되지 않는 소켓 인터페이스 연결
 #include <iostream>
-
 // 미국식 소켓
 class USASocket {
 public:
@@ -108,14 +91,12 @@ public:
 		std::cout << "Plugged into USA socket" << std::endl;
 	}
 };
-
 // 유럽식 소켓 인터페이스
 class EuropeSocket {
 public:
 	virtual void plugInEurope() = 0;
 	virtual ~EuropeSocket() = default;
 };
-
 // 어댑터
 class USAToEuropeAdapter : public EuropeSocket {
 	USASocket* usaSocket;
@@ -125,12 +106,10 @@ public:
 		usaSocket->plugInUSA();
 	}
 };
-
 // 사용 예시
 // USASocket usa;
 // USAToEuropeAdapter adapter(&usa);
 // adapter.plugInEurope(); // Plugged into USA socket
-
 //  Adapter 패턴
 //  	• 목적 :
 //  		서로 다른 인터페이스를 가진 클래스들을 연결(호환)시켜줍니다.

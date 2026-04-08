@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
 class Form {
     std::vector<std::string> fields;
 public:
@@ -13,7 +12,6 @@ public:
         std::cout << std::endl;
     }
 };
-
 class FormBuilder {
     Form form;
 public:
@@ -31,7 +29,6 @@ public:
     }
     Form build() { return form; }
 };
-
 // 사용 예시
 void guiFormBuilderExample() {
     FormBuilder builder;
@@ -41,12 +38,10 @@ void guiFormBuilderExample() {
                        .build();
     form.show();
 }
-
 //2. HTTP 요청 빌더
 #include <iostream>
 #include <string>
 #include <map>
-
 class HttpRequest {
     std::string method, url;
     std::map<std::string, std::string> headers;
@@ -60,7 +55,6 @@ public:
             std::cout << h.first << ": " << h.second << std::endl;
     }
 };
-
 class HttpRequestBuilder {
     HttpRequest req;
 public:
@@ -69,7 +63,6 @@ public:
     HttpRequestBuilder& header(const std::string& k, const std::string& v) { req.addHeader(k, v); return *this; }
     HttpRequest build() { return req; }
 };
-
 // 사용 예시
 void httpRequestBuilderExample() {
     HttpRequestBuilder builder;
@@ -80,11 +73,9 @@ void httpRequestBuilderExample() {
                             .build();
     req.show();
 }
-
 //3. 게임 캐릭터 생성 빌더
 #include <iostream>
 #include <string>
-
 class Character {
     std::string name, job;
     int hp = 0, mp = 0;
@@ -97,7 +88,6 @@ public:
         std::cout << "캐릭터: " << name << ", 직업: " << job << ", HP: " << hp << ", MP: " << mp << std::endl;
     }
 };
-
 class CharacterBuilder {
     Character c;
 public:
@@ -107,15 +97,12 @@ public:
     CharacterBuilder& mp(int m) { c.setMP(m); return *this; }
     Character build() { return c; }
 };
-
 // 사용 예시
 void characterBuilderExample() {
     CharacterBuilder builder;
     Character hero = builder.name("아더").job("기사").hp(150).mp(30).build();
     hero.show();
 }
-
-
 //단순한 객체에는 Builder가 불필요할 수 있지만,
 //옵션이 많고, 생성 과정이 복잡하거나, 불변 객체가 필요한 경우
 // Builder 패턴이 훨씬 안전하고, 유지보수에 강합니다.

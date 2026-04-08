@@ -2,11 +2,9 @@
 //
 #include <iostream>
 #include <vector>
-
 int main()
 {
 	std::vector<int> vec = { 1, 2, 3 };
-
 	std::move(vec).at(0) = 3;
     std::cout << "Hello World!\n";
     return 0;
