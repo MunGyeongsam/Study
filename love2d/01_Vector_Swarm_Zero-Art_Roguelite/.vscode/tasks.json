@@ -1,0 +1,119 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🎮 Run LÖVE 2D Game (Windows)",
+            "type": "shell",
+            "command": "${workspaceFolder}/love-11.5-win64/love.exe",
+            "args": ["${workspaceFolder}/src"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "runOptions": {
+                "runOn": "default"
+            },
+            "windows": {
+                "command": "${workspaceFolder}/love-11.5-win64/love.exe"
+            }
+        },
+        {
+            "label": "🎮 Run LÖVE 2D Game (macOS)",
+            "type": "shell",
+            "command": "open",
+            "args": ["-a", "${workspaceFolder}/love-11.5-macos/love.app", "${workspaceFolder}/src"],
+            "group": {
+                "kind": "build"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "osx": {
+                "command": "open",
+                "args": ["-a", "${workspaceFolder}/love-11.5-macos/love.app", "${workspaceFolder}/src"]
+            }
+        },
+        {
+            "label": "🏃‍♂️ Quick Run (Windows)",
+            "type": "shell",
+            "command": "${workspaceFolder}/run.bat",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "windows": {
+                "command": "${workspaceFolder}/run.bat"
+            }
+        },
+        {
+            "label": "🏃‍♂️ Quick Run (macOS)", 
+            "type": "shell",
+            "command": "${workspaceFolder}/run.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always", 
+                "focus": false,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "osx": {
+                "command": "chmod",
+                "args": ["+x", "${workspaceFolder}/run.sh"],
+                "postCommand": "${workspaceFolder}/run.sh"
+            }
+        },
+        {
+            "label": "📝 Watch Debug Log",
+            "type": "shell", 
+            "windows": {
+                "command": "Get-Content",
+                "args": ["debug.log", "-Wait", "-Tail", "20"]
+            },
+            "osx": {
+                "command": "tail",
+                "args": ["-f", "debug.log"]
+            },
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ]
+}

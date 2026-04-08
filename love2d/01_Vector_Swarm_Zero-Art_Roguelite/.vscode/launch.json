@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🐛 Debug LÖVE 2D (Lua Debugger)",
+            "type": "lua-local",
+            "request": "launch",
+            "program": {
+                "command": "${workspaceFolder}/love-11.5-win64/love.exe"
+            },
+            "args": ["${workspaceFolder}/src"],
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "verbose": true
+        },
+        {
+            "name": "🎮 Run LÖVE 2D (No Debug)",
+            "type": "lua-local",
+            "request": "launch",
+            "program": {
+                "command": "${workspaceFolder}/love-11.5-win64/love.exe" 
+            },
+            "args": ["${workspaceFolder}/src"],
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "noDebug": true
+        }
+    ]
+}
