@@ -3,6 +3,7 @@
 
 -- Load modules
 local Logger = require("lib.logger")
+local Debug = require("lib.debug")
 
 function love.load()
     -- Initialize logging first
@@ -32,10 +33,18 @@ function love.load()
     frameCount = 0                  -- 프레임 카운터
     playerPosition = {x = width/2, y = height/2}  -- 플레이어 위치
     gameSpeed = 1.0                 -- 게임 속도
-    debugMode = false               -- 디버그 모드 플래그
     
     -- Debug console variables
     debugConsoleVisible = false
+    
+    -- Initialize debug system
+    Debug.init(fonts.small)
+    
+    -- Register debug information
+    Debug.addGameVariable("Game Time", function() return gameTime end, "%.2f")
+    Debug.addGameVariable("Frame Count", function() return frameCount end, "%.0f")
+    Debug.addGameVariable("Game Speed", function() return gameSpeed end, "%.1f")
+    Debug.addPosition("Player", function() return playerPosition end)
 end
 
 function love.update(dt)
@@ -50,7 +59,7 @@ function love.update(dt)
     windowInfo = "Window: " .. width .. "x" .. height .. " | FPS: " .. love.timer.getFPS()
     
     -- 디버그 모드일 때 플레이어 위치 업데이트 (간단한 움직임)
-    if debugMode then
+    if Debug.isEnabled() then
         playerPosition.x = playerPosition.x + math.sin(gameTime) * 50 * dt
         playerPosition.y = playerPosition.y + math.cos(gameTime) * 30 * dt
         
@@ -82,43 +91,19 @@ function love.draw()
     love.graphics.setFont(fonts.small)
     love.graphics.print(windowInfo, 10, 10)
     
-    -- 디버그 모드일 때 추가 정보 표시
-    if debugMode then
-        love.graphics.setColor(1, 1, 0, 1) -- 노란색
-        love.graphics.print("DEBUG MODE ON", 10, 30)
-        love.graphics.print("Game Time: " .. string.format("%.2f", gameTime), 10, 50)
-        love.graphics.print("Frame Count: " .. frameCount, 10, 70)
-        love.graphics.print("Player Pos: " .. string.format("%.0f,%.0f", playerPosition.x, playerPosition.y), 10, 90)
-        love.graphics.print("Game Speed: " .. gameSpeed, 10, 110)
-        
-        -- 플레이어 위치에 점 표시
+    -- 디버그 정보 그리기
+    Debug.draw()
+    
+    -- 플레이어 위치에 점 표시 (디버그 맀드일 때)
+    if Debug.isEnabled() then
         love.graphics.setColor(1, 0, 0, 1) -- 빨간색
         love.graphics.circle("fill", playerPosition.x, playerPosition.y, 5)
+        love.graphics.setColor(1, 1, 1, 1) -- 색상 리셋
     end
     
     -- Draw debug console if visible
     if debugConsoleVisible then
-        -- Semi-transparent background
-        love.graphics.setColor(0, 0, 0, 0.8)
-        love.graphics.rectangle("fill", 0, 0, width, height * 0.5)
-        
-        -- Console text (작은 폰트)
-        love.graphics.setFont(fonts.small)
-        love.graphics.setColor(0, 1, 0, 1) -- Green color for console
-        local y = 10
-        local lineHeight = fonts.small:getHeight() + 2  -- 줄 간격 조정
-        
-        -- Get messages from logger
-        local messages = Logger.getConsoleMessages()
-        for i, msg in ipairs(messages) do
-            local text = type(msg) == "table" and msg.text or msg
-            love.graphics.print(text, 10, y)
-            y = y + lineHeight
-        end
-        
-        -- Instructions (작은 폰트)
-        love.graphics.setColor(1, 1, 0, 1) -- Yellow for instructions
-        love.graphics.print("F1: Toggle Console | F2: Test Logs | F3: Debug Mode | ESC: Exit", 10, height * 0.5 - 30)
+        Logger.drawConsole(fonts.small, debugConsoleVisible)
     end
 end
 
@@ -153,12 +138,11 @@ function love.keypressed(key)
         addDebugMessage("Tested all log levels including WARN")
     elseif key == "f3" then
         -- Toggle debug mode
-        debugMode = not debugMode
+        local debugMode = Debug.toggleMode()
         local modeStr = debugMode and "ON" or "OFF"
         Logger.info("Debug mode toggled " .. modeStr)
-        addDebugMessage("Debug mode: " .. modeStr)
-        
-        if debugMode then
+        addDebugMessage("Debug mode: " .. modeStr)        
+        if Debug.isEnabled() then
             -- 디버그 모드 시작시 플레이어 위치 리셋
             local width, height = love.graphics.getDimensions()
             playerPosition.x = width / 2

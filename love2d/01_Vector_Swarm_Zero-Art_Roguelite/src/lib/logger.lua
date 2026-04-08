@@ -130,4 +130,47 @@ function Logger.isInitialized()
     return logFile ~= nil
 end
 
+-- Draw debug console (콘솔이 Logger 데이터를 직접 관리하므로 Logger에서 렌더링)
+function Logger.drawConsole(font, isVisible)
+    if not isVisible or not consoleMessages then return end
+    
+    -- Save current graphics state
+    local r, g, b, a = love.graphics.getColor()
+    local currentFont = love.graphics.getFont()
+    
+    local width, height = love.graphics.getDimensions()
+    local consoleHeight = height * 0.5
+    local consoleY = height - consoleHeight
+    local lineHeight = font and (font:getHeight() + 2) or 15
+    
+    -- Console background
+    love.graphics.setColor(0, 0, 0, 0.8)
+    love.graphics.rectangle("fill", 0, consoleY, width, consoleHeight)
+    
+    -- Console text
+    if font then love.graphics.setFont(font) end
+    love.graphics.setColor(0, 1, 0, 1) -- Green
+    
+    local y = consoleY + 10
+    local maxLines = math.floor((consoleHeight - 20) / lineHeight)
+    local startIndex = math.max(1, #consoleMessages - maxLines + 1)
+    
+    for i = startIndex, #consoleMessages do
+        if y + lineHeight > height then break end
+        local msg = consoleMessages[i]
+        local text = type(msg) == "table" and msg.text or msg
+        love.graphics.print(text, 10, y)
+        y = y + lineHeight
+    end
+    
+    -- Instructions
+    love.graphics.setColor(1, 1, 0, 1) -- Yellow
+    love.graphics.print("F1: Toggle Console | F2: Test Logs | F3: Debug Mode | ESC: Exit", 
+                       10, height - 25)
+                       
+    -- Restore graphics state
+    love.graphics.setColor(r, g, b, a)
+    love.graphics.setFont(currentFont)
+end
+
 return Logger
