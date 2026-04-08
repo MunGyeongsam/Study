@@ -1,0 +1,27 @@
+# === Vector Swarm 프로젝트 전용 .gitignore ===
+
+# 전역 규칙 무시하고 LOVE2D 실행 파일 포함
+!love-*/
+!love-*/*.exe
+!love-*/*.app
+!run.bat
+!run.sh
+
+# 개발 임시 파일 제외
+debug.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# VS Code 설정은 포함 (팀 개발용)
+# .vscode/ 는 포함됨
+
+# 빌드 결과물 제외 (있다면)
+build/
+dist/
+*.love
+
+# 기타 임시 파일
+*.swp
+*.swo
+*~
