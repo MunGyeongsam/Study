@@ -42,7 +42,7 @@ function love.conf(t)
     
     -- Console settings
     t.console = true                                 -- Attach a console (Windows only) - 콘솔창 표시
-    t.console = false
+    --t.console = false
     
     -- Modules to enable
     t.modules.audio = true                           -- Enable the audio module

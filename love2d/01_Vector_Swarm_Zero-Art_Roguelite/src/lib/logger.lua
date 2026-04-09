@@ -18,12 +18,6 @@ local LOG_LEVELS = {
 
 -- Initialize logging system
 function Logger.init()
-    -- Create log file that VS Code can monitor
-    logFile = io.open("debug.log", "w")
-    if logFile then
-        logFile:write("=== Vector Swarm Debug Log Started ===\n")
-        logFile:flush()
-    end
     
     -- Initialize console messages
     consoleMessages = {
@@ -33,6 +27,24 @@ function Logger.init()
         "F2: Test logging functions",
         "F3: Toggle debug mode"
     }
+    -- Create log file that VS Code can monitor
+    logFile, err = io.open("~/Desktop/debug.log", "w")
+    if logFile then
+        logFile:write("=== Vector Swarm Debug Log Started ===\n")
+        logFile:flush()
+        table.insert(consoleMessages, 1, "Debug log initialized: debug.log")
+    else
+        originalPrint("Error initializing log file: " .. tostring(err))
+        table.insert(consoleMessages, 1, "[LOGGER ERROR] 로그 파일 초기화 실패: " .. tostring(err))
+    end
+
+    if logFile == nil then
+        originalPrint("Error: Could not initialize log file!")
+        table.insert(consoleMessages, 1, "[LOGGER ERROR] 로그 파일 생성 실패! (debug.log)")
+    else
+        Logger.info("Logger initialized successfully.")
+        table.insert(consoleMessages, 1, "Logger initialized successfully.")
+    end
     
     return logFile ~= nil
 end
