@@ -24,6 +24,16 @@
             "cwd": "${workspaceFolder}",
             "stopOnEntry": false,
             "noDebug": true
+        },
+        {
+            "name": "🎮 Run LÖVE 2D (macOS) Task",
+            "type": "pwa-node",
+            "request": "launch",
+            "runtimeExecutable": "sh",
+            "runtimeArgs": ["-c", "open -a '${workspaceFolder}/love-11.5-macos/love.app' '${workspaceFolder}/src'"],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "noDebug": true
         }
     ]
 }
