@@ -4,6 +4,7 @@
 -- Load modules
 local Logger = require("lib.logger")
 local Debug = require("lib.debug")
+local GridDebugDraw = require("lib.grid_debug_draw")
 
 function love.load()
     -- Initialize logging first
@@ -34,17 +35,14 @@ function love.load()
     playerPosition = {x = width/2, y = height/2}  -- 플레이어 위치
     gameSpeed = 1.0                 -- 게임 속도
     
-    -- Debug console variables
+    debugMode = false
     debugConsoleVisible = false
-    
-    -- Initialize debug system
-    Debug.init(fonts.small)
-    
-    -- Register debug information
-    Debug.addGameVariable("Game Time", function() return gameTime end, "%.2f")
-    Debug.addGameVariable("Frame Count", function() return frameCount end, "%.0f")
-    Debug.addGameVariable("Game Speed", function() return gameSpeed end, "%.1f")
-    Debug.addPosition("Player", function() return playerPosition end)
+
+    -- Debug 정보 등록 (순서대로)
+    Debug.add("Game Time", function() return string.format("Game Time: %.2f", gameTime) end)
+    Debug.add("Frame Count", function() return string.format("Frame Count: %d", frameCount) end)
+    Debug.add("Game Speed", function() return string.format("Game Speed: %.1f", gameSpeed) end)
+    Debug.add("Player Pos", function() return string.format("Player: (%.0f, %.0f)", playerPosition.x, playerPosition.y) end)
 end
 
 function love.update(dt)
@@ -59,10 +57,9 @@ function love.update(dt)
     windowInfo = "Window: " .. width .. "x" .. height .. " | FPS: " .. love.timer.getFPS()
     
     -- 디버그 모드일 때 플레이어 위치 업데이트 (간단한 움직임)
-    if Debug.isEnabled() then
+    if debugMode then
         playerPosition.x = playerPosition.x + math.sin(gameTime) * 50 * dt
         playerPosition.y = playerPosition.y + math.cos(gameTime) * 30 * dt
-        
         -- 화면 경계 체크
         if playerPosition.x < 0 then playerPosition.x = width end
         if playerPosition.x > width then playerPosition.x = 0 end
@@ -73,12 +70,15 @@ end
 
 function love.draw()
     -- Called every frame for rendering
+
+    local width, height = love.graphics.getDimensions()
+
+    GridDebugDraw.drawGrid(0, 0, 100)  -- 그리드 그리기
     
     -- Set text color to white
     love.graphics.setColor(1, 1, 1, 1)
     
     -- Draw the message at the center of the screen (큰 폰트)
-    local width, height = love.graphics.getDimensions()
     love.graphics.setFont(fonts.large)
     local textWidth = fonts.large:getWidth(message)
     local textHeight = fonts.large:getHeight()
@@ -95,7 +95,7 @@ function love.draw()
     Debug.draw()
     
     -- 플레이어 위치에 점 표시 (디버그 맀드일 때)
-    if Debug.isEnabled() then
+    if debugMode then
         love.graphics.setColor(1, 0, 0, 1) -- 빨간색
         love.graphics.circle("fill", playerPosition.x, playerPosition.y, 5)
         love.graphics.setColor(1, 1, 1, 1) -- 색상 리셋
@@ -138,11 +138,11 @@ function love.keypressed(key)
         addDebugMessage("Tested all log levels including WARN")
     elseif key == "f3" then
         -- Toggle debug mode
-        local debugMode = Debug.toggleMode()
+        debugMode = not debugMode
         local modeStr = debugMode and "ON" or "OFF"
         Logger.info("Debug mode toggled " .. modeStr)
-        addDebugMessage("Debug mode: " .. modeStr)        
-        if Debug.isEnabled() then
+        addDebugMessage("Debug mode: " .. modeStr)
+        if debugMode then
             -- 디버그 모드 시작시 플레이어 위치 리셋
             local width, height = love.graphics.getDimensions()
             playerPosition.x = width / 2
