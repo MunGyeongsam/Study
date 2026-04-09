@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5476800842701104496}
   - component: {fileID: 5942600289288770584}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: PathTile
   m_TagString: Untagged
   m_Icon: {fileID: 0}

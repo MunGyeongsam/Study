@@ -1,3 +1,4 @@
+using _02_script.MVC.Controller;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -88,13 +89,17 @@ public class Enemy : PoolElement
             _lifeBar.value = _Hp / _maxHp;
             if (_Hp <= 0)
             {
-                GlobalEnvironment.Instance.UI.AddScore(_maxHp);
+                //GlobalEnvironment.Instance.UI.AddScore(_maxHp);
+                
+                ScoreController.Instance.AddScore(_maxHp);
                 Release();
             }
         }
         else if (collision.CompareTag("Player"))
         {
-            GlobalEnvironment.Instance.UI.AddScore(_maxHp);
+            //GlobalEnvironment.Instance.UI.AddScore(_maxHp);
+            ScoreController.Instance.AddScore(_maxHp);
+            
             collision.GetComponent<Player>().TakeDamage(_Hp);
             Release();
         }

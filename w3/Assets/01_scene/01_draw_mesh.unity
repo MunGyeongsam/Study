@@ -240,16 +240,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 38097747}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96a54ef654fbeee43862c85d9d91ad96, type: 3}
+  m_Script: {fileID: 11500000, guid: 2ae041362f3634423b0a68547ab9cf3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 0}
+  texture: {fileID: 2800000, guid: 44b9cfecc37ca444695775beb0e461b2, type: 3}
   yawSpeed: 90
   pitchSpeed: 0
   rollSpeed: 0
   radius: 1
   tubeRadius: 0.3
-  numOfAngle: 9
+  numOfAngle: 4
   numOfTubeAngle: 4
 --- !u!4 &38097749
 Transform:
@@ -295,12 +295,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc18e7652a0e1dd46b2ec4dcaba30bae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 2800000, guid: 402488b2475ef9c4fbaac8086d8e5af2, type: 3}
-  yawSpeed: 0
-  pitchSpeed: 0
-  rollSpeed: 0
-  radius: 1
-  segments: 110
 --- !u!4 &48584946
 Transform:
   m_ObjectHideFlags: 0
@@ -345,12 +339,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f256d44fab246b2bac439d518903b3d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
-  yawSpeed: 11
-  pitchSpeed: 11
-  rollSpeed: 11
-  radius: 1
-  numOfAngle: 8
 --- !u!4 &189132932
 Transform:
   m_ObjectHideFlags: 0
@@ -395,7 +383,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5798fae114d9034399a2a27cef28b1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
 --- !u!4 &341632972
 Transform:
   m_ObjectHideFlags: 0
@@ -440,12 +427,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05992725902d4a9097d7f1b8ba97ec57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 2800000, guid: 402488b2475ef9c4fbaac8086d8e5af2, type: 3}
-  yawSpeed: 0
-  pitchSpeed: 0
-  rollSpeed: 0
-  width: 2
-  height: 1
 --- !u!4 &654862215
 Transform:
   m_ObjectHideFlags: 0
@@ -505,11 +486,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f4a13aedc2b4b0da4c73bd43a0a17f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 0}
-  yawSpeed: 90
-  pitchSpeed: 0
-  rollSpeed: 0
-  size: 1
 --- !u!1 &1514074981
 GameObject:
   m_ObjectHideFlags: 0
@@ -539,12 +515,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02ef21dc69034f6ba13cf0a3074cc51e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
-  yawSpeed: 11
-  pitchSpeed: 11
-  rollSpeed: 11
-  radius: 1
-  numOfAngle: 8
 --- !u!4 &1514074983
 Transform:
   m_ObjectHideFlags: 0
@@ -589,13 +559,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 447891c3aec6be040839486fbfa68ac1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 0}
-  yawSpeed: 90
-  pitchSpeed: 0
-  rollSpeed: 0
-  radius: 1
-  height: 1
-  numOfAngle: 4
 --- !u!4 &1623613233
 Transform:
   m_ObjectHideFlags: 0
@@ -640,11 +603,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f95fc76e95d14d6394cf4c93dd67cebd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 2800000, guid: 402488b2475ef9c4fbaac8086d8e5af2, type: 3}
-  yawSpeed: 0
-  pitchSpeed: 0
-  rollSpeed: 0
-  size: 1
 --- !u!4 &1729693087
 Transform:
   m_ObjectHideFlags: 0
@@ -689,14 +647,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4e7e63a23784aa094a2f8116a6dc4b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
-  yawSpeed: 0
-  pitchSpeed: 0
-  rollSpeed: 0
-  radius: 1
-  height: 2
-  numOfAngle: 32
-  numOfSlice: 75
 --- !u!4 &1982770281
 Transform:
   m_ObjectHideFlags: 0
@@ -756,12 +706,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 936be57789ff40da918aa07fb8338ed9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  texture: {fileID: 2800000, guid: 7e3fdf88115344f47a9b699d868541ac, type: 3}
-  yawSpeed: 11
-  pitchSpeed: 11
-  rollSpeed: 11
-  radius: 1
-  numOfAngle: 8
 --- !u!1 &2042661215
 GameObject:
   m_ObjectHideFlags: 0
