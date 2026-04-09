@@ -1,0 +1,39 @@
+{
+    "files.associations": {
+        "*.lua": "lua",
+        "conf.lua": "lua",
+        "run.sh": "shellscript",
+        "run.bat": "bat"
+    },
+    "lua.workspace.library": [
+        "${workspaceFolder}/love-11.5-win64",
+        "${workspaceFolder}/love-11.5-macos"
+    ],
+    "files.exclude": {
+        "**/.git": true,
+        "**/node_modules": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "debug.log": false,
+        "**/*.app/Contents/**": true
+    },
+    "files.watcherExclude": {
+        "**/love-11.5-*/**": true
+    },
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "debug.console.fontSize": 12,
+    "editor.fontSize": 14,
+    "terminal.integrated.fontSize": 12,
+    "[lua]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": true
+    },
+    "workbench.colorCustomizations": {
+        "terminal.foreground": "#00FF00",
+        "debugConsole.infoForeground": "#00BFFF",
+        "debugConsole.warningForeground": "#FFFF00",
+        "debugConsole.errorForeground": "#FF4500"
+    },
+    "github.copilot.chat.instructions": "You are helping with a LOVE2D bullet hell game called 'Vector Swarm'. Always refer to .instructions.md and doc/VECTOR_SWARM_SPEC.md for context. Use the established logger module instead of print(). Follow the modular architecture pattern."
+}

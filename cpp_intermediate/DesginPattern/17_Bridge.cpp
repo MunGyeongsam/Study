@@ -5,13 +5,11 @@
  * provides only primitive operations, while the Abstraction defines higher-
  * level operations based on those primitives.
  */
-
 class Implementation {
  public:
   virtual ~Implementation() {}
   virtual std::string OperationImplementation() const = 0;
 };
-
 /**
  * Each Concrete Implementation corresponds to a specific platform and
  * implements the Implementation interface using that platform's API.
@@ -28,27 +26,22 @@ class ConcreteImplementationB : public Implementation {
     return "ConcreteImplementationB: Here's the result on the platform B.\n";
   }
 };
-
 /**
  * The Abstraction defines the interface for the "control" part of the two class
  * hierarchies. It maintains a reference to an object of the Implementation
  * hierarchy and delegates all of the real work to this object.
  */
-
 class Abstraction {
   /**
    * @var Implementation
    */
  protected:
   Implementation* implementation_;
-
  public:
   Abstraction(Implementation* implementation) : implementation_(implementation) {
   }
-
   virtual ~Abstraction() {
   }
-
   virtual std::string Operation() const {
     return "Abstraction: Base operation with:\n" +
            this->implementation_->OperationImplementation();
@@ -66,7 +59,6 @@ class ExtendedAbstraction : public Abstraction {
            this->implementation_->OperationImplementation();
   }
 };
-
 /**
  * Except for the initialization phase, where an Abstraction object gets linked
  * with a specific Implementation object, the client code should only depend on
@@ -82,7 +74,6 @@ void ClientCode(const Abstraction& abstraction) {
  * The client code should be able to work with any pre-configured abstraction-
  * implementation combination.
  */
-
 int main() {
   Implementation* implementation = new ConcreteImplementationA;
   Abstraction* abstraction = new Abstraction(implementation);
@@ -90,23 +81,16 @@ int main() {
   std::cout << std::endl;
   delete implementation;
   delete abstraction;
-
   implementation = new ConcreteImplementationB;
   abstraction = new ExtendedAbstraction(implementation);
   ClientCode(*abstraction);
-
   delete implementation;
   delete abstraction;
-
   return 0;
 }
-
-
-
 // 1. 메시지 전송 시스템 (메시지 종류와 전송 방식 분리)
 #include <iostream>
 #include <string>
-
 // 구현 계층: 전송 방식
 class MessageSender {
 public:
@@ -121,7 +105,6 @@ class SMSSender : public MessageSender {
 public:
     void send(const std::string& msg) override { std::cout << "[SMS] " << msg << std::endl; }
 };
-
 // 기능 계층: 메시지 종류
 class Message {
 protected:
@@ -141,22 +124,17 @@ public:
     AlertMessage(MessageSender* s) : Message(s) {}
     void sendMessage(const std::string& msg) override { sender->send("[경고] " + msg); }
 };
-
 // 사용 예시
 void bridgeMessageExample() {
     EmailSender email;
     SMSSender sms;
     TextMessage text(&email);
     AlertMessage alert(&sms);
-
     text.sendMessage("안녕하세요!");   // [이메일] [텍스트] 안녕하세요!
     alert.sendMessage("위험 발생!");   // [SMS] [경고] 위험 발생!
 }
-
-
 // 2. 그래픽 라이브러리 추상화 (도형과 렌더링 엔진 분리)
 #include <iostream>
-
 // 구현 계층: 렌더링 엔진
 class Renderer {
 public:
@@ -175,7 +153,6 @@ public:
         std::cout << "DirectX: 원 (" << x << "," << y << ") 반지름 " << r << std::endl;
     }
 };
-
 // 기능 계층: 도형
 class Shape2 {
 protected:
@@ -191,17 +168,12 @@ public:
     Circle2(float x, float y, float r, Renderer* ren) : Shape2(ren), x(x), y(y), r(r) {}
     void draw() override { renderer->renderCircle(x, y, r); }
 };
-
 // 사용 예시
 void bridgeGraphicsExample() {
     OpenGLRenderer ogl;
     DirectXRenderer dx;
     Circle2 c1(0, 0, 5, &ogl);
     Circle2 c2(1, 2, 3, &dx);
-
     c1.draw(); // OpenGL: 원 (0,0) 반지름 5
     c2.draw(); // DirectX: 원 (1,2) 반지름 3
 }
-
-
-

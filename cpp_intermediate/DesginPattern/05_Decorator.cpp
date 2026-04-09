@@ -35,7 +35,6 @@ public:
 	int cost() const override { return coffee->cost() + 300; }
 	std::string ingredients() const override { return coffee->ingredients() + ", Sugar"; }
 };
-
 //// 사용 예시
 //int main() {
 //	std::unique_ptr<Coffee> coffee = std::make_unique<BasicCoffee>();
@@ -44,33 +43,27 @@ public:
 //	std::cout << "Cost: " << coffee->cost() << std::endl;
 //	std::cout << "Ingredients: " << coffee->ingredients() << std::endl;
 //}
-
-
 // 2. 텍스트에 데코레이터 적용 (텍스트 데코레이터)
 #include <iostream>
 #include <memory>
 #include <algorithm>
-
 class Text {
 public:
 	virtual std::string getText() const = 0;
 	virtual ~Text() = default;
 };
-
 class PlainText : public Text {
 	std::string text;
 public:
 	PlainText(const std::string& t) : text(t) {}
 	std::string getText() const override { return text; }
 };
-
 class TextDecorator : public Text {
 protected:
 	std::unique_ptr<Text> inner;
 public:
 	TextDecorator(std::unique_ptr<Text> t) : inner(std::move(t)) {}
 };
-
 class UppercaseDecorator : public TextDecorator {
 public:
 	UppercaseDecorator(std::unique_ptr<Text> t) : TextDecorator(std::move(t)) {}
@@ -80,7 +73,6 @@ public:
 		return s;
 	}
 };
-
 class BracketDecorator : public TextDecorator {
 public:
 	BracketDecorator(std::unique_ptr<Text> t) : TextDecorator(std::move(t)) {}
@@ -88,36 +80,28 @@ public:
 		return "[" + inner->getText() + "]";
 	}
 };
-
 // 사용 예시
 // auto txt = std::make_unique<BracketDecorator>(std::make_unique<UppercaseDecorator>(std::make_unique<PlainText>("hello")));
 // std::cout << txt->getText() << std::endl;
 // 출력: [HELLO]
-
-
-
 // 3. 그래픽 도형에 색상/테두리 추가
 #include <iostream>
 #include <memory>
-
 class Shape {
 public:
 	virtual void draw() const = 0;
 	virtual ~Shape() = default;
 };
-
 class Circle : public Shape {
 public:
 	void draw() const override { std::cout << "Draw Circle"; }
 };
-
 class ShapeDecorator : public Shape {
 protected:
 	std::unique_ptr<Shape> shape;
 public:
 	ShapeDecorator(std::unique_ptr<Shape> s) : shape(std::move(s)) {}
 };
-
 class ColorDecorator : public ShapeDecorator {
 	std::string color;
 public:
@@ -127,7 +111,6 @@ public:
 		std::cout << " with color " << color;
 	}
 };
-
 class BorderDecorator : public ShapeDecorator {
 	int thickness;
 public:
@@ -137,7 +120,6 @@ public:
 		std::cout << " with border thickness " << thickness;
 	}
 };
-
 // 사용 예시
 // auto shape = std::make_unique<ColorDecorator>(std::make_unique<BorderDecorator>(std::make_unique<Circle>(), 3), "red");
 // shape->draw(); // Draw Circle with border thickness 3 with color red

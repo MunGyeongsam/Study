@@ -5,7 +5,6 @@
 #include <typeindex>
 #include <memory>
 #include "Event.h"
-
 class EventBus {
 public:
 	EventBus() = default;

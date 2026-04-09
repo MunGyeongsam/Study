@@ -1,5 +1,4 @@
 #pragma once
-
 #include <unordered_map>
 #include <memory>
 #include <bitset>
@@ -7,7 +6,6 @@
 #include <typeindex>
 #include "Entity.h"
 #include "Types.h"
-
 // Component type ID generator
 class ComponentTypeManager {
 public:
@@ -19,14 +17,12 @@ public:
 private:
 	static inline ComponentType nextId = 0;
 };
-
 // Interface for generic component arrays
 class IComponentArray {
 public:
 	virtual ~IComponentArray() = default;
 	virtual void EntityDestroyed(Entity entity) = 0;
 };
-
 // Concrete component array
 template <typename T>
 class ComponentArray : public IComponentArray {

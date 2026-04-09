@@ -2,7 +2,6 @@
 #include <iostream>
 #include <unordered_map>
 #include <string>
-
 class TreeType {
     std::string name, texture;
 public:
@@ -11,7 +10,6 @@ public:
         std::cout << "나무(" << name << ", " << texture << ") 위치: (" << x << "," << y << ")\n";
     }
 };
-
 class TreeFactory {
     std::unordered_map<std::string, TreeType*> pool;
 public:
@@ -22,7 +20,6 @@ public:
         return pool[key];
     }
 };
-
 class Tree {
     int x, y;
     TreeType* type;
@@ -30,7 +27,6 @@ public:
     Tree(int x, int y, TreeType* t) : x(x), y(y), type(t) {}
     void draw() { type->draw(x, y); }
 };
-
 void flyweightTreeExample() {
     TreeFactory factory;
     Tree t1(1, 2, factory.get("소나무", "green.png"));
@@ -40,12 +36,10 @@ void flyweightTreeExample() {
     t2.draw();
     t3.draw();
 }
-
 // 2. 지도 마커 아이콘 플라이웨이트 예제
 #include <iostream>
 #include <unordered_map>
 #include <string>
-
 class Icon {
     std::string imagePath;
 public:
@@ -54,7 +48,6 @@ public:
         std::cout << "아이콘(" << imagePath << ") 위치: (" << x << "," << y << ")\n";
     }
 };
-
 class IconFactory {
     std::unordered_map<std::string, Icon*> pool;
 public:
@@ -64,7 +57,6 @@ public:
         return pool[path];
     }
 };
-
 class Marker {
     int x, y;
     Icon* icon;
@@ -72,7 +64,6 @@ public:
     Marker(int x, int y, Icon* i) : x(x), y(y), icon(i) {}
     void draw() { icon->draw(x, y); }
 };
-
 void flyweightMarkerExample() {
     IconFactory factory;
     Marker m1(10, 20, factory.get("cafe.png"));
@@ -82,13 +73,10 @@ void flyweightMarkerExample() {
     m2.draw();
     m3.draw();
 }
-
-
 // 3. 그래픽 에디터 도형 속성 플라이웨이트 예제
 #include <iostream>
 #include <unordered_map>
 #include <string>
-
 class Brush {
     std::string color;
 public:
@@ -97,7 +85,6 @@ public:
         std::cout << shape << "에 브러시(" << color << ") 사용\n";
     }
 };
-
 class BrushFactory {
     std::unordered_map<std::string, Brush*> pool;
 public:
@@ -107,7 +94,6 @@ public:
         return pool[color];
     }
 };
-
 void flyweightBrushExample() {
     BrushFactory factory;
     Brush* red = factory.get("red");
@@ -117,13 +103,10 @@ void flyweightBrushExample() {
     blue->use("Rectangle");
     red2->use("Triangle");
 }
-
-
 // 4. 텍스트 에디터 문자 플라이웨이트 예제
 #include <iostream>
 #include <unordered_map>
 #include <string>
-
 class Character {
     char symbol;
 public:
@@ -132,7 +115,6 @@ public:
         std::cout << "문자: " << symbol << " 위치: (" << row << "," << col << ") 폰트: " << font << std::endl;
     }
 };
-
 class CharacterFactory {
     std::unordered_map<char, Character*> pool;
 public:
@@ -142,7 +124,6 @@ public:
         return pool[c];
     }
 };
-
 void flyweightCharExample() {
     CharacterFactory factory;
     Character* a1 = factory.get('A');
@@ -152,7 +133,6 @@ void flyweightCharExample() {
     a2->display(0, 1, "Arial");
     b->display(1, 0, "Times");
 }
-
 // 플라이웨이트 = 캐싱 + 불변성 + 외부 상태 분리
 // 캐싱 = 단순 저장/재사용 (불변성/외부 상태 분리 필요 없음)
 //

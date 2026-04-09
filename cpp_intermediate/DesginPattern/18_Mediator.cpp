@@ -2,16 +2,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
-
 class Airplane;
-
 class ControlTower {
 public:
     virtual void requestLanding(Airplane* plane) = 0;
     virtual void notifyLanded(Airplane* plane) = 0;
     virtual ~ControlTower() = default;
 };
-
 class Airplane {
     std::string name;
     ControlTower* tower;
@@ -27,7 +24,6 @@ public:
     }
     std::string getName() const { return name; }
 };
-
 class ConcreteControlTower : public ControlTower {
     std::vector<Airplane*> queue;
     bool runwayFree = true;
@@ -52,41 +48,30 @@ public:
         }
     }
 };
-
 int main_1() {
     ConcreteControlTower tower;
     Airplane a1("비행기1", &tower);
     Airplane a2("비행기2", &tower);
     Airplane a3("비행기3", &tower);
-
     a1.requestLanding(); // 비행기1 착륙
     a2.requestLanding(); // 비행기2 대기
     a3.requestLanding(); // 비행기3 대기
-
     // 실제로는 착륙 완료가 자동 호출되지만, 예시에서는 즉시 land() 호출
     // 실제 상황에서는 land()가 비동기로 호출될 수 있음
     // 여기서는 흐름을 보여주기 위해 land()가 내부에서 바로 호출됨
-
     return 0;
 }
-
-
-
 // 2. 채팅방(채팅 서버) Mediator 패턴 예제
-
 #include <iostream>
 #include <string>
 #include <vector>
-
 class User;
-
 class ChatRoom {
 public:
     virtual void sendMessage(const std::string& msg, User* sender) = 0;
     virtual void addUser(User* user) = 0;
     virtual ~ChatRoom() = default;
 };
-
 class User {
     std::string name;
     ChatRoom* room;
@@ -101,7 +86,6 @@ public:
     }
     std::string getName() const { return name; }
 };
-
 class ConcreteChatRoom : public ChatRoom {
     std::vector<User*> users;
 public:
@@ -117,28 +101,20 @@ public:
         }
     }
 };
-
 int main_2() {
     ConcreteChatRoom room;
     User alice("Alice"), bob("Bob"), charlie("Charlie");
     room.addUser(&alice);
     room.addUser(&bob);
     room.addUser(&charlie);
-
     alice.send("안녕하세요!"); // Bob, Charlie가 메시지 받음
     bob.send("반가워요!");   // Alice, Charlie가 메시지 받음
-
     return 0;
 }
-
-
-
 // 3. 게임 내 유닛 간 상호작용 (RTS 게임) Mediator 패턴 예제
-
 #include <iostream>
 #include <vector>
 #include <string>
-
 class Unit;
 class GameMediator {
 public:
@@ -146,7 +122,6 @@ public:
     virtual void addUnit(Unit* unit) = 0;
     virtual ~GameMediator() = default;
 };
-
 class Unit {
     std::string name;
     int hp;
@@ -164,7 +139,6 @@ public:
     }
     std::string getName() const { return name; }
 };
-
 class ConcreteGameMediator : public GameMediator {
     std::vector<Unit*> units;
 public:
@@ -181,40 +155,29 @@ public:
         }
     }
 };
-
 int main_3() {
     ConcreteGameMediator mediator;
     Unit marine("해병", 30, &mediator);
     Unit zergling("저글링", 20, &mediator);
     Unit medic("메딕", 25, &mediator);
-
     mediator.addUnit(&marine);
     mediator.addUnit(&zergling);
     mediator.addUnit(&medic);
-
     marine.attack(&zergling); // 해병이 저글링 공격
     zergling.attack(&marine); // 저글링이 해병 공격
-
     return 0;
 }
-
-
-
 // 4. 스마트홈 허브 Mediator 패턴 예제
-
 #include <iostream>
 #include <string>
 #include <vector>
-
 class SmartDevice;
-
 class SmartHomeHub {
 public:
     virtual void notify(SmartDevice* sender, const std::string& event) = 0;
     virtual void addDevice(SmartDevice* device) = 0;
     virtual ~SmartHomeHub() = default;
 };
-
 class SmartDevice {
 protected:
     SmartHomeHub* hub;
@@ -228,56 +191,48 @@ public:
     std::string getName() const { return name; }
     virtual ~SmartDevice() = default;
 };
-
 class Light : public SmartDevice {
 public:
     Light(const std::string& n, SmartHomeHub* h) : SmartDevice(n, h) {}
     void turnOn() { std::cout << name << ": 불이 켜졌습니다.\n"; }
     void turnOff() { std::cout << name << ": 불이 꺼졌습니다.\n"; }
 };
-
 class DoorLock : public SmartDevice {
 public:
     DoorLock(const std::string& n, SmartHomeHub* h) : SmartDevice(n, h) {}
     void lock() { std::cout << name << ": 문이 잠겼습니다.\n"; }
     void unlock() { std::cout << name << ": 문이 열렸습니다.\n"; }
 };
-
 class AirConditioner : public SmartDevice {
 public:
     AirConditioner(const std::string& n, SmartHomeHub* h) : SmartDevice(n, h) {}
     void turnOn() { std::cout << name << ": 에어컨이 켜졌습니다.\n"; }
     void turnOff() { std::cout << name << ": 에어컨이 꺼졌습니다.\n"; }
 };
-
 class Window : public SmartDevice {
 public:
     Window(const std::string& n, SmartHomeHub* h) : SmartDevice(n, h) {}
     void open() { std::cout << name << ": 창문이 열렸습니다.\n"; }
     void close() { std::cout << name << ": 창문이 닫혔습니다.\n"; }
 };
-
 class Heater : public SmartDevice {
 public:
     Heater(const std::string& n, SmartHomeHub* h) : SmartDevice(n, h) {}
     void turnOn() { std::cout << name << ": 온풍기가 켜졌습니다.\n"; }
     void turnOff() { std::cout << name << ": 온풍기가 꺼졌습니다.\n"; }
 };
-
 class TV : public SmartDevice {
 public:
     TV(const std::string& n, SmartHomeHub* h) : SmartDevice(n, h) {}
     void turnOn() { std::cout << name << ": TV가 켜졌습니다.\n"; }
     void turnOff() { std::cout << name << ": TV가 꺼졌습니다.\n"; }
 };
-
 class Radio : public SmartDevice {
 public:
     Radio(const std::string& n, SmartHomeHub* h) : SmartDevice(n, h) {}
     void turnOn() { std::cout << name << ": 라디오가 켜졌습니다.\n"; }
     void turnOff() { std::cout << name << ": 라디오가 꺼졌습니다.\n"; }
 };
-
 class ConcreteSmartHomeHub : public SmartHomeHub {
     std::vector<SmartDevice*> devices;
 public:
@@ -323,7 +278,6 @@ public:
         }
     }
 };
-
 int main_4() {
     ConcreteSmartHomeHub hub;
     Light light("거실 조명", &hub);
@@ -333,7 +287,6 @@ int main_4() {
     Heater heater("온풍기", &hub);
     TV tv("TV", &hub);
     Radio radio("라디오", &hub);
-
     hub.addDevice(&light);
     hub.addDevice(&door);
     hub.addDevice(&ac);
@@ -341,11 +294,9 @@ int main_4() {
     hub.addDevice(&heater);
     hub.addDevice(&tv);
     hub.addDevice(&radio);
-
     door.triggerEvent("door unlocked"); // 현관문 열림 → 조명, 에어컨, TV, 라디오 켜짐
     window.triggerEvent("window opened"); // 창문 열림 → 에어컨, 온풍기 꺼짐
     window.triggerEvent("window closed"); // 창문 닫힘 → 에어컨, 온풍기 켜짐
     door.triggerEvent("door locked");   // 현관문 잠김 → 조명, 에어컨, TV, 라디오 꺼짐
-
     return 0;
 }

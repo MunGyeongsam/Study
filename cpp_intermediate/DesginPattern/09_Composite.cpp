@@ -2,14 +2,12 @@
 #include <iostream>
 #include <vector>
 #include <memory>
-
 // Component
 class Graphic {
 public:
     virtual void draw() const = 0;
     virtual ~Graphic() = default;
 };
-
 // Leaf
 class Circle : public Graphic {
 public:
@@ -19,7 +17,6 @@ class Rectangle : public Graphic {
 public:
     void draw() const override { std::cout << "Draw Rectangle\n"; }
 };
-
 // Composite
 class Picture : public Graphic {
     std::vector<std::unique_ptr<Graphic>> children;
@@ -31,7 +28,6 @@ public:
             child->draw();
     }
 };
-
 // 사용 예시
 int example1() {
     Picture scene;
@@ -49,21 +45,17 @@ int example1() {
     // Draw Circle
     return 0;
 }
-
-
 //2. 조직도(Organization Chart)
 #include <iostream>
 #include <vector>
 #include <memory>
 #include <string>
-
 // Component
 class Employee {
 public:
     virtual void show(int indent = 0) const = 0;
     virtual ~Employee() = default;
 };
-
 // Leaf
 class Worker : public Employee {
     std::string name;
@@ -73,7 +65,6 @@ public:
         std::cout << std::string(indent, ' ') << "- " << name << std::endl;
     }
 };
-
 // Composite
 class Manager : public Employee {
     std::string name;
@@ -87,7 +78,6 @@ public:
             member->show(indent + 2);
     }
 };
-
 // 사용 예시
 int example2() {
     auto ceo = std::make_unique<Manager>("CEO");
@@ -105,19 +95,15 @@ int example2() {
     //   - HR
     return 0;
 }
-
-
 //3. 수식(Expression) 트리
 #include <iostream>
 #include <memory>
-
 // Component
 class Expr {
 public:
     virtual int eval() const = 0;
     virtual ~Expr() = default;
 };
-
 // Leaf
 class Number : public Expr {
     int value;
@@ -125,7 +111,6 @@ public:
     Number(int v) : value(v) {}
     int eval() const override { return value; }
 };
-
 // Composite
 class Add : public Expr {
     std::unique_ptr<Expr> left, right;
@@ -141,7 +126,6 @@ public:
         : left(std::move(l)), right(std::move(r)) {}
     int eval() const override { return left->eval() * right->eval(); }
 };
-
 // 사용 예시
 int example3() {
     // (3 + 4) * 5
@@ -155,17 +139,13 @@ int example3() {
     std::cout << expr->eval() << std::endl; // 35
     return 0;
 }
-
-
 //4. 간단한 파서 구현 (재귀 하향 파싱)
 class Parser {
     const std::string& s;
     size_t pos = 0;
-
     void skip() {
         while (pos < s.size() && std::isspace(s[pos])) ++pos;
     }
-
     int parseNumber() {
         skip();
         int num = 0;
@@ -174,7 +154,6 @@ class Parser {
         }
         return num;
     }
-
     std::unique_ptr<Expr> parseFactor() {
         skip();
         if (s[pos] == '(') {
@@ -186,7 +165,6 @@ class Parser {
         }
         return std::make_unique<Number>(parseNumber());
     }
-
     std::unique_ptr<Expr> parseTerm() {
         auto node = parseFactor();
         skip();
@@ -197,7 +175,6 @@ class Parser {
         }
         return node;
     }
-
     std::unique_ptr<Expr> parseExpr() {
         auto node = parseTerm();
         skip();
@@ -208,12 +185,10 @@ class Parser {
         }
         return node;
     }
-
 public:
     Parser(const std::string& str) : s(str) {}
     std::unique_ptr<Expr> parse() { return parseExpr(); }
 };
-
 // 사용 예시
 int example4() {
     std::string input = "(3 + 4) * 5 + 2";

@@ -1,9 +1,7 @@
 //1. 오디오 플레이어 제어 (Play, Stop, Pause)
-
 #include <iostream>
 #include <memory>
 #include <vector>
-
 // Receiver
 class AudioPlayer {
 public:
@@ -11,14 +9,12 @@ public:
     void stop() { std::cout << "Stop music\n"; }
     void pause() { std::cout << "Pause music\n"; }
 };
-
 // Command 인터페이스
 class Command {
 public:
     virtual void execute() = 0;
     virtual ~Command() = default;
 };
-
 // ConcreteCommand
 class PlayCommand : public Command {
     AudioPlayer& player;
@@ -38,7 +34,6 @@ public:
     PauseCommand(AudioPlayer& p) : player(p) {}
     void execute() override { player.pause(); }
 };
-
 // Invoker
 class Remote {
     std::vector<std::unique_ptr<Command>> buttons;
@@ -50,7 +45,6 @@ public:
         if (idx < buttons.size()) buttons[idx]->execute();
     }
 };
-
 // 사용 예시
 int test1() {
     AudioPlayer player;
@@ -62,21 +56,16 @@ int test1() {
     remote.press(1); // Pause music
     remote.press(2); // Stop music
 }
-
-
-
 //2. 매크로 커맨드(여러 명령을 한 번에 실행)
 #include <iostream>
 #include <vector>
 #include <memory>
-
 // Command 인터페이스
 class Command {
 public:
     virtual void execute() = 0;
     virtual ~Command() = default;
 };
-
 // MacroCommand
 class MacroCommand : public Command {
     std::vector<std::unique_ptr<Command>> commands;
@@ -88,7 +77,6 @@ public:
         for (auto& cmd : commands) cmd->execute();
     }
 };
-
 // 예시용 간단한 커맨드
 class HelloCommand : public Command {
 public:
@@ -98,7 +86,6 @@ class WorldCommand : public Command {
 public:
     void execute() override { std::cout << "World!\n"; }
 };
-
 // 사용 예시
 int test2() {
     MacroCommand macro;
@@ -106,14 +93,11 @@ int test2() {
     macro.add(std::make_unique<WorldCommand>());
     macro.execute(); // Hello World!
 }
-
-
 //3. 메뉴 시스템(Undo 포함)
 #include <iostream>
 #include <stack>
 #include <memory>
 #include <string>
-
 // Receiver
 class TextBuffer {
     std::string text;
@@ -122,7 +106,6 @@ public:
     void erase(size_t n) { text.erase(text.size() - n, n); }
     void show() { std::cout << text << std::endl; }
 };
-
 // Command 인터페이스
 class Command {
 public:
@@ -130,7 +113,6 @@ public:
     virtual void undo() = 0;
     virtual ~Command() = default;
 };
-
 // ConcreteCommand
 class AppendText : public Command {
     TextBuffer& buf;
@@ -140,7 +122,6 @@ public:
     void execute() override { buf.append(str); }
     void undo() override { buf.erase(str.size()); }
 };
-
 // Invoker
 class Menu {
     std::stack<std::unique_ptr<Command>> history;
@@ -156,7 +137,6 @@ public:
         }
     }
 };
-
 // 사용 예시
 int test3() {
     TextBuffer buf;

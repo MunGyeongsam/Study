@@ -36,27 +36,21 @@ public:
 //	sorter.setStrategy(std::make_unique<QuickSort>());
 //	sorter.sort(); // Quick Sort
 //}
-
-
-
 #include <iostream>
 #include <fstream>
 #include <memory>
 #include <string>
-
 class OutputStrategy {
 public:
 	virtual void output(const std::string& msg) = 0;
 	virtual ~OutputStrategy() = default;
 };
-
 class ConsoleOutput : public OutputStrategy {
 public:
 	void output(const std::string& msg) override {
 		std::cout << "Console: " << msg << std::endl;
 	}
 };
-
 class FileOutput : public OutputStrategy {
 	std::string filename;
 public:
@@ -66,7 +60,6 @@ public:
 		ofs << "File: " << msg << std::endl;
 	}
 };
-
 class Logger {
 	std::unique_ptr<OutputStrategy> strategy;
 public:
@@ -78,7 +71,6 @@ public:
 		else std::cout << "No output strategy set\n";
 	}
 };
-
 // 사용 예시
 // Logger logger;
 // logger.setStrategy(std::make_unique<ConsoleOutput>());

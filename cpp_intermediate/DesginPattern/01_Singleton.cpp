@@ -1,4 +1,3 @@
-
 /*
 // basic singleton pattern in C++
 class Singleton {
@@ -15,12 +14,9 @@ public:
 	// 예시 메서드
 	void doSomething() {  }
 };
-
 // C++17 이전 버전에서는 아래와 같이 작성해야 합니다.
 //Singleton* Singleton::instance = nullptr;
 //*/
-
-
 /*
 // Double-Checked Locking
 #include <mutex>
@@ -48,10 +44,7 @@ public:
 Singleton* Singleton::instance = nullptr;
 std::mutex Singleton::mtx;
 //*/
-
-
 // C++11 이후 스레드 안전한 싱글턴 패턴
-
 /*
 // C++11 이후 스레드 안전한 싱글턴 패턴(static 지역 변수 사용)
 class Singleton {
@@ -63,7 +56,6 @@ public:
 	// ...
 };
 //*/
-
 /*
 // C++11 이후 스레드 안전한 싱글턴 패턴(call_once를 사용)
 #include <mutex>
@@ -83,18 +75,15 @@ public:
 Singleton* Singleton::instance = nullptr;
 std::once_flag Singleton::flag;
 //*/
-
 /*
 // C++11 이후 스레드 안전한 싱글턴 패턴 (atomic과 mutex 사용)
 #include <atomic>
 #include <mutex>
-
 class Singleton {
 private:
 	static std::atomic<Singleton*> instance;
 	static std::mutex mtx;
 	Singleton() {}
-
 public:
 	static Singleton* getInstance() {
 		Singleton* tmp = instance.load(std::memory_order_acquire);
@@ -111,10 +100,8 @@ public:
 	// 예시 메서드
 	void doSomething() { }
 };
-
 std::atomic<Singleton*> Singleton::instance{ nullptr };
 std::mutex Singleton::mtx;
-
 +----------------------------------------------------------------------------+
 | 구분                | std::atomic + DCL         | std::call_once           |
 |---------------------|---------------------------|--------------------------|
@@ -125,11 +112,7 @@ std::mutex Singleton::mtx;
 | 실수 가능성         | 높음 (메모리 오더 등)     | 낮음                     |
 | 표준 지원           | C++11 이상                | C++11 이상               |
 +----------------------------------------------------------------------------+
-
 //*/
-
-
-
 // Singleton.h
 #pragma once
 template <typename T>
@@ -148,7 +131,6 @@ protected:
 	Singleton() = default;
 	virtual ~Singleton() = default;
 };
-
 class MyManager : public Singleton<MyManager> {
 	friend class Singleton<MyManager>; // 생성자 보호
 private:
@@ -156,13 +138,9 @@ private:
 public:
 	void doSomething() { /* ... */ }
 };
-
-
 static int main()
 {
 	// MyManager의 인스턴스를 가져와서 사용
 	MyManager::Instance().doSomething();
 	return 0;
 }
-
-
