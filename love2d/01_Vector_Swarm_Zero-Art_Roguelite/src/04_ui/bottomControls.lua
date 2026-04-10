@@ -6,6 +6,9 @@ local mobileLayout = require("04_ui.mobileLayout")
 
 local bottomControls = {}
 
+-- 🔧 상수: 버튼 순서 (한 번만 생성, GC 부담 없음)
+local BUTTON_ORDER = {"zoomOut", "zoomIn", "reset", "debug"}
+
 -- 콜백 함수들
 local callbacks = {
     onZoomIn = nil,
@@ -59,14 +62,15 @@ function bottomControls.updateLayout()
     local startX = (layout.screenWidth - totalWidth) / 2
     local buttonY = layout.bottomAreaStart + (layout.bottomAreaHeight - buttonSize) / 2
     
-    -- 버튼 위치 설정
-    local buttonIndex = 0
-    for name, button in pairs(buttons) do
-        button.x = startX + (buttonIndex * (buttonSize + spacing))
-        button.y = buttonY
-        button.width = buttonSize
-        button.height = buttonSize
-        buttonIndex = buttonIndex + 1
+    -- 버튼 위치 설정 (순서 보장, GC 부담 없음)
+    for buttonIndex, buttonName in ipairs(BUTTON_ORDER) do
+        local button = buttons[buttonName]
+        if button then
+            button.x = startX + ((buttonIndex - 1) * (buttonSize + spacing))
+            button.y = buttonY
+            button.width = buttonSize
+            button.height = buttonSize
+        end
     end
 end
 
