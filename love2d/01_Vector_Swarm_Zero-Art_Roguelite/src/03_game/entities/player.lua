@@ -20,11 +20,11 @@ function player.init(startX, startY)
         
         -- 이동 관련
         velocity = { x = 0, y = 0 },
-        speed = 10,  -- 유닛/초 (화면 높이를 1초에 횡단)
+        speed = 2,  -- 유닛/초 (화면 높이를 1초에 횡단)
         
         -- 렌더링
-        radius = 0.3,  -- 월드 좌표상 반지름 (화면 높이 10 기준 3% 크기)
-        color = {0, 1, 0, 1},  -- 초록색 (RGBA)
+        radius = 0.1,  -- 월드 좌표상 반지름 (화면 높이 10 기준 3% 크기)
+        color = {0, 1, 1, 1},  -- 사이안 (미래적/벡터 게임 느낌)
         
         -- 상태
         health = 100,
@@ -82,7 +82,6 @@ function player.handleInput(dt, inputState)
     if love.keyboard.isDown("d", "right") then
         vel.x = vel.x + 1
     end
-    vel.x, vel.y = normalize(vel.x, vel.y)  -- 대각선 이동 보정
     
     -- 터치 입력 (모바일용, 추후 구현)
     if inputState.touchDirection then
@@ -187,8 +186,8 @@ function player.draw(camera)
     -- 플레이어 원 그리기
     lg.circle("fill", pos.x, pos.y, drawRadius)
     
-    -- 외곽선 (더 진한 색)
-    lg.setColor(0, 0.7, 0, 1)
+    -- 외곽선 (더 진한 사이안)
+    lg.setColor(0, 0.7, 0.7, 1)
     lg.setLineWidth(pixelToWorld * 2)
     lg.circle("line", pos.x, pos.y, drawRadius * 1.2)
     

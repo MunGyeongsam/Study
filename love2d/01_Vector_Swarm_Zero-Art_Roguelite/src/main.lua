@@ -152,7 +152,7 @@ end
 
 function love.keypressed(key)
     if key == "f1" then
-        logger.toggleConsole()  -- F1키로 디버그 콘솔 토글
+        debug.toggleConsole()  -- F1키로 디버그 콘솔 토글
     elseif key == "f2" then
         uiManager.toggleVisibility()  -- F2키로 UI 토글
     elseif key == "f3" then
@@ -183,6 +183,7 @@ function love.keypressed(key)
     if key == "d" then mainCamera:move(moveSpeed, 0) end
     if key == "space" then mainCamera:lookAt(0, 0) end  -- 원점으로 복귀 (더블탭으로 대체 가능)
     
+    --[[ 카메라 줌 테스트 (PC 프로토타입)
     -- Viewport 테스트 (화살표 키)
     -- TODO: 모바일에서는 UI 버튼으로 대체 예정
     local w, h = love.graphics.getDimensions()
@@ -191,6 +192,7 @@ function love.keypressed(key)
     if key == "left" then mainCamera:setViewport(w/4, h/2) end    -- 좌측
     if key == "right" then mainCamera:setViewport(w*3/4, h/2) end -- 우측
     if key == "return" then mainCamera:setViewportToCenter() end  -- 중심 복귀
+    --]]
 end
 
 -- 모바일 터치 입력 처리
