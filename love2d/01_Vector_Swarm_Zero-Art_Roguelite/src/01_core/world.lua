@@ -13,65 +13,65 @@ world.size = {
 
 -- 월드 중심점 (플레이어 시작 위치)
 world.center = {
-    x = 60,   -- 가로 중앙 (120/2)
-    y = 25    -- 하단에서 시작 (상향 진행)
+    x = 0,    -- 중앙 (0,0 기준)
+    y = -100  -- 하단에서 시작 (상향 진행)
 }
 
 -- 🗺️ 재미 구역 정의 (기획 기반)
 world.zones = {
     -- 안전 시작 구역 (튜토리얼)
     safe_start = {
-        bounds = {x1 = 40, y1 = 0, x2 = 80, y2 = 40},
+        bounds = {x1 = -20, y1 = -125, x2 = 20, y2 = -85},
         type = "safe",
         description = "플레이어 시작 및 학습 구역",
-        color = {0, 1, 0, 0.3}  -- 초록
+        color = {0, 1, 0, 0.1}  -- 초록
     },
     
     -- 초급 탐험 구역 
     exploration_easy = {
-        bounds = {x1 = 20, y1 = 40, x2 = 100, y2 = 100},
+        bounds = {x1 = -40, y1 = -85, x2 = 40, y2 = -25},
         type = "exploration", 
         description = "기본 적과 아이템이 있는 탐험 구역",
-        color = {0, 0, 1, 0.3}  -- 파랑
+        color = {0, 0, 1, 0.1}  -- 파랑
     },
     
     -- 중급 전투 구역
     combat_medium = {
-        bounds = {x1 = 10, y1 = 100, x2 = 110, y2 = 160},
+        bounds = {x1 = -50, y1 = -25, x2 = 50, y2 = 35},
         type = "combat",
         description = "중간 난이도 탄막 패턴 구역", 
-        color = {1, 1, 0, 0.3}  -- 노랑
+        color = {1, 1, 0, 0.1}  -- 노랑
     },
     
     -- 고급 위험 구역
     danger_zone = {
-        bounds = {x1 = 0, y1 = 160, x2 = 120, y2 = 220},
+        bounds = {x1 = -60, y1 = 35, x2 = 60, y2 = 95},
         type = "danger",
         description = "고난이도 적과 보상이 있는 위험 구역",
-        color = {1, 0.5, 0, 0.3}  -- 주황
+        color = {1, 0.5, 0, 0.1}  -- 주황
     },
     
     -- 최종 보스 구역
     boss_chamber = {
-        bounds = {x1 = 30, y1 = 220, x2 = 90, y2 = 250},
+        bounds = {x1 = -30, y1 = 95, x2 = 30, y2 = 125},
         type = "boss",
         description = "최종 보스와의 결전 구역",
-        color = {1, 0, 0, 0.3}  -- 빨강
+        color = {1, 0, 0, 0.1}  -- 빨강
     },
     
     -- 숨겨진 보상 구역들
     secret_left = {
-        bounds = {x1 = 0, y1 = 60, x2 = 20, y2 = 140},
+        bounds = {x1 = -60, y1 = -65, x2 = -40, y2 = 15},
         type = "secret",
         description = "숨겨진 파워업과 보너스",
-        color = {1, 0, 1, 0.4}  -- 자주
+        color = {1, 0, 1, 0.1}  -- 자주
     },
     
     secret_right = {
-        bounds = {x1 = 100, y1 = 80, x2 = 120, y2 = 180},
+        bounds = {x1 = 40, y1 = -45, x2 = 60, y2 = 55},
         type = "secret", 
         description = "레어 아이템과 특별 능력",
-        color = {1, 0, 1, 0.4}  -- 자주
+        color = {1, 0, 1, 0.1}  -- 자주
     }
 }
 
@@ -79,25 +79,25 @@ world.zones = {
 world.funElements = {
     -- 파워업 포인트들
     powerUps = {
-        {x = 50, y = 70, type = "speed", active = true},
-        {x = 70, y = 90, type = "shield", active = true},
-        {x = 30, y = 130, type = "multishot", active = true},
-        {x = 90, y = 150, type = "laser", active = true},
-        {x = 60, y = 190, type = "ultimate", active = true}
+        {x = -10, y = -55, type = "speed", active = true},
+        {x = 10, y = -35, type = "shield", active = true},
+        {x = -30, y = 5, type = "multishot", active = true},
+        {x = 30, y = 25, type = "laser", active = true},
+        {x = 0, y = 65, type = "ultimate", active = true}
     },
     
     -- 체크포인트 (세이브 포인트)
     checkpoints = {
-        {x = 60, y = 50, active = false},  -- 첫 번째 체크포인트
-        {x = 60, y = 110, active = false},  -- 중간 체크포인트  
-        {x = 60, y = 170, active = false},  -- 고급 체크포인트
-        {x = 60, y = 210, active = false}  -- 보스 직전
+        {x = 0, y = -75, active = false},  -- 첫 번째 체크포인트
+        {x = 0, y = -15, active = false},  -- 중간 체크포인트  
+        {x = 0, y = 45, active = false},  -- 고급 체크포인트
+        {x = 0, y = 85, active = false}  -- 보스 직전
     },
     
     -- 숨겨진 통로들
     secretPaths = {
-        {x1 = 16, y1 = 70, x2 = 24, y2 = 130, discovered = false},
-        {x1 = 96, y1 = 90, x2 = 104, y2 = 170, discovered = false}
+        {x1 = -44, y1 = -55, x2 = -36, y2 = 5, discovered = false},
+        {x1 = 36, y1 = -35, x2 = 44, y2 = 45, discovered = false}
     }
 }
 
@@ -148,28 +148,31 @@ function world.drawGrid(gridSize, camera, showZones)
     lg.setLineWidth(pixelToWorld * 0.5)  -- 0.5픽셀 두께
     
     -- 세로선들 (X축 방향)
-    for x = 0, world.size.width, gridSize do
-        lg.line(x, 0, x, world.size.height)
+    for x = -world.size.width/2, world.size.width/2, gridSize do
+        lg.line(x, -world.size.height/2, x, world.size.height/2)
     end
     
     -- 가로선들 (Y축 방향)  
-    for y = 0, world.size.height, gridSize do
-        lg.line(0, y, world.size.width, y)
+    for y = -world.size.height/2, world.size.height/2, gridSize do
+        lg.line(-world.size.width/2, y, world.size.width/2, y)
     end
     
     -- 🎯 중요 축 강조 표시
     lg.setLineWidth(pixelToWorld * 2)  -- 2픽셀 두께
     
-    -- 세로 중앙선 (플레이어 진행 경로, 초록색)
+    -- 세로 중앙선 (X=0, 초록색)
     lg.setColor(0, 0.8, 0, 0.8)
-    lg.line(world.center.x, 0, world.center.x, world.size.height)
+    lg.line(0, -world.size.height/2, 0, world.size.height/2)
+    
+    -- 가로 중앙선 (Y=0, 초록색)
+    lg.line(-world.size.width/2, 0, world.size.width/2, 0)
     
     -- 구역 경계선들 (노란색)
     lg.setColor(1, 1, 0, 0.6)
-    lg.line(0, 40, world.size.width, 40)  -- 시작-탐험 경계
-    lg.line(0, 100, world.size.width, 100)  -- 탐험-전투 경계  
-    lg.line(0, 160, world.size.width, 160)  -- 전투-위험 경계
-    lg.line(0, 220, world.size.width, 220)  -- 위험-보스 경계
+    lg.line(-world.size.width/2, -85, world.size.width/2, -85)  -- 시작-탐험 경계
+    lg.line(-world.size.width/2, -25, world.size.width/2, -25)  -- 탐험-전투 경계  
+    lg.line(-world.size.width/2, 35, world.size.width/2, 35)  -- 전투-위험 경계
+    lg.line(-world.size.width/2, 95, world.size.width/2, 95)  -- 위험-보스 경계
     
     -- 🏠 플레이어 시작점 마커 (큰 초록 원)
     lg.setColor(0, 1, 0, 1)
@@ -338,9 +341,9 @@ function world.getSize()
     return world.size.width, world.size.height
 end
 
--- 월드 경계 반환 (새로운 확장된 크기)
+-- 월드 경계 반환 (새로운 0,0 중심 크기)
 function world.getBounds()
-    return 0, 0, world.size.width, world.size.height  -- left, bottom, right, top
+    return -world.size.width/2, -world.size.height/2, world.size.width/2, world.size.height/2  -- left, bottom, right, top
 end
 
 -- 플레이어 시작 위치 반환
@@ -368,9 +371,11 @@ function world.resetFunElements()
     logger.info("🎮 World fun elements reset for new game")
 end
 
--- 🏆 게임 진행률 계산
+-- 🏆 게임 진행률 계산 (0,0 중심 기준)
 function world.getProgressPercentage(playerY)
-    local progress = math.max(0, math.min(100, (playerY / world.size.height) * 100))
+    -- Y가 -125에서 시작해서 125로 가므로 보정
+    local normalizedY = (playerY + world.size.height/2)  -- 0~250 범위로 보정
+    local progress = math.max(0, math.min(100, (normalizedY / world.size.height) * 100))
     return progress
 end
 

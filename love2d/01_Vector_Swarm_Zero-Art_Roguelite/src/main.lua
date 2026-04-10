@@ -11,6 +11,7 @@ local screenDebugDraw = require("00_common.grid_debug_draw")
 local world = require("01_core.world")
 local camera = require("02_renderer.camera")
 local uiManager = require("04_ui.uiManager")  -- UI 시스템 추가
+local player = require("03_game.entities.player")  -- 플레이어 엔티티
 
 local mainCamera = nil  -- 전역 카메라 인스턴스 (필요 시 생성)
 
@@ -37,10 +38,26 @@ function love.load()
     -- Initialize core systems
     world.init()
     
-    -- 🌍 카메라를 월드 시작 위치로 이동
-    local startX, startY = world.getStartPosition()
+    -- �‍♂️ 플레이어 초기화
+    player.init()
+
+    debug.add("world info", 
+    function()
+        local size = world.size
+        return string.format("%10s : %d x %d", "World Size", size.width, size.height) 
+    end);
+
+    debug.add("player info", 
+    function()
+        local x, y = player.getPosition()
+        return string.format("%10s : (%.1f, %.1f)", "Player Pos", x, y) 
+    end);
+    debug.toggleConsole()  -- 디버그 콘솔 자동 표시 (개발 편의용)
+    
+    -- 🌍 카메라를 플레이어 시작 위치로 이동
+    local startX, startY = player.getPosition()
     mainCamera:lookAt(startX, startY)
-    logger.info(string.format("📍 Camera positioned at world start: (%.1f, %.1f)", startX, startY))
+    logger.info(string.format("📍 Camera positioned at player start: (%.1f, %.1f)", startX, startY))
     
     -- Initialize UI system
     uiManager.init()
@@ -58,11 +75,15 @@ function love.load()
             log(string.format("Zoom Out - Orthographic Size: %.2f", newSize))
         end,
         onReset = function()
-            local startX, startY = world.getStartPosition()
+            -- 플레이어와 월드 리셋
+            player.reset()
+            world.resetFunElements()
+            
+            local startX, startY = player.getPosition()
             mainCamera:lookAt(startX, startY)
             mainCamera:setOrthographicSize(5)
             mainCamera:setViewportToCenter()
-            log("Camera reset to world start position")
+            log("Game reset - Player and world initialized")
         end,
         onDebugToggle = function()
             uiManager.toggleDebugMode()
@@ -77,28 +98,39 @@ function love.load()
 end
 
 function love.update(dt)
+    -- 🏃‍♂️ 플레이어 업데이트 (입력 처리 및 이동)
+    player.update(dt, {})  -- 나중에 터치 입력 시스템 연결
+    
+    -- 📹 카메라가 플레이어를 따라가기
+    local playerX, playerY = player.getCameraTarget()
+    mainCamera:lookAt(playerX, playerY)
+    
     -- UI 업데이트
     uiManager.update(dt)
     
-    -- 게임 데이터를 UI에 전달
+    -- 플레이어와 월드 데이터를 UI에 전달
     local worldStats = world.getWorldStats()
-    local currentX, currentY = mainCamera:pos()
-    local progress = world.getProgressPercentage(currentY)
+    local playerStats = player.getStats()
     
     uiManager.setGameData({
         score = 1250,  -- 예시 데이터
         lives = 3,
-        level = math.floor(progress / 20) + 1,  -- 20%마다 레벨업
+        level = playerStats.zonesVisited + 1,  -- 방문한 구역 수 + 1
         fps = love.timer.getFPS(),
-        progress = progress,  -- 월드 진행률
-        powerUps = worldStats.powerUpsRemaining,
-        secrets = worldStats.secretsDiscovered
+        progress = playerStats.progress,  -- 플레이어 진행률
+        powerUps = #playerStats.powerUps,  -- 수집한 파워업 수
+        secrets = worldStats.secretsDiscovered,
+        currentZone = playerStats.currentZone or "outside",
+        checkpoints = playerStats.checkpoints
     })
 end
 
 local function drawWorld()
     -- 월드 좌표계 그리드 (중심 0,0)
-    world.drawGrid(2, mainCamera)  -- 2 유닛 간격 그리드, 카메라 정보 전달
+    world.drawGrid(1, mainCamera)  -- 2 유닛 간격 그리드, 카메라 정보 전달
+    
+    -- 🏃‍♂️ 플레이어 렌더링
+    player.draw(mainCamera)
 end
 
 function love.draw()
@@ -109,7 +141,7 @@ function love.draw()
     uiManager.draw()
     
     -- 디버그 정보 그리기 (기존 시스템)
-    debug.draw()
+    debug.draw(10, 50)
     logger.drawConsole(fonts.small)  -- 인게임 디버그 콘솔 (작은 폰트)
 
     -- 스크린 좌표계 그리드 (참고용) - 주석 처리
