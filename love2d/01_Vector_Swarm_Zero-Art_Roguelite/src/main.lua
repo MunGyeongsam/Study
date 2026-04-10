@@ -1,23 +1,26 @@
 -- Vector Swarm - Zero Art Roguelite
 -- Main game file
 
+-- Global utilities first (전역 함수 최우선 초기화)
+local global = require("00_common.global")
+
 -- Load modules
-local Logger = require("lib.logger")
-local Debug = require("lib.debug")
-local GridDebugDraw = require("lib.grid_debug_draw")
+local logger = require("00_common.logger")
+local debug = require("00_common.debug")
+local screenDebugDraw = require("00_common.grid_debug_draw")
+local world = require("01_core.world")
+local camera = require("02_renderer.camera")
+local uiManager = require("04_ui.uiManager")  -- UI 시스템 추가
+
+local mainCamera = nil  -- 전역 카메라 인스턴스 (필요 시 생성)
 
 function love.load()
-    -- Initialize logging first
-    Logger.init()
+    -- Initialize global utilities first
+    global.init()
     
-    -- Called once at the beginning of the game
-    Logger.info("Game started - hello vector_swarm")
-    
-    -- Debug: 실제 창 크기 확인
-    local width, height = love.graphics.getDimensions()
-    Logger.info("Window size: " .. width .. " x " .. height)
-    Logger.addWindowInfo(width, height)  -- Add to console
-    
+    -- Initialize logging second
+    logger.init()
+
     -- Set up multiple font sizes
     fonts = {
         small = love.graphics.newFont(12),    -- 작은 폰트 (디버그용)
@@ -26,135 +29,207 @@ function love.load()
         xlarge = love.graphics.newFont(24)    -- 매우 큰 폰트 (특별용)
     }
     love.graphics.setFont(fonts.medium)  -- 기본 폰트를 중간 크기로 설정
-    
-    -- Game variables
-    message = "hello vector_swarm"
-    windowInfo = "Window: " .. width .. "x" .. height
-    gameTime = 0                    -- 게임 시간
-    frameCount = 0                  -- 프레임 카운터
-    playerPosition = {x = width/2, y = height/2}  -- 플레이어 위치
-    gameSpeed = 1.0                 -- 게임 속도
-    
-    debugMode = false
-    debugConsoleVisible = false
 
-    -- Debug 정보 등록 (순서대로)
-    Debug.add("Game Time", function() return string.format("Game Time: %.2f", gameTime) end)
-    Debug.add("Frame Count", function() return string.format("Frame Count: %d", frameCount) end)
-    Debug.add("Game Speed", function() return string.format("Game Speed: %.1f", gameSpeed) end)
-    Debug.add("Player Pos", function() return string.format("Player: (%.0f, %.0f)", playerPosition.x, playerPosition.y) end)
+    -- Unity 스타일 카메라 생성
+    local orthographicSize = 5
+    mainCamera = camera.new(0, 0, orthographicSize)  -- 임시 위치
+    
+    -- Initialize core systems
+    world.init()
+    
+    -- 🌍 카메라를 월드 시작 위치로 이동
+    local startX, startY = world.getStartPosition()
+    mainCamera:lookAt(startX, startY)
+    logger.info(string.format("📍 Camera positioned at world start: (%.1f, %.1f)", startX, startY))
+    
+    -- Initialize UI system
+    uiManager.init()
+    
+    -- UI 버튼 콜백 설정
+    uiManager.setButtonCallbacks({
+        onZoomIn = function()
+            local newSize = mainCamera:getOrthographicSize() * 0.8
+            mainCamera:setOrthographicSize(newSize)
+            log(string.format("Zoom In - Orthographic Size: %.2f", newSize))
+        end,
+        onZoomOut = function()
+            local newSize = mainCamera:getOrthographicSize() * 1.25
+            mainCamera:setOrthographicSize(newSize)
+            log(string.format("Zoom Out - Orthographic Size: %.2f", newSize))
+        end,
+        onReset = function()
+            local startX, startY = world.getStartPosition()
+            mainCamera:lookAt(startX, startY)
+            mainCamera:setOrthographicSize(5)
+            mainCamera:setViewportToCenter()
+            log("Camera reset to world start position")
+        end,
+        onDebugToggle = function()
+            uiManager.toggleDebugMode()
+        end
+    })
+    
+    log("All systems initialized successfully")
+    log(string.format("Camera orthographic size: %.1f (viewing %.1f world units height)", 
+         orthographicSize, orthographicSize * 2))
+    log(string.format("Pixels per unit: %.1f", mainCamera:getPixelsPerUnit()))
+    
 end
 
 function love.update(dt)
-    -- Called every frame
-    -- dt is the time since the last frame in seconds
+    -- UI 업데이트
+    uiManager.update(dt)
     
-    gameTime = gameTime + (dt * gameSpeed)  -- 게임 시간 업데이트
-    frameCount = frameCount + 1
+    -- 게임 데이터를 UI에 전달
+    local worldStats = world.getWorldStats()
+    local currentX, currentY = mainCamera:pos()
+    local progress = world.getProgressPercentage(currentY)
     
-    -- Update window info in real time
-    local width, height = love.graphics.getDimensions()
-    windowInfo = "Window: " .. width .. "x" .. height .. " | FPS: " .. love.timer.getFPS()
-    
-    -- 디버그 모드일 때 플레이어 위치 업데이트 (간단한 움직임)
-    if debugMode then
-        playerPosition.x = playerPosition.x + math.sin(gameTime) * 50 * dt
-        playerPosition.y = playerPosition.y + math.cos(gameTime) * 30 * dt
-        -- 화면 경계 체크
-        if playerPosition.x < 0 then playerPosition.x = width end
-        if playerPosition.x > width then playerPosition.x = 0 end
-        if playerPosition.y < 0 then playerPosition.y = height end
-        if playerPosition.y > height then playerPosition.y = 0 end
-    end
+    uiManager.setGameData({
+        score = 1250,  -- 예시 데이터
+        lives = 3,
+        level = math.floor(progress / 20) + 1,  -- 20%마다 레벨업
+        fps = love.timer.getFPS(),
+        progress = progress,  -- 월드 진행률
+        powerUps = worldStats.powerUpsRemaining,
+        secrets = worldStats.secretsDiscovered
+    })
+end
+
+local function drawWorld()
+    -- 월드 좌표계 그리드 (중심 0,0)
+    world.drawGrid(2, mainCamera)  -- 2 유닛 간격 그리드, 카메라 정보 전달
 end
 
 function love.draw()
-    -- Called every frame for rendering
+    -- 월드 렌더링 (카메라 적용)
+    mainCamera:draw(drawWorld)
+    
+    -- UI 렌더링 (스크린 좌표계) 
+    uiManager.draw()
+    
+    -- 디버그 정보 그리기 (기존 시스템)
+    debug.draw()
+    logger.drawConsole(fonts.small)  -- 인게임 디버그 콘솔 (작은 폰트)
 
-    local width, height = love.graphics.getDimensions()
-
-    GridDebugDraw.drawGrid(0, 0, 100)  -- 그리드 그리기
-    
-    -- Set text color to white
-    love.graphics.setColor(1, 1, 1, 1)
-    
-    -- Draw the message at the center of the screen (큰 폰트)
-    love.graphics.setFont(fonts.large)
-    local textWidth = fonts.large:getWidth(message)
-    local textHeight = fonts.large:getHeight()
-    
-    love.graphics.print(message, 
-                       (width - textWidth) / 2, 
-                       (height - textHeight) / 2)
-    
-    -- Debug: 창 크기 정보를 화면 상단에 표시 (작은 폰트)
-    love.graphics.setFont(fonts.small)
-    love.graphics.print(windowInfo, 10, 10)
-    
-    -- 디버그 정보 그리기
-    Debug.draw()
-    
-    -- 플레이어 위치에 점 표시 (디버그 맀드일 때)
-    if debugMode then
-        love.graphics.setColor(1, 0, 0, 1) -- 빨간색
-        love.graphics.circle("fill", playerPosition.x, playerPosition.y, 5)
-        love.graphics.setColor(1, 1, 1, 1) -- 색상 리셋
-    end
-    
-    -- Draw debug console if visible
-    if debugConsoleVisible then
-        Logger.drawConsole(fonts.small, debugConsoleVisible)
-    end
+    -- 스크린 좌표계 그리드 (참고용) - 주석 처리
+    --screenDebugDraw.drawScreenGrid(50)
 end
 
--- Debug console functions
-function addDebugMessage(msg)
-    local logMsg = Logger.debug(msg)  -- 표준 출력과 콘솔로 출력
-    Logger.addToConsole(logMsg, 15)
-end
+-- Debug console functions are now handled automatically by Logger
 
 function love.keypressed(key)
-    -- Called when a key is pressed
-    if key == "escape" then
-        Logger.info("Game exiting...")
-        love.event.quit()
-    elseif key == "f1" then
-        -- Toggle debug console
-        debugConsoleVisible = not debugConsoleVisible
-        if debugConsoleVisible then
-            -- Add current time info when opening console
-            local timeStr = "Console opened at: " .. love.timer.getTime()
-            addDebugMessage(timeStr)
-            Logger.info("Debug console toggled ON")
-        else
-            Logger.info("Debug console toggled OFF")
-        end
+    if key == "f1" then
+        logger.toggleConsole()  -- F1키로 디버그 콘솔 토글
     elseif key == "f2" then
-        -- Test logging functions
-        Logger.info("This is an INFO message")
-        Logger.debug("This is a DEBUG message")
-        Logger.warn("This is a WARN message")  -- NEW!
-        Logger.error("This is an ERROR test (not a real error!)")
-        addDebugMessage("Tested all log levels including WARN")
+        uiManager.toggleVisibility()  -- F2키로 UI 토글
     elseif key == "f3" then
-        -- Toggle debug mode
-        debugMode = not debugMode
-        local modeStr = debugMode and "ON" or "OFF"
-        Logger.info("Debug mode toggled " .. modeStr)
-        addDebugMessage("Debug mode: " .. modeStr)
-        if debugMode then
-            -- 디버그 모드 시작시 플레이어 위치 리셋
-            local width, height = love.graphics.getDimensions()
-            playerPosition.x = width / 2
-            playerPosition.y = height / 2
-            gameSpeed = 2.0  -- 더 빠르게
-        else
-            gameSpeed = 1.0  -- 정상 속도
-        end
+        uiManager.toggleDebugMode()  -- F3키로 UI 디버그 모드 토글
+    end
+    if key == 'escape' then
+        love.event.quit()  -- ESC키로 게임 종료
+    end
+    
+    -- Orthographic Size 조정 (Unity 스타일) - PC 프로토타입용
+    if key == "=" or key == "+" then
+        local newSize = mainCamera:getOrthographicSize() * 0.8  -- 줌인 (크기 축소)
+        mainCamera:setOrthographicSize(newSize)
+        log(string.format("Zoom In - Orthographic Size: %.2f", newSize))
+    end
+    if key == "-" then
+        local newSize = mainCamera:getOrthographicSize() * 1.25  -- 줌아웃 (크기 확대)
+        mainCamera:setOrthographicSize(newSize)
+        log(string.format("Zoom Out - Orthographic Size: %.2f", newSize))
+    end
+    
+    -- 카메라 이동 테스트 (PC 프로토타입)
+    -- TODO: 모바일에서는 터치 드래그로 대체 예정
+    local moveSpeed = 1
+    if key == "w" then mainCamera:move(0, moveSpeed) end
+    if key == "s" then mainCamera:move(0, -moveSpeed) end
+    if key == "a" then mainCamera:move(-moveSpeed, 0) end
+    if key == "d" then mainCamera:move(moveSpeed, 0) end
+    if key == "space" then mainCamera:lookAt(0, 0) end  -- 원점으로 복귀 (더블탭으로 대체 가능)
+    
+    -- Viewport 테스트 (화살표 키)
+    -- TODO: 모바일에서는 UI 버튼으로 대체 예정
+    local w, h = love.graphics.getDimensions()
+    if key == "up" then mainCamera:setViewport(w/2, h/4) end      -- 상단 
+    if key == "down" then mainCamera:setViewport(w/2, h*3/4) end  -- 하단
+    if key == "left" then mainCamera:setViewport(w/4, h/2) end    -- 좌측
+    if key == "right" then mainCamera:setViewport(w*3/4, h/2) end -- 우측
+    if key == "return" then mainCamera:setViewportToCenter() end  -- 중심 복귀
+end
+
+-- 모바일 터치 입력 처리
+function love.touchpressed(id, x, y, dx, dy, pressure)
+    -- UI 터치 처리
+    if uiManager.touchpressed(id, x, y, dx, dy, pressure) then
+        return  -- UI에서 터치를 소비했으면 게임 로직으로 전달하지 않음
+    end
+    
+    -- 게임 플레이 영역 터치 처리
+    local mobileLayout = require("04_ui.mobileLayout")
+    if mobileLayout.isTouchInArea(x, y, "play") then
+        local worldX, worldY = mainCamera:worldCoords(x, y)
+        log(string.format("Touch at world: (%.1f, %.1f)", worldX, worldY))
+    end
+end
+
+function love.touchmoved(id, x, y, dx, dy, pressure)
+    -- UI 터치 이동 처리
+    if uiManager.touchmoved(id, x, y, dx, dy, pressure) then
+        return  -- UI에서 처리됨
+    end
+    
+    -- 게임 플레이 영역에서 터치 드래그로 카메라 이동
+    local mobileLayout = require("04_ui.mobileLayout")
+    if mobileLayout.isTouchInArea(x, y, "play") then
+        -- 터치 드래그로 카메라 이동
+        mainCamera:move(-dx * mainCamera:getUnitsPerPixel(), 
+                        dy * mainCamera:getUnitsPerPixel())  -- Y축 반전
+    end
+end
+
+function love.touchreleased(id, x, y, dx, dy, pressure)
+    -- UI 터치 릴리즈 처리
+    uiManager.touchreleased(id, x, y, dx, dy, pressure)
+end
+
+-- PC 프로토타입용 마우스 입력을 터치로 시뮬레이션
+function love.mousepressed(x, y, button, istouch, presses)
+    if not istouch then  -- 실제 마우스 클릭인 경우만
+        love.touchpressed("mouse", x, y, 0, 0, 1)
+    end
+end
+
+function love.mousemoved(x, y, dx, dy, istouch)
+    if not istouch and love.mouse.isDown(1) then  -- 마우스 드래그
+        love.touchmoved("mouse", x, y, dx, dy, 1)
+    end
+end
+
+function love.mousereleased(x, y, button, istouch, presses)
+    if not istouch then  -- 실제 마우스 릴리즈인 경우만
+        love.touchreleased("mouse", x, y, 0, 0, 1)
     end
 end
 
 -- Close log file when game quits
 function love.quit()
-    Logger.close()
+    logger.close()
+end
+
+-- 화면 리사이즈 콜백
+function love.resize(w, h)
+    log(string.format("Screen resized to: %dx%d", w, h))
+    -- UI 레이아웃 업데이트
+    uiManager.updateLayout()
+end
+function love.resize(w, h)
+    logger.info(string.format("Screen resized to %dx%d", w, h))
+    
+    -- Orthographic Size는 그대로, 픽셀당 유닛만 다시 계산됨 
+    log(string.format("New pixels per unit: %.1f", mainCamera:getPixelsPerUnit()))
+    --World.onResize()  -- 월드 좌표계 업데이트
 end

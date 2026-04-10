@@ -7,20 +7,21 @@
 -- remove(key): 해당 디버그 정보 제거
 -- draw(): 등록된 순서대로 출력
 
-local Debug = {}
+local debug = {}
 
 local debugList = {}   -- { {key=..., func=...}, ... } (순서 보장)
 local debugIndex = {}  -- key -> index in debugList
+local debugConsoleVisible = false  -- F1키로 토글 가능한 디버그 콘솔
 
 -- 디버그 정보 추가 (key, 문자열 반환 함수)
-function Debug.add(key, func)
+function debug.add(key, func)
     if debugIndex[key] then return end -- 중복 방지
     table.insert(debugList, {key=key, func=func})
     debugIndex[key] = #debugList
 end
 
 -- 디버그 정보 제거
-function Debug.remove(key)
+function debug.remove(key)
     local idx = debugIndex[key]
     if not idx then return end
     table.remove(debugList, idx)
@@ -32,7 +33,9 @@ function Debug.remove(key)
 end
 
 -- 디버그 정보 출력 (등록 순서)
-function Debug.draw(x, y, lineHeight)
+function debug.draw(x, y, lineHeight)
+    if not debugConsoleVisible then return end
+
     x = x or 10
     y = y or 30
     lineHeight = lineHeight or 16
@@ -45,4 +48,8 @@ function Debug.draw(x, y, lineHeight)
     end
 end
 
-return Debug
+function debug.toggleConsole()
+    debugConsoleVisible = not debugConsoleVisible
+end
+
+return debug
