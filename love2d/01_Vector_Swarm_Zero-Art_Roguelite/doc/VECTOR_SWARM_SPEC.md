@@ -1,11 +1,11 @@
-# 🚀 Project: Vector Swarm (현재 개발 상황)
-> **"단순한 2D 수학적 시각화와 카메라 시스템 프로토타입"**
+# Project: Vector Swarm (현재 개발 상황)
+> **"벡터 아트 로그라이트 탄막 슈터"**
 
 ## 1. 프로젝트 개요
-- **장르:** 2D 수학적 시각화 프로토타입 
+- **장르:** 벡터 아트 로그라이트 탄막 슈터
 - **플랫폼:** Mobile-First (Android/iOS) + Desktop - LÖVE2D 기반
 - **화면 비율:** 모바일 9:16/9:20 Portrait + 가변 해상도 지원
-- **개발 상태:** 기초 카메라 시스템 구현 완료 (PC 프로토타입)  
+- **개발 상태:** ECS 코어 구현 완료, 플레이어 ECS 전환 완료 (PC 프로토타입)
 - **핵심 목표:** 
     - Unity 스타일 orthographic 카메라 시스템 구현 ✅
     - 픽셀 정확도 UI 시스템 ✅
@@ -21,110 +21,121 @@
 - **Viewport 제어**: 카메라가 화면의 어느 위치를 중심으로 할지 설정 가능
 - **수학적 좌표계**: (0,0) 중심, Y+ 위쪽 방향
 - **픽셀 정확도**: 줌과 무관하게 UI 요소들이 일정한 픽셀 크기 유지
+- **CameraManager**: game 모드 (플레이어 추적) + debug 모드 (자유 이동/줌)
 
-### 2.2. 좌표계 시각화 시스템 ✅
-- **월드 그리드**: 수학적 좌표계 기반 격자 표시
-- **축 렌더링**: X축(빨강), Y축(초록) 그라데이션과 화살표
-- **원점 마커**: (0,0) 중심점 강조 표시
-- **픽셀 기반 UI**: 카메라 줌과 독립적인 텍스트/라인 크기
+### 2.2. ECS (Entity-Component-System) ✅
+- **ECS 코어**: 엔티티 생성/제거(ID 재활용), 컴포넌트 CRUD, pivot query 최적화
+- **컴포넌트 8종**: Transform, Velocity, Collider, Renderable, LifeSpan, PlayerTag, Input, WorldBound
+- **시스템 6종**: Input, Movement, Boundary, LifeSpan, Render, PlayerRender
+- **ECS 매니저**: 시스템 등록/실행 순서, update/draw 분리
+- **EntityFactory**: createPlayer(), createEnemy()
 
-### 2.3. 개발자 친화적 시스템 ✅
-- **디버그 콘솔**: F1키로 토글 가능한 인게임 로그 시스템  
-- **전역 유틸리티**: log(), clamp(), lerp() 등 편의 함수
-- **표준 명명**: Lua camelCase 규칙 준수
-- **모듈화**: 각 시스템 독립적 구성
+### 2.3. 플레이어 시스템 ✅
+- **ECS 파사드 패턴**: player.bind(ecs, entityId) — ECS 엔티티에 래핑
+- **InputSystem**: 키보드/터치 입력 → Velocity 반영
+- **BoundarySystem**: 월드 경계 clamping
+- **PlayerRenderSystem**: 삼각형 + 방향 표시 렌더링
+- **월드 인터랙션**: 존 감지, 파워업, 체크포인트
 
-## 3. 입력 컨트롤  
+### 2.4. 디버그/개발 도구 ✅
+- **Logger 콘솔**: ` 키 토글, 4레벨 색상 구분 (DEBUG/INFO/WARN/ERROR)
+- **Debug watch panel**: F1 토글, 키-값 실시간 모니터링
+- **Screen grid**: F4 토글
+- **Camera debug**: F5 토글 (마우스 드래그/휠로 자유 이동)
+
+### 2.5. 모바일 UI ✅
+- **uiManager**: 터치 입력 우선 소비
+- **topHud**: 상단 점수/설정 바
+- **bottomControls**: 하단 버튼 컨트롤
+- **mobileLayout**: 영역 분할 (play/ui 영역 판별)
+
+## 3. 입력 컨트롤
 
 ### 3.1. 현재 구현 (PC 프로토타입)
 
-#### 카메라 조작
-- **줌 인/아웃**: `+` / `-` 키로 orthographic size 조절
-- **카메라 이동**: `WASD` 키로 월드 내 이동
-- **원점 복귀**: `Space` 키로 (0,0)으로 즉시 이동
+#### 키 바인딩
+| 키 | 기능 |
+|----|------|
+| `` ` `` | Logger 콘솔 토글 |
+| F1 | Debug watch panel 토글 |
+| F2 | UI 표시 토글 |
+| F3 | UI 디버그 모드 토글 |
+| F4 | Screen grid 토글 |
+| F5 | Camera 모드 전환 (game ↔ debug) |
+| ESC | 게임 종료 |
 
-#### Viewport 테스트
-- **화면 위치 조정**: 화살표 키로 카메라 중심 위치 변경
-  - `↑`: 화면 상단 1/4 지점으로 이동
-  - `↓`: 화면 하단 3/4 지점으로 이동  
-  - `←`: 화면 좌측 1/4 지점으로 이동
-  - `Enter`: 화면 중앙으로 복귀
+#### 게임 조작
+- **이동**: 터치 드래그 (play 영역) 또는 마우스
+- **Debug 카메라**: F5로 전환 후 마우스 드래그/휠
 
-#### 기타
-- **디버그**: `F1` 키로 콘솔 토글
-- **종료**: `ESC` 키로 게임 종료
-
-### 3.2. 모바일 입력 계획
-
-#### 터치 컨트롤 (계획)
-- **드래그 이동**: 손가락으로 직접 카메라 이동
-- **핀치 줌**: 두 손가락으로 orthographic size 조절
-- **더블 탭**: 원점으로 즉시 이동
-- **롱 프레스**: 디버그 메뉴 토글
+### 3.2. 모바일 입력
+- **터치 이동**: play 영역 터치/드래그
+- **UI 터치**: uiManager가 터치 우선 소비
+- mouse → touch 브릿지: `love.mousepressed` → `love.touchpressed` (PC 프로토타입)
 
 ---
 
-## 4. 기술적 아키텍처 (현재 상태)
+## 4. 기술적 아키텍처
 
-### 4.1. 단순화된 폴더 구조 
+### 4.1. 폴더 구조
 ```
-├── main.lua                # Entry Point 
-├── conf.lua                # LÖVE2D 설정
-│
-├── src/                    # 소스 코드
-│   ├── 00_common/          # 공통 유틸리티
-│   │   ├── debug.lua       # 디버그 시스템
-│   │   ├── global.lua      # 전역 함수들  
-│   │   ├── logger.lua      # 로깅 시스템
-│   │   └── math/           # 수학 라이브러리
-│   │       ├── vector.lua  # 2D 벡터 연산
-│   │       └── matrix.lua  # 행렬 연산
-│   │
-│   ├── 01_core/            # 핵심 게임 시스템
-│   │   └── world.lua       # 월드 좌표계와 그리드
-│   │
-│   └── 02_renderer/        # 렌더링 시스템  
-│       └── camera.lua      # Unity 스타일 카메라
-│
-├── doc/                    # 문서
-└── love-11.5-*/           # LÖVE2D 실행 파일
+src/
+├── main.lua               # LÖVE 콜백 (load/update/draw/input)
+├── conf.lua               # LÖVE 설정 (432×960, 9:20 세로)
+├── 00_common/             # 유틸리티 — 게임 의존성 없음
+│   ├── global.lua           # 전역 함수 (log, clamp, lerp, setColor, …)
+│   ├── logger.lua           # 4레벨 로깅 + 인게임 콘솔
+│   ├── debug.lua            # 디버그 watch panel
+│   ├── gridDebugDraw.lua    # 스크린 그리드 오버레이
+│   ├── kutil.lua            # 기타 유틸리티
+│   └── math/                # 벡터/행렬 라이브러리
+├── 01_core/               # 엔진 레이어
+│   ├── world.lua            # 월드 경계, 존, 재미 요소
+│   ├── ecs.lua              # ECS 코어
+│   ├── system.lua           # 시스템 베이스 클래스
+│   └── ecsManager.lua       # ECS 오케스트레이터
+├── 02_renderer/           # 카메라 & 렌더링
+│   ├── camera.lua           # Unity 스타일 orthographic 카메라
+│   └── cameraManager.lua    # game/debug 카메라 모드
+├── 03_game/               # 게임 로직
+│   ├── components/          # 순수 데이터 ECS 컴포넌트 (8종)
+│   ├── systems/             # ECS 시스템 (6종)
+│   ├── entities/            # 엔티티 팩토리 + player 파사드
+│   ├── patterns/            # 탄막 패턴 (예정)
+│   └── states/              # 게임 상태 (예정)
+└── 04_ui/                 # HUD, 모바일 레이아웃
+    ├── uiManager.lua
+    ├── topHud.lua
+    ├── bottomControls.lua
+    └── mobileLayout.lua
 ```
 
 ### 4.2. 핵심 설계 원칙
-```lua
--- Unity 호환성: 
-mainCamera = camera.new(0, 0, orthographicSize)
-mainCamera:setOrthographicSize(5)  -- 줌 제어
-mainCamera:getPixelsPerUnit()      -- 픽셀 정확도
-
--- 수학적 좌표계:
-world.drawGrid(gridSize, camera)   -- (0,0) 중심, Y+ 상향
-
--- Lua 표준:
-local logger = require("00_common.logger")  -- camelCase
-log("message")  -- 전역 편의 함수
-```
+- **레이어 의존성**: `04_ui → 03_game → 02_renderer → 01_core → 00_common` (역방향 금지)
+- **ECS 아키텍처**: 컴포넌트(순수 데이터) + 시스템(로직) + 엔티티(ID)
+- **Unity 호환 카메라**: orthographicSize, 수학적 좌표계 (Y+ 상향)
+- **모바일 우선**: 터치 입력 파이프라인, 9:20 세로 레이아웃
 
 ---
 
 ## 5. 향후 확장 계획
 
-### 5.1. 단기 목표 (게임 오브젝트)
-- [ ] 간단한 플레이어 엔티티 (월드 좌표계에서 이동)
-- [ ] 모바일 입력 처리 (터치/드래그)  
-- [ ] 충돌 검사 시스템
-- [ ] 간단한 파티클 시스템
+### 5.1. 단기 목표 (탄막 시스템)
+- [ ] 오브젝트 풀링 (bulletPool)
+- [ ] BulletPattern 컴포넌트 + BulletPatternSystem
+- [ ] 기본 탄막 패턴 (원형, 나선형)
+- [ ] 충돌 검사 시스템 (CollisionSystem)
 
-### 5.2. 중기 목표 (게임플레이) 
-- [ ] 탄막 패턴 시스템 (수학적 함수 기반)
-- [ ] 스프라이트 렌더링 (텍스처 없는 기하학적 도형)
+### 5.2. 중기 목표 (게임플레이)
+- [ ] 적 AI 시스템 (이동/공격 패턴)
+- [ ] 게임 상태 머신 (title → playing → gameover)
 - [ ] 사운드 시스템
-- [ ] 게임 상태 관리 (메뉴, 인게임, 게임오버)
+- [ ] 경험치/레벨업 시스템
 
-### 5.3. 장기 목표 (최적화)
-- [ ] 배치 렌더링 (많은 객체 처리)
-- [ ] 오브젝트 풀링 (메모리 최적화)
-- [ ] 모바일 포팅 완료 (터치 입력, 성능 최적화)
+### 5.3. 장기 목표 (최적화/포팅)
+- [ ] Canvas 배치 렌더링
+- [ ] 공간 파티셔닝 (spatialGrid)
+- [ ] 모바일 포팅 (Android/iOS)
 - [ ] 절차적 콘텐츠 생성
 
 ---

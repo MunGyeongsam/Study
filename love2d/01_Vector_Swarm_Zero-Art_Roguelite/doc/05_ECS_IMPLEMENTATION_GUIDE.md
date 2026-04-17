@@ -2,6 +2,23 @@
 
 > Vector Swarm을 위한 고성능 모바일 최적화 ECS 아키텍처
 
+### 구현 현황 (2026-04-17)
+| 항목 | 상태 |
+|------|------|
+| ECS 코어 (ecs.lua) | ✅ 구현 완료 — componentIndex 캐시, pivot query 최적화 |
+| System 베이스 (system.lua) | ✅ 구현 완료 — 성능 모니터링 내장 |
+| ECSManager (ecsManager.lua) | ✅ 구현 완료 — update/draw 분리, 시스템 순서 보장 |
+| 컴포넌트 8종 | ✅ `{ name, defaults, new(data) }` 패턴으로 구현 |
+| 시스템 6종 | ✅ Input, Movement, Boundary, LifeSpan, Render, PlayerRender |
+| EntityFactory | ✅ createPlayer, createEnemy |
+| Player 파사드 | ✅ bind/update/getPosition |
+| BulletPatternSystem | ⬜ 미구현 (다음 Phase) |
+| CollisionSystem | ⬜ 미구현 |
+| 오브젝트 풀링 | ⬜ 미구현 |
+
+> 아래 가이드의 코드 예시는 **설계 참고용**입니다. 실제 구현은 `src/` 코드를 확인하세요.
+> 특히 컴포넌트는 단순 테이블이 아닌 `M.new(data)` 생성자 패턴을 사용합니다.
+
 ---
 
 ## 1. ECS 개요 및 목표

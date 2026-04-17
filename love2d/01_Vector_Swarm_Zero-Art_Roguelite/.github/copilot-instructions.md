@@ -28,13 +28,36 @@ src/
 ├── conf.lua          # LÖVE window config (432×960 portrait, 9:20)
 ├── 00_common/        # Utilities — loaded first, no game dependencies
 │   ├── global.lua    # Injects globals: log, clamp, lerp, setColor, …
-│   ├── logger.lua    # 4-level logging system (DEBUG/INFO/WARN/ERROR)
+│   ├── logger.lua    # 4-level logging + in-game console (` key)
 │   ├── debug.lua     # In-game debug overlay (key-value watch panel)
+│   ├── gridDebugDraw.lua  # Screen-space grid overlay (F4)
+│   ├── kutil.lua     # Misc utilities
 │   └── math/         # Vector / matrix helpers
-├── 01_core/          # Engine layer (world boundaries, future ECS)
-├── 02_renderer/      # Camera (orthographic, Unity-style)
-├── 03_game/          # Game logic — entities, systems, patterns, states
+├── 01_core/          # Engine layer
+│   ├── world.lua     # World boundaries, zones, fun elements
+│   ├── ecs.lua       # ECS core (entity/component management, componentIndex cache)
+│   ├── system.lua    # System base class (performance monitoring)
+│   └── ecsManager.lua # ECS orchestrator (system registration, update/draw split)
+├── 02_renderer/      # Camera & rendering
+│   ├── camera.lua    # Unity-style orthographic camera
+│   └── cameraManager.lua  # Game/debug camera modes (F5 toggle)
+├── 03_game/          # Game logic
+│   ├── components/   # Pure-data ECS components (8 types)
+│   │   ├── transform.lua, velocity.lua, collider.lua, renderable.lua
+│   │   ├── lifespan.lua, playerTag.lua, input.lua, worldBound.lua
+│   ├── systems/      # ECS systems (6 types)
+│   │   ├── inputSystem.lua, movementSystem.lua, boundarySystem.lua
+│   │   ├── lifespanSystem.lua, renderSystem.lua, playerRenderSystem.lua
+│   ├── entities/     # Entity factories & façades
+│   │   ├── entityFactory.lua  # createPlayer(), createEnemy()
+│   │   └── player.lua         # ECS façade (bind, update, getPosition)
+│   ├── patterns/     # Bullet patterns (planned)
+│   └── states/       # Game states (planned)
 └── 04_ui/            # HUD, mobile layout, button controls
+    ├── uiManager.lua
+    ├── topHud.lua
+    ├── bottomControls.lua
+    └── mobileLayout.lua
 ```
 
 ### Key cross-layer rules
@@ -42,10 +65,31 @@ src/
 - `00_common/global.lua` must be loaded **first** in `love.load()`; it defines globals used everywhere (`log`, `clamp`, `lerp`, `setColor`, etc.).
 - `logger.init()` is called immediately after `global.init()`.
 
-### Camera system (`02_renderer/camera.lua`)
+### ECS architecture (`01_core/`)
+- **ecs.lua**: Entity lifecycle (create/destroy with ID recycling), component CRUD, `queryEntities()` with pivot optimization and `componentIndex` cache.
+- **system.lua**: `System.new(name, requiredComponents, updateFn)` — base class with built-in performance timing.
+- **ecsManager.lua**: Orchestrates all systems. `update(dt)` runs logic systems; `draw()` runs render systems separately. Systems registered via `addSystem()` execute in registration order.
+
+### Component pattern (`03_game/components/`)
+Each component file exports `{ name, defaults, new(data) }`:
+```lua
+local M = {}
+M.name = "Transform"
+M.defaults = { x = 0, y = 0, angle = 0, scale = 1 }
+function M.new(data) ... end
+return M
+```
+
+### Player ECS façade (`03_game/entities/player.lua`)
+- `player.bind(ecs, entityId)` — binds to an ECS entity created by `entityFactory.createPlayer()`.
+- `player.update(dt)` — handles world interactions (zone detection, power-ups) only.
+- Rendering is handled by `PlayerRenderSystem`; input by `InputSystem`.
+
+### Camera system (`02_renderer/camera.lua` + `cameraManager.lua`)
 - Unity-style orthographic camera: `orthographicSize` = half-height in world units.
 - World coordinate system is centered at `(0, 0)`; Y increases upward.
 - `camera:draw(fn)` applies the transform; all world rendering happens inside that callback.
+- `cameraManager` manages game camera (player-following) and debug camera (free pan/zoom).
 - Mouse input is forwarded to touch callbacks (`love.mousepressed` → `love.touchpressed`) for PC prototyping.
 
 ### Touch / input pipeline
@@ -57,6 +101,17 @@ src/
 ---
 
 ## Key Conventions
+
+### Key bindings (current)
+| Key | Function |
+|-----|----------|
+| `` ` `` | Logger console toggle |
+| F1 | Debug watch panel toggle |
+| F2 | UI visibility toggle |
+| F3 | UI debug mode toggle |
+| F4 | Screen grid toggle |
+| F5 | Camera mode toggle (game ↔ debug) |
+| ESC | Quit game |
 
 ### Global helpers (injected by `00_common/global.lua`)
 Use these everywhere — do **not** use raw `print()` for debug output:
@@ -78,8 +133,17 @@ normalize(x, y)         -- returns nx, ny
 local logger = require("00_common.logger")
 logger.init()                        -- call in love.load
 logger.debug/info/warn/error("msg")
+logger.toggleConsole()               -- ` key toggle
 logger.drawConsole(fonts.small)      -- call in love.draw
 logger.close()                       -- call in love.quit
+```
+
+### Log message format
+Use ASCII tags instead of emoji for log messages (no Korean font loaded):
+```lua
+logInfo("[CAM] Camera initialized")     -- not "📹 Camera initialized"
+logInfo("[ECS] System registered")      -- not "🏗️ ECS ..."
+logInfo("[PLAYER] Collected: shield")   -- not "🎁 Player collected: ..."
 ```
 
 ### Debug overlay

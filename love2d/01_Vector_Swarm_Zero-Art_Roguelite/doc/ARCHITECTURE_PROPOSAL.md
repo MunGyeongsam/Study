@@ -1,203 +1,169 @@
-# Vector Swarm 아키텍처 현황 (단순화된 접근법)
+# Vector Swarm 아키텍처 현황
 
 ## 현재 구현 상태
 
-현재는 복잡한 ECS 시스템 대신 **단순하고 직접적인 아키텍처**로 구현되어 있습니다.
-핵심은 Unity 스타일 카메라 시스템과 깔끔한 모듈 구조에 있습니다.
+ECS(Entity-Component-System) 아키텍처를 기반으로 한 레이어 구조.
+Unity 스타일 카메라 시스템과 모바일-우선 입력 파이프라인을 갖추고 있습니다.
 
 ## 1. 실제 구조
 
 ```
 src/
-  00_common/         # 공통 유틸리티 모듈
-    debug.lua          # 디버그 시스템
-    global.lua         # 전역 유틸리티 함수들  
-    grid_debug_draw.lua # 스크린 그리드 디버그
-    kutil.lua          # 기타 유틸리티
-    logger.lua         # 로깅 시스템
-    math/              # 수학 라이브러리
-      vector.lua       # 2D 벡터 연산
-      matrix.lua       # 행렬 연산
-  01_core/             # 핵심 게임 시스템
-    world.lua          # 월드 좌표계와 그리드 시스템
-  02_renderer/         # 렌더링 시스템
-    camera.lua         # Unity 스타일 orthographic 카메라
-  main.lua             # 메인 진입점
-  conf.lua             # LÖVE2D 설정
+  main.lua               # LÖVE 콜백 (load/update/draw/input)
+  conf.lua               # LÖVE 창 설정 (432×960, 9:20 세로)
+  00_common/             # 공통 유틸리티 — 게임 의존성 없음
+    global.lua             # 전역 함수 (log, clamp, lerp, setColor, …)
+    logger.lua             # 4레벨 로깅 + 인게임 콘솔 (` 키)
+    debug.lua              # 디버그 watch panel (F1)
+    gridDebugDraw.lua      # 스크린 그리드 오버레이 (F4)
+    kutil.lua              # 기타 유틸리티
+    math/
+      vector.lua           # 2D 벡터 연산
+      matrix.lua           # 행렬 연산
+  01_core/               # 엔진 레이어
+    world.lua              # 월드 경계, 존, 재미 요소
+    ecs.lua                # ECS 코어 (엔티티/컴포넌트, componentIndex 캐시)
+    system.lua             # 시스템 베이스 클래스 (성능 모니터링)
+    ecsManager.lua         # ECS 오케스트레이터 (시스템 등록, update/draw 분리)
+  02_renderer/           # 카메라 & 렌더링
+    camera.lua             # Unity 스타일 orthographic 카메라
+    cameraManager.lua      # game/debug 카메라 모드 (F5 토글)
+  03_game/               # 게임 로직
+    components/            # 순수 데이터 ECS 컴포넌트 (8종)
+      transform.lua          # 위치, 각도, 스케일
+      velocity.lua           # 속도, 최대속력, 감속
+      collider.lua           # 충돌체 (원형/AABB)
+      renderable.lua         # 렌더링 속성 (색상, 반지름, 도형)
+      lifespan.lua           # 수명 (자동 제거)
+      playerTag.lua          # 플레이어 식별 태그
+      input.lua              # 입력 설정 (속도, 활성화)
+      worldBound.lua         # 월드 경계 제한
+    systems/               # ECS 시스템 (6종)
+      inputSystem.lua        # 키보드/터치 → Velocity
+      movementSystem.lua     # Velocity → Transform
+      boundarySystem.lua     # 월드 경계 clamping
+      lifespanSystem.lua     # 수명 만료 엔티티 제거
+      renderSystem.lua       # 일반 엔티티 렌더링
+      playerRenderSystem.lua # 플레이어 전용 렌더링 (삼각형+방향)
+    entities/              # 엔티티 팩토리 & 파사드
+      entityFactory.lua      # createPlayer(), createEnemy()
+      player.lua             # ECS 파사드 (bind, update, getPosition)
+    patterns/              # 탄막 패턴 (예정)
+    states/                # 게임 상태 (예정)
+  04_ui/                 # HUD, 모바일 레이아웃
+    uiManager.lua          # UI 총괄 (터치 소비 우선)
+    topHud.lua             # 상단 HUD (점수, 설정)
+    bottomControls.lua     # 하단 버튼 컨트롤
+    mobileLayout.lua       # 모바일 레이아웃 (영역 분할)
 ```
 
 ## 2. 핵심 설계 원칙
 
-### 2.1. Lua 표준 명명 규칙
-- **모듈명**: camelCase (debug, logger, camera, world)
-- **함수명**: camelCase 
-- **상수**: UPPER_CASE
-- PascalCase는 사용하지 않음
+### 2.1. 레이어 의존성
+```
+04_ui → 03_game → 02_renderer → 01_core → 00_common
+```
+- 상위 → 하위 require만 허용 (역방향 절대 금지)
+- `main.lua`는 예외: 모든 레이어 require 가능 (진입점)
 
-### 2.2. Unity 스타일 카메라 시스템
-- **Orthographic Size**: 카메라가 보는 월드의 절반 높이
-- **Viewport Control**: 카메라가 화면의 어느 위치를 중심으로 할지 제어
-- **픽셀 정확도**: UI 요소들이 줌과 무관하게 정확한 픽셀 크기 유지
+### 2.2. ECS 아키텍처
+- **컴포넌트**: 순수 데이터 (`{ name, defaults, new(data) }` 패턴)
+- **시스템**: `System.new(name, requiredComponents, updateFn)` — 로직 처리
+- **엔티티**: 고유 ID (생성/파괴, ID 재활용)
+- **ecsManager**: update(dt)에서 로직 시스템 실행, draw()에서 렌더 시스템만 실행
 
-### 2.3. 수학적 좌표계
-- **월드 좌표**: (0,0) 중심, Y+ 위방향
-- **스크린 변환**: 카메라가 자동 처리
-- **픽셀-월드 변환**: 카메라의 orthographic size 기반 정확 계산
+### 2.3. Unity 스타일 카메라
+- Orthographic Size: 카메라가 보는 월드의 절반 높이
+- Viewport Control: 화면 내 카메라 중심 위치
+- 수학적 좌표계: (0,0) 중심, Y+ 상향
+- cameraManager: game 모드 (플레이어 추적) + debug 모드 (자유 이동/줌)
 
-## 3. 주요 시스템 설명
-
-### 3.1. 카메라 시스템 (02_renderer/camera.lua)
+### 2.4. 모듈 패턴
 ```lua
--- Unity 스타일 생성
-local camera = camera.new(x, y, orthographicSize, rotation, viewportX, viewportY)
-
--- 주요 기능
-camera:setOrthographicSize(5)  -- 뷰 크기 조정
-camera:setViewport(x, y)       -- 화면 중심 위치 설정
-camera:getPixelsPerUnit()      -- 픽셀당 월드 유닛
-camera:getUnitsPerPixel()      -- 월드 유닛당 픽셀
-
--- 렌더링
-camera:draw(function()
-    -- 월드 좌표계에서 그리기
-end)
+local M = {}
+function M.init() end
+function M.update(dt) end
+function M.draw() end
+return M
 ```
 
-### 3.2. 월드 시스템 (01_core/world.lua)
-```lua
--- 간단한 좌표계와 그리드 표시
-world.init()                    -- 초기화
-world.drawGrid(gridSize, camera) -- 픽셀 기준 정확한 그리드
-world.getSize()                 -- 월드 크기
-world.getBounds()               -- 월드 경계
+## 3. 시스템 실행 순서
+
+```
+love.update(dt):
+  1. InputSystem      — 키보드/터치 → Velocity 컴포넌트
+  2. MovementSystem   — Velocity → Transform 위치 갱신
+  3. BoundarySystem   — 월드 경계 clamping
+  4. LifeSpanSystem   — 수명 만료 엔티티 제거
+  5. player.update()  — 존 감지, 파워업 (ECS 파사드)
+  6. cameraManager    — 카메라 추적/업데이트
+
+love.draw():
+  cameraManager.draw(function()
+    1. RenderSystem       — 일반 엔티티 렌더링
+    2. PlayerRenderSystem — 플레이어 삼각형+방향
+    3. world.draw()       — 월드 디버그 그리기
+  end)
+  4. UI 렌더링 (스크린 좌표)
+  5. Debug overlay / Logger console
 ```
 
-### 3.3. 로깅 시스템 (00_common/logger.lua) 
-```lua
--- 표준 로깅
-logger.info("메시지")
-logger.error("오류")
-logger.toggleConsole()  -- F1 키로 인게임 콘솔
+## 4. 데이터 흐름
 
--- 전역 단축 함수 (global.lua에서 제공)
-log("간단한 로깅")
+### 4.1. 엔티티 생성
+```lua
+-- EntityFactory.createPlayer(ecs, x, y)
+entityId = ecs:createEntity()
+ecs:addComponent(entityId, "Transform", Transform.new({x=x, y=y}))
+ecs:addComponent(entityId, "Velocity", Velocity.new({maxSpeed=5}))
+ecs:addComponent(entityId, "Input", Input.new({speed=5}))
+ecs:addComponent(entityId, "PlayerTag", PlayerTag.new())
+...
 ```
 
-### 3.4. 전역 유틸리티 (00_common/global.lua)
+### 4.2. Player 파사드 바인딩
 ```lua
-global.init()  -- love.load에서 최우선 호출
-
--- 제공되는 전역 함수들:
-log()          -- logger.info 단축
-clamp()        -- 수학적 클램핑
-lerp()         -- 선형 보간
-distance()     -- 거리 계산
-randomColor()  -- 랜덤 색상
+player.bind(ecsManager.getWorld(), playerId)
+-- player.update(dt)는 ECS 외부 로직만 담당 (존 감지 등)
+-- 입력은 InputSystem, 렌더링은 PlayerRenderSystem이 처리
 ```
 
-## 4. 현재 구현의 장점
+## 5. 키 바인딩
 
-### 4.1. 단순성
-- 복잡한 ECS 없이 직접적인 시스템 설계
-- 이해하기 쉽고 수정하기 용이한 구조
-- 빠른 프로토타이핑 가능
+| 키 | 기능 |
+|----|------|
+| `` ` `` | Logger 콘솔 토글 |
+| F1 | Debug watch panel 토글 |
+| F2 | UI 표시 토글 |
+| F3 | UI 디버그 모드 토글 |
+| F4 | Screen grid 토글 |
+| F5 | Camera 모드 전환 (game ↔ debug) |
+| ESC | 게임 종료 |
 
-### 4.2. Unity 호환성 
-- Unity 2D 카메라와 동일한 orthographic size 개념
-- Unity 개발자에게 친숙한 API
-- 3D 게임 엔진 경험 활용 가능
+## 6. 향후 확장 방향
 
-### 4.3. 픽셀 정확도
-- 줌과 무관한 일정한 UI 크기
-- 깔끔한 픽셀 아트 스타일 지원
-- 다양한 해상도 대응
+### 6.1. 탄막/불릿 시스템 (Phase 2C)
+- 오브젝트 풀링 (bulletPool)
+- BulletPattern 컴포넌트 + BulletPatternSystem
+- Canvas 배치 렌더링
+- 공간 파티셔닝 (spatialGrid)
 
-## 5. 향후 확장 방향
+### 6.2. 적 AI 시스템
+- AIComponent + AISystem
+- 이동/공격 패턴 정의
 
-### 5.1. 게임 객체 시스템
-- 단순한 table 기반 엔티티
-- 상속 대신 composition 패턴
-- 필요시 간단한 컴포넌트 시스템 추가
+### 6.3. 게임 스테이트 머신
+- title → playing → gameover 흐름
+- states/ 폴더에 상태별 모듈
 
-### 5.2. 렌더링 최적화
-- 배치(batch) 렌더링 시스템
-- 간단한 오브젝트 풀링
-- 화면 밖 컬링
+### 6.4. 충돌 시스템
+- CollisionSystem (Transform + Collider 쿼리)
+- 레이어 기반 충돌 필터링
 
-### 5.3. 게임플레이 시스템
-- 입력 시스템 (터치 우선/키보드 호환)
-- 충돌 검사 시스템
-- 탄막 패턴 시스템
-
----
-
-## ECS 확장 고려사항 (미래)
-
-현재는 단순한 구조이지만, 게임이 복잡해질 경우를 대비한 ECS 확장 계획:
-
-* 03_game/components/Exp.lua      # 경험치 데이터
-* 03_game/components/Level.lua    # 레벨/성장 단계  
-* 03_game/components/Stat.lua     # 공격력, 체력 등 기본 능력치
-* 03_game/systems/LevelUpSystem.lua # 경험치 획득 및 레벨업 처리
-
-이때도 현재의 단순한 구조를 기반으로 점진적 확장이 가능합니다.
-
----
-
-## 6. 모바일 포팅 고려사항
-
-### 6.1. LÖVE2D 모바일 지원
-현재 구조는 LÖVE2D의 멀티플랫폼 특성을 활용하여 최소한의 변경으로 모바일 포팅이 가능합니다:
-
-- **Android**: love-android-sdl2 사용
-- **iOS**: love-ios-source 사용  
-- **입력 추상화**: 현재 키보드 입력을 터치로 쉽게 대체 가능
-
-### 6.2. 터치 인터페이스 설계
-```lua
--- 현재 키보드 입력:
-love.keypressed() → camera:move()
-
--- 모바일 터치 입력 (계획):
-love.touchmoved() → camera:move()
-love.touchpressed() → UI interaction
-```
-
-### 6.3. 성능 최적화 전략
-- **현재 장점**: 단순한 구조로 모바일 성능에 유리
-- **픽셀 퍼펙트**: 다양한 모바일 해상도에 대응
-- **배치 렌더링**: 필요시 쉽게 추가 가능한 구조
-
----
-
-## 7. 실제 사용 예시
-
-### main.lua의 현재 구조:
-```lua
--- 전역 유틸리티 최우선 초기화
-local global = require("00_common.global")
-
--- 주요 시스템들
-local logger = require("00_common.logger")
-local world = require("01_core.world")
-local camera = require("02_renderer.camera")
-
-local mainCamera
-
-function love.load()
-    global.init()  -- 전역 함수들 등록
-    logger.init()
-    
-    -- Unity 스타일 카메라 생성
-    mainCamera = camera.new(0, 0, 5)  -- orthographicSize = 5
-    world.init()
-end
-
-function love.draw()
-    mainCamera:draw(function()
-        -- 월드 좌표계에서 그리기
-        world.drawGrid(2, mainCamera)
-    end)
+### 6.5. 모바일 최적화
+- 터치 인터페이스 고도화
+- 배터리 효율 (불필요한 계산 최소화)
+- 다양한 화면비 대응 (18:9 ~ 20:9)
     
     -- 스크린 좌표계 UI
     logger.drawConsole()

@@ -108,156 +108,300 @@ local logger = require("00_common.logger")
 -- 초기화 (main.lua에서 한 번만)
 logger.init()
 
--- 로깅
-logger.info("정보 메시지")
-logger.warn("경고 메시지") 
-logger.error("오류 메시지")
-logger.debug("디버그 메시지")
+-- 로깅 (문자열만 받음 — format은 호출자가 처리)
+logger.info("[TAG] message")
+logger.warn("[TAG] warning")
+logger.error("[TAG] error")
+logger.debug("[TAG] debug info")
 
--- 포매팅 지원
-logger.info("플레이어 위치: (%.1f, %.1f)", playerX, playerY)
+-- 포매팅 예시
+logger.info(string.format("[PLAYER] Position: (%.1f, %.1f)", x, y))
 ```
 
 ### 3.2. 인게임 콘솔
 ```lua
--- 콘솔 토글 (F1 키 등에 바인딩)
+-- 콘솔 토글 (` 키에 바인딩, 기본값: 숨김)
 logger.toggleConsole()
 
--- 콘솔 렌더링 (love.draw에서 호출)
-function love.draw()
-    -- 게임 내용 그리기...
-    
-    -- 콘솔은 맨 마지막에
-    logger.drawConsole(fonts.small)  -- fonts.small = 작은 폰트
-end
+-- 콘솔 렌더링 (love.draw 맨 마지막에 호출)
+logger.drawConsole(fonts.small)
+
+-- 콘솔 상태 확인
+logger.isConsoleVisible()
+```
+
+### 3.3. 로그 메시지 규칙
+```lua
+-- ASCII 태그 사용 (이모지/한글 금지 — 기본 폰트에서 깨짐)
+logInfo("[CAM] Camera initialized")       -- O
+logInfo("[ECS] System registered")        -- O
+logInfo("📹 Camera initialized")         -- X (이모지 깨짐)
 ```
 
 ---
 
-## 4. 전역 유틸리티 (00_common/global.lua)
+## 4. ECS 시스템 (01_core/)
 
-### 4.1. 초기화 및 전역 함수들
+### 4.1. ECS 코어 (ecs.lua)
+```lua
+local ECS = require("01_core.ecs")
+local ecs = ECS.new()
+
+-- 엔티티 생성/제거
+local id = ecs:createEntity()
+ecs:destroyEntity(id)
+
+-- 컴포넌트 CRUD
+ecs:addComponent(id, "Transform", {x = 0, y = 0, angle = 0, scale = 1})
+local transform = ecs:getComponent(id, "Transform")
+ecs:removeComponent(id, "Transform")
+ecs:hasComponent(id, "Transform")
+
+-- 엔티티 쿼리 (pivot 최적화 + componentIndex 캐시)
+local entities = ecs:queryEntities({"Transform", "Velocity"})
+
+-- 통계
+local stats = ecs:getStats()
+-- stats.entityCount, stats.componentCounts, stats.recycledCount
+```
+
+### 4.2. 시스템 베이스 클래스 (system.lua)
+```lua
+local System = require("01_core.system")
+
+local MySystem = System.new("MySystem", {"Transform", "Velocity"}, function(ecs, entities, dt)
+    for _, entityId in ipairs(entities) do
+        local t = ecs:getComponent(entityId, "Transform")
+        local v = ecs:getComponent(entityId, "Velocity")
+        -- 로직 처리...
+    end
+end)
+
+-- 성능 통계
+local stats = MySystem:getStats()  -- { name, updateTime, entityCount }
+```
+
+### 4.3. ECS 매니저 (ecsManager.lua)
+```lua
+local ecsManager = require("01_core.ecsManager")
+
+ecsManager.init()                            -- 월드 생성 + 기본 시스템 등록
+ecsManager.update(dt)                        -- 로직 시스템만 실행 (렌더 제외)
+ecsManager.draw()                            -- 렌더 시스템만 실행
+ecsManager.getWorld()                        -- ECS 월드 참조 반환
+
+-- 엔티티 생성 (EntityFactory 위임)
+local playerId = ecsManager.createPlayer(x, y)
+local enemyId = ecsManager.createEnemy(x, y, "basic")
+
+-- 통계
+local stats = ecsManager.getStats()          -- world + systems 통계
+```
+
+### 4.4. 컴포넌트 패턴 (03_game/components/)
+```lua
+-- 모든 컴포넌트 파일은 같은 패턴:
+local M = {}
+M.name = "Transform"
+M.defaults = { x = 0, y = 0, angle = 0, scale = 1 }
+function M.new(data)
+    local c = {}
+    for k, v in pairs(M.defaults) do
+        c[k] = (data and data[k]) or v
+    end
+    return c
+end
+return M
+```
+
+### 4.5. Player 파사드 (03_game/entities/player.lua)
+```lua
+local player = require("03_game.entities.player")
+
+player.bind(ecs, entityId)         -- ECS 엔티티에 파사드 바인딩
+player.init()                      -- 초기화 (디버그 정보 등록 등)
+player.update(dt)                  -- 월드 인터랙션 (존 감지, 파워업)
+player.getPosition()               -- x, y 반환
+player.getCameraTarget()           -- 카메라 추적용 좌표
+player.getStats()                  -- 디버그용 통계
+player.reset()                     -- 상태 초기화
+-- player.draw()는 비어있음 (PlayerRenderSystem이 처리)
+```
+
+---
+
+## 5. 카메라 매니저 (02_renderer/cameraManager.lua)
+
+```lua
+local cameraManager = require("02_renderer.cameraManager")
+
+-- 초기화 (카메라 2개 생성: game + debug)
+cameraManager.init(orthographicSize)
+
+-- 모드 전환 (F5)
+cameraManager.toggle()             -- "game" ↔ "debug"
+cameraManager.getMode()            -- 현재 모드 문자열
+
+-- 업데이트
+cameraManager.update(dt, targetX, targetY)  -- game 모드: 타겟 추적
+
+-- 디버그 모드 조작
+cameraManager.debugMove(dx, dy)    -- 마우스 드래그
+cameraManager.wheelmoved(x, y)     -- 마우스 휠 줌
+
+-- 렌더링 (카메라 변환 적용 후 콜백 실행)
+cameraManager.draw(function()
+    -- 월드 좌표계에서 그리기
+end)
+
+-- 활성 카메라 참조
+local cam = cameraManager.getActive()
+```
+
+---
+
+## 6. 디버그 도구
+
+### 6.1. Debug Watch Panel (00_common/debug.lua)
+```lua
+local debug = require("00_common.debug")
+
+-- watch 항목 등록 (문자열 반환 함수)
+debug.add("FPS", function() return tostring(love.timer.getFPS()) end)
+debug.add("Player", function() return string.format("(%.1f, %.1f)", x, y) end)
+debug.remove("FPS")
+
+-- 토글 (F1)
+debug.toggleConsole()
+debug.isConsoleVisible()
+
+-- 렌더링 (love.draw에서 호출)
+debug.draw(x, y, font)  -- x, y = 화면 위치, font = 폰트 객체
+```
+
+### 6.2. Grid Debug Draw (00_common/gridDebugDraw.lua)
+```lua
+local gridDebugDraw = require("00_common.gridDebugDraw")
+
+gridDebugDraw.toggle()    -- F4 토글
+gridDebugDraw.draw()      -- love.draw에서 호출
+```
+
+---
+
+## 7. 전역 유틸리티 (00_common/global.lua)
+
 ```lua
 local global = require("00_common.global")
+global.init()  -- love.load에서 최우선 호출
 
--- love.load에서 최우선 초기화
-function love.load()
-    global.init()  -- 전역 함수들 등록
-    -- 다른 초기화들...
-end
+-- 로깅 (어디서나 사용 가능)
+log("message")          -- logger.info 단축
+logInfo("message")      -- logger.info
+logDebug("message")     -- logger.debug
+logWarn("message")      -- logger.warn
+logError("message")     -- logger.error
 
--- 이제 어디서나 사용 가능한 전역 함수들:
-log("간단한 로깅")                     -- logger.info의 단축
+-- 수학
+clamp(value, 0, 100)           -- 범위 제한
+lerp(a, b, 0.5)               -- 선형 보간
+distance(x1, y1, x2, y2)      -- 두 점 사이 거리
+normalize(x, y)                -- 정규화 벡터 반환 (nx, ny)
 
--- 수학 함수들
-local result = clamp(value, 0, 100)    -- 값을 0-100 사이로 제한
-local interpolated = lerp(a, b, 0.5)   -- a와 b 사이 50% 지점
-local dist = distance(x1, y1, x2, y2)  -- 두 점 사이 거리
-
--- 색상 함수들  
-local r, g, b = randomColor()          -- 랜덤 RGB 색상
-local r, g, b = hsl(hue, sat, light)   -- HSL → RGB 변환
+-- 색상 (0-255 범위)
+setColor(r, g, b, a)           -- love.graphics.setColor 래퍼
+resetColor()                   -- 흰색으로 복원
 ```
 
 ---
 
-## 5. 수학 라이브러리 (00_common/math/)
-
-### 5.1. 벡터 연산 (vector.lua)
-```lua
-local Vector = require("00_common.math.vector")
-
--- 벡터 생성
-local v1 = Vector(3, 4)        -- 또는 Vector.new(3, 4)
-local v2 = Vector(1, 2)
-
--- 기본 연산
-local v3 = v1 + v2             -- 덧셈  
-local v4 = v1 - v2             -- 뺄셈
-local v5 = v1 * 2              -- 스칼라 곱
-local length = v1:len()        -- 길이 (5.0)
-local normalized = v1:normalized()  -- 정규화된 벡터
-
--- 벡터 함수들
-local dot = v1:dot(v2)         -- 내적
-local angle = v1:angleTo(v2)   -- 두 벡터 사이 각도
-local rotated = v1:rotated(math.pi/2)  -- 90도 회전
-```
-
-### 5.2. 행렬 연산 (matrix.lua)
-```lua
-local Matrix = require("00_common.math.matrix")
-
--- 변환 행렬 생성
-local translate = Matrix.translate(10, 5)    -- 이동 행렬
-local rotate = Matrix.rotate(math.pi/4)      -- 회전 행렬  
-local scale = Matrix.scale(2, 1.5)           -- 스케일 행렬
-
--- 행렬 연산
-local combined = translate * rotate * scale   -- 조합 변환
-local transformed = combined * Vector(1, 1)   -- 벡터 변환
-```
-
----
-
-## 6. 실제 게임 루프 예제
+## 8. 실제 게임 루프 예제
 
 ```lua
--- main.lua 전체 구조 예제
 local global = require("00_common.global")
-local logger = require("00_common.logger") 
+local logger = require("00_common.logger")
+local debug = require("00_common.debug")
 local world = require("01_core.world")
-local camera = require("02_renderer.camera")
+local ecsManager = require("01_core.ecsManager")
+local cameraManager = require("02_renderer.cameraManager")
+local uiManager = require("04_ui.uiManager")
+local player = require("03_game.entities.player")
 
-local mainCamera
+local fonts
 
 function love.load()
-    -- 1. 전역 유틸리티 최우선
     global.init()
-    
-    -- 2. 로깅 초기화
     logger.init()
     
-    -- 3. 카메라 설정
-    mainCamera = camera.new(0, 0, 5)
+    fonts = {
+        small = love.graphics.newFont(12),
+        medium = love.graphics.newFont(16),
+    }
     
-    -- 4. 기타 시스템들
+    ecsManager.init()
     world.init()
+    cameraManager.init(5)  -- orthographicSize = 5
     
-    log("All systems initialized")
+    local playerId = ecsManager.createPlayer(0, -100)
+    player.bind(ecsManager.getWorld(), playerId)
+    player.init()
+    
+    uiManager.init()
 end
 
 function love.update(dt)
-    -- 게임 로직 업데이트
+    ecsManager.update(dt)   -- 로직 시스템 실행
+    player.update(dt)       -- 월드 인터랙션
+    
+    local tx, ty = player.getCameraTarget()
+    cameraManager.update(dt, tx, ty)
+    
+    uiManager.update(dt)
 end
 
 function love.draw()
-    -- 월드 렌더링 
-    mainCamera:draw(function()
-        world.drawGrid(2, mainCamera)
-        -- 게임 오브젝트들 그리기...
+    cameraManager.draw(function()
+        ecsManager.draw()       -- 렌더 시스템 실행
+        world.draw(cameraManager.getActive())
     end)
     
-    -- UI 렌더링 (스크린 좌표)
-    love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
-    logger.drawConsole()
-end
-
-function love.keypressed(key)
-    if key == "f1" then
-        logger.toggleConsole()
-    elseif key == "=" then
-        -- 줌인
-        local newSize = mainCamera:getOrthographicSize() * 0.8
-        mainCamera:setOrthographicSize(newSize)
-        log("Zoom: %.2f", newSize)
-    end
+    uiManager.draw()
+    debug.draw(10, 10, fonts.small)
+    logger.drawConsole(fonts.small)
 end
 ```
 
 ---
 
-## 7. 성능 고려사항
+## 9. 수학 라이브러리 (00_common/math/)
+
+### 9.1. 벡터 연산 (vector.lua)
+```lua
+local Vector = require("00_common.math.vector")
+
+local v1 = Vector(3, 4)
+local v2 = Vector(1, 2)
+
+local v3 = v1 + v2             -- 덧셈
+local v4 = v1 * 2              -- 스칼라 곱
+local length = v1:len()        -- 길이 (5.0)
+local normalized = v1:normalized()
+local dot = v1:dot(v2)         -- 내적
+local rotated = v1:rotated(math.pi/2)
+```
+
+### 9.2. 행렬 연산 (matrix.lua)
+```lua
+local Matrix = require("00_common.math.matrix")
+
+local translate = Matrix.translate(10, 5)
+local rotate = Matrix.rotate(math.pi/4)
+local combined = translate * rotate
+```
+
+---
+
+## 10. 성능 고려사항
 
 ### 7.1. 픽셀 정확도 
 ```lua
@@ -278,4 +422,4 @@ local textScale = pixelToWorld * 16
 -- 여러 텍스트에 textScale 사용...
 ```
 
-이 API 가이드는 현재 구현된 시스템의 실제 사용법을 정리한 것으로, 코드베이스와 정확히 일치합니다.
+이 API 가이드는 현재 구현된 시스템의 실제 사용법을 정리한 것입니다. (2026-04-17 업데이트)
