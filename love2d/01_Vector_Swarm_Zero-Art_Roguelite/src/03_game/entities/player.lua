@@ -83,9 +83,9 @@ end
 
 -- 위치 정보 반환
 function player.getPosition()
-    if not ecsWorld or not entityId then return 0, -100 end
+    if not ecsWorld or not entityId then return 0, 0 end
     local transform = ecsWorld:getComponent(entityId, "Transform")
-    if not transform then return 0, -100 end
+    if not transform then return 0, 0 end
     return transform.x, transform.y
 end
 

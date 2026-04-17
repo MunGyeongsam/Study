@@ -37,13 +37,12 @@ function ECSManager.init(getPlayerPos)
     -- Bullet pool (shared by emitter system and render)
     ECSManager.bulletPool = BulletPool.new(2000)
 
-    -- World bounds for bullet culling
+    -- World bounds for bullet culling (use getBounds for consistency)
     local world = require("01_core.world")
-    local halfW = world.size.width  / 2
-    local halfH = world.size.height / 2
+    local left, bottom, right, top = world.getBounds()
     ECSManager.bulletBounds = {
-        minX = -halfW, maxX = halfW,
-        minY = world.center.y - halfH, maxY = world.center.y + halfH,
+        minX = left, maxX = right,
+        minY = bottom, maxY = top,
     }
 
     -- Enemy spawner
