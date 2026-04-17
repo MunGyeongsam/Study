@@ -113,9 +113,9 @@ function love.load()
     debug.add("waves",
     function()
         local stats = ecsManager.getStats()
-        local s = stats.spawner
-        return string.format("%10s : wave %d (%.0fs elapsed)",
-            "Spawner", s.waveNumber, s.timer)
+        local s = stats.stage
+        return string.format("%10s : Stage %d Wave %d/%d [%s] (%d enemies)",
+            "Stage", s.stage, s.wave, s.wavesPerStage, s.state, s.enemies)
     end);
 
     debug.add("dash/focus",
@@ -213,6 +213,12 @@ function love.update(dt)
         return
     end
 
+    -- 스테이지 클리어 중이면 스테이지 매니저만 업데이트 (연출 진행)
+    if ecsManager.stageManager:isClearing() then
+        ecsManager.stageManager:update(dt)
+        return
+    end
+
     -- 게임 오버 상태로 게임 로직 정지
     if gameState.isGameOver() then
         gameState.update(dt, nil)
@@ -236,14 +242,18 @@ function love.update(dt)
     -- 플레이어와 월드 데이터를 UI에 전달
     local worldStats = world.getWorldStats()
     local playerStats = player.getStats()
+    local stageStats = ecsManager.getStats().stage
     
     uiManager.setGameData({
         score = math.floor(gameState.getScore()),
         lives = 3,
-        level = playerStats.zonesVisited + 1,  -- 방문한 구역 수 + 1
+        level = playerStats.zonesVisited + 1,
         fps = love.timer.getFPS(),
-        progress = playerStats.progress,  -- 플레이어 진행률
-        powerUps = #playerStats.powerUps,  -- 수집한 파워업 수
+        stage = stageStats.stage,
+        wave = stageStats.wave,
+        wavesPerStage = stageStats.wavesPerStage,
+        progress = playerStats.progress,
+        powerUps = #playerStats.powerUps,
         secrets = worldStats.secretsDiscovered,
         currentZone = playerStats.currentZone or "outside",
         checkpoints = playerStats.checkpoints
@@ -253,7 +263,9 @@ function love.update(dt)
     local w = ecsManager.getWorld()
     local playerEntities = w:queryEntities({"PlayerTag", "Health"})
     local playerHealth = #playerEntities > 0 and w:getComponent(playerEntities[1], "Health") or nil
-    gameState.setWaveReached(ecsManager.getStats().spawner.waveNumber)
+    -- 스테이지 정보를 gameState에 전달
+    gameState.setStageInfo(stageStats.stage, stageStats.wave, stageStats.wavesPerStage)
+    gameState.setWaveReached(stageStats.totalWaves)
     gameState.update(dt, playerHealth)
 
     -- 레벨업 체크
@@ -295,6 +307,9 @@ function love.draw()
 
     -- 게임 오버 오버레이 (스크린 좌표계, 최상위)
     gameState.draw()
+
+    -- 스테이지 클리어 오버레이
+    ecsManager.stageManager:draw()
 
     -- 레벨업 선택 UI (최상위)
     levelUp.draw()

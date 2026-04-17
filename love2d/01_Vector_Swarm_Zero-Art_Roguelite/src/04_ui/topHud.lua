@@ -63,9 +63,14 @@ function topHud.draw()
     local scoreText = string.format("Score: %d", gameData.score)
     lg.print(scoreText, 10, 10)
     
+    -- 스테이지/웨이브 표시
+    local stageText = string.format("Stage %d  Wave %d/%d",
+        gameData.stage or 1, gameData.wave or 0, gameData.wavesPerStage or 5)
+    lg.print(stageText, 10, 25)
+    
     -- 라이프 표시
-    local livesText = string.format("♥ x %d", gameData.lives)
-    lg.print(livesText, 10, 25)
+    local livesText = string.format("HP x %d", gameData.lives)
+    lg.print(livesText, 10, 40)
     
     -- 레벨과 진행률 표시
     local levelText = string.format("Lv.%d", gameData.level)
@@ -128,6 +133,9 @@ function topHud.setGameData(data)
     if data.lives then gameData.lives = data.lives end
     if data.level then gameData.level = data.level end
     if data.fps then gameData.fps = data.fps end
+    if data.stage then gameData.stage = data.stage end
+    if data.wave then gameData.wave = data.wave end
+    if data.wavesPerStage then gameData.wavesPerStage = data.wavesPerStage end
 end
 
 -- 터치 입력 처리

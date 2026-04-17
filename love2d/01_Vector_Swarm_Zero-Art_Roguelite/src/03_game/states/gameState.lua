@@ -18,6 +18,9 @@ local state = {
     score       = 0,        -- survival time in seconds
     bestScore   = 0,        -- best survival time
     waveReached = 0,
+    stage       = 1,
+    wave        = 0,
+    wavesPerStage = 5,
     gameOverTimer = 0,      -- time since game over (for UI delay)
     restartDelay = 1.0,     -- seconds before restart is allowed
     timeScale    = 1.0,     -- 시간 배율 (포커스 슬로모용)
@@ -28,6 +31,9 @@ function GameState.init()
     state.score       = 0
     state.gameOverTimer = 0
     state.timeScale    = 1.0
+    state.stage        = 1
+    state.wave         = 0
+    state.waveReached  = 0
 end
 
 function GameState.update(dt, playerHealth)
@@ -83,7 +89,7 @@ function GameState.draw()
 
     -- Wave
     lg.setColor(0.7, 0.7, 0.7, 1)
-    local waveText = string.format("Wave: %d", state.waveReached)
+    local waveText = string.format("Stage %d - Wave %d", state.stage, state.waveReached)
     local ww = scoreFont:getWidth(waveText)
     lg.print(waveText, (w - ww) / 2, h * 0.54)
 
@@ -114,6 +120,16 @@ end
 
 function GameState.getScore()
     return state.score
+end
+
+function GameState.setStageInfo(stage, wave, wavesPerStage)
+    state.stage = stage or state.stage
+    state.wave = wave or state.wave
+    state.wavesPerStage = wavesPerStage or state.wavesPerStage
+end
+
+function GameState.getStageInfo()
+    return state.stage, state.wave, state.wavesPerStage
 end
 
 function GameState.setWaveReached(wave)

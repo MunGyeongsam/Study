@@ -102,9 +102,13 @@ function EntityFactory.createPlayer(world, x, y)
     return entityId
 end
 
--- 적 엔티티 생성
-function EntityFactory.createEnemy(world, x, y, enemyType)
+-- 적 엔티티 생성 (difficulty: optional scaling from stageManager)
+function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
     local preset = ENEMY_TYPES[enemyType] or ENEMY_TYPES.basic
+    local diff = difficulty or {}
+    local hpMult = diff.enemyHpMult or 1.0
+    local spdMult = diff.enemySpeedMult or 1.0
+    local bspdMult = diff.bulletSpeedMult or 1.0
     local entityId = world:createEntity()
 
     world:addComponent(entityId, "Transform", Transform.new({
@@ -112,7 +116,7 @@ function EntityFactory.createEnemy(world, x, y, enemyType)
     }))
 
     world:addComponent(entityId, "Velocity", Velocity.new({
-        vx = 0, vy = 0, speed = preset.ai.speed or 1, maxSpeed = 3, damping = 1.0,
+        vx = 0, vy = 0, speed = (preset.ai.speed or 1) * spdMult, maxSpeed = 3 * spdMult, damping = 1.0,
     }))
 
     world:addComponent(entityId, "Collider", Collider.new({
@@ -126,22 +130,32 @@ function EntityFactory.createEnemy(world, x, y, enemyType)
     }))
 
     world:addComponent(entityId, "LifeSpan", LifeSpan.new({
-        time = 30, destroyOffScreen = true,
+        time = 15, destroyOffScreen = true,
     }))
 
+    local scaledHp = math.floor(preset.hp * hpMult + 0.5)
     world:addComponent(entityId, "EnemyAI", EnemyAI.new({
         behavior     = preset.ai.behavior,
-        speed        = preset.ai.speed,
+        speed        = (preset.ai.speed or 1) * spdMult,
         orbitRadius  = preset.ai.orbitRadius,
-        orbitSpeed   = preset.ai.orbitSpeed,
-        chaseSpeed   = preset.ai.chaseSpeed,
-        driftVx      = preset.ai.driftVx,
-        driftVy      = preset.ai.driftVy,
+        orbitSpeed   = preset.ai.orbitSpeed and (preset.ai.orbitSpeed * spdMult),
+        chaseSpeed   = preset.ai.chaseSpeed and (preset.ai.chaseSpeed * spdMult),
+        driftVx      = preset.ai.driftVx and (preset.ai.driftVx * spdMult),
+        driftVy      = preset.ai.driftVy and (preset.ai.driftVy * spdMult),
         xpValue      = preset.xpValue or 1,
     }))
-    world:addComponent(entityId, "BulletEmitter", BulletEmitter.new(preset.emitter))
+    world:addComponent(entityId, "BulletEmitter", BulletEmitter.new({
+        pattern        = preset.emitter.pattern,
+        emitRate       = preset.emitter.emitRate,
+        bulletSpeed    = preset.emitter.bulletSpeed * bspdMult,
+        bulletCount    = preset.emitter.bulletCount,
+        bulletLifetime = preset.emitter.bulletLifetime,
+        bulletRadius   = preset.emitter.bulletRadius,
+        bulletColor    = preset.emitter.bulletColor,
+        turnRate       = preset.emitter.turnRate,
+    }))
     world:addComponent(entityId, "Health", Health.new({
-        hp = preset.hp or 3, maxHp = preset.hp or 3, iFrames = 0,
+        hp = scaledHp, maxHp = scaledHp, iFrames = 0,
     }))
 
     -- Set orbit center to spawn position

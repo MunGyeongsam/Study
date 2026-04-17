@@ -21,7 +21,7 @@ local createEnemyAISystem       = require("03_game.systems.enemyAISystem")
 local DashSystem                = require("03_game.systems.dashSystem")
 local FocusSystem               = require("03_game.systems.focusSystem")
 local createXpCollectionSystem  = require("03_game.systems.xpCollectionSystem")
-local EnemySpawner              = require("03_game.systems.enemySpawner")
+local StageManager              = require("03_game.systems.stageManager")
 
 -- Entity factories (03_game/entities/)
 local EntityFactory = require("03_game.entities.entityFactory")
@@ -45,8 +45,8 @@ function ECSManager.init(getPlayerPos)
         minY = bottom, maxY = top,
     }
 
-    -- Enemy spawner
-    ECSManager.enemySpawner = EnemySpawner.new(ECSManager, ECSManager.getPlayerPos)
+    -- Stage manager (replaces enemy spawner)
+    ECSManager.stageManager = StageManager.new(ECSManager, ECSManager.getPlayerPos)
 
     logInfo("[ECS] ECS Manager initialized")
     
@@ -112,8 +112,8 @@ function ECSManager.update(dt)
     -- Bullet pool update (movement + lifetime + culling)
     ECSManager.bulletPool:update(dt, ECSManager.bulletBounds)
 
-    -- Enemy spawner
-    ECSManager.enemySpawner:update(dt)
+    -- Stage manager (wave spawning + stage progression)
+    ECSManager.stageManager:update(dt)
 end
 
 -- 렌더링 (카메라 변환은 호출자가 적용 — main.lua의 drawWorld 내부에서 호출됨)
@@ -147,13 +147,13 @@ function ECSManager.createPlayer(x, y)
     return EntityFactory.createPlayer(ECSManager.world, x, y)
 end
 
--- 적 엔티티 생성 (EntityFactory 위임)
-function ECSManager.createEnemy(x, y, enemyType)
+-- 적 엔티티 생성 (EntityFactory 위임, difficulty 포워딩)
+function ECSManager.createEnemy(x, y, enemyType, difficulty)
     if not ECSManager.world then
         logError("ECS: World not initialized")
         return nil
     end
-    return EntityFactory.createEnemy(ECSManager.world, x, y, enemyType)
+    return EntityFactory.createEnemy(ECSManager.world, x, y, enemyType, difficulty)
 end
 
 -- ECS 통계 반환
@@ -173,7 +173,7 @@ function ECSManager.getStats()
         world = worldStats,
         systems = systemStats,
         bullets = ECSManager.bulletPool:getStats(),
-        spawner = ECSManager.enemySpawner:getStats(),
+        stage = ECSManager.stageManager:getStats(),
     }
 end
 
@@ -202,8 +202,8 @@ function ECSManager.restart()
         world:destroyEntity(entityId)
     end
 
-    -- 스포너 리셋
-    ECSManager.enemySpawner = EnemySpawner.new(ECSManager, ECSManager.getPlayerPos)
+    -- 스테이지 매니저 리셋
+    ECSManager.stageManager = StageManager.new(ECSManager, ECSManager.getPlayerPos)
 
     logInfo("[ECS] World restarted")
 end
