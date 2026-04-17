@@ -15,16 +15,19 @@ local PlayerRenderSystem = require("03_game.systems.playerRenderSystem")
 local BulletPool                = require("03_game.systems.bulletPool")
 local createBulletEmitterSystem = require("03_game.systems.bulletEmitterSystem")
 local createCollisionSystem     = require("03_game.systems.collisionSystem")
+local createEnemyAISystem       = require("03_game.systems.enemyAISystem")
+local EnemySpawner              = require("03_game.systems.enemySpawner")
 
 -- Entity factories (03_game/entities/)
 local EntityFactory = require("03_game.entities.entityFactory")
 
 local ECSManager = {}
 
-function ECSManager.init()
+function ECSManager.init(getPlayerPos)
     ECSManager.world = ECS.new()
     ECSManager.systems = {}
     ECSManager.systemsOrder = {}  -- 실행 순서 보장
+    ECSManager.getPlayerPos = getPlayerPos or function() return 0, 0 end
     
     -- Bullet pool (shared by emitter system and render)
     ECSManager.bulletPool = BulletPool.new(2000)
@@ -37,6 +40,9 @@ function ECSManager.init()
         minX = -halfW, maxX = halfW,
         minY = world.center.y - halfH, maxY = world.center.y + halfH,
     }
+
+    -- Enemy spawner
+    ECSManager.enemySpawner = EnemySpawner.new(ECSManager, ECSManager.getPlayerPos)
 
     logInfo("[ECS] ECS Manager initialized")
     
@@ -101,6 +107,9 @@ function ECSManager.update(dt)
 
     -- Bullet pool update (movement + lifetime + culling)
     ECSManager.bulletPool:update(dt, ECSManager.bulletBounds)
+
+    -- Enemy spawner
+    ECSManager.enemySpawner:update(dt)
 end
 
 -- 렌더링 (카메라 변환은 호출자가 적용 — main.lua의 drawWorld 내부에서 호출됨)
@@ -160,6 +169,7 @@ function ECSManager.getStats()
         world = worldStats,
         systems = systemStats,
         bullets = ECSManager.bulletPool:getStats(),
+        spawner = ECSManager.enemySpawner:getStats(),
     }
 end
 
@@ -175,19 +185,22 @@ end
 
 -- 기본 시스템들 등록 (실행 순서가 중요!)
 function ECSManager._registerBasicSystems()
+    local getPlayerPos = ECSManager.getPlayerPos
     -- 1. Input: 키보드/터치 → Velocity
     ECSManager.addSystem(InputSystem)
-    -- 2. Movement: Velocity → Transform
+    -- 2. EnemyAI: AI 행동 → Velocity
+    ECSManager.addSystem(createEnemyAISystem(getPlayerPos))
+    -- 3. Movement: Velocity → Transform
     ECSManager.addSystem(MovementSystem)
-    -- 3. Boundary: 월드 경계 clamping
+    -- 4. Boundary: 월드 경계 clamping
     ECSManager.addSystem(BoundarySystem)
-    -- 4. LifeSpan: 수명 만료 제거
+    -- 5. LifeSpan: 수명 만료 제거
     ECSManager.addSystem(LifeSpanSystem)
-    -- 5. BulletEmitter: 이미터 → BulletPool spawn
-    ECSManager.addSystem(createBulletEmitterSystem(ECSManager.bulletPool))
-    -- 6. Collision: 플레이어 ↔ 불릿 충돌
+    -- 6. BulletEmitter: 이미터 → BulletPool spawn
+    ECSManager.addSystem(createBulletEmitterSystem(ECSManager.bulletPool, getPlayerPos))
+    -- 7. Collision: 플레이어 ↔ 불릿 충돌
     ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool))
-    -- 7-8. Render: draw()에서만 실행
+    -- 8-9. Render: draw()에서만 실행
     ECSManager.addSystem(RenderSystem)
     ECSManager.addSystem(PlayerRenderSystem)
 end

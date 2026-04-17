@@ -39,17 +39,15 @@ function love.load()
     -- Initialize core systems
     world.init()
     
-    -- 🏗️ ECS 시스템 초기화
-    ecsManager.init()
+    -- 🏗️ ECS 시스템 초기화 (플레이어 위치 조회 콜백 전달)
+    ecsManager.init(function() return player.getPosition() end)
     
     -- 🎮 플레이어 ECS 엔티티 생성 + 파사드 바인딩
     local playerId = ecsManager.createPlayer(0, 0)  -- 임시 위치, player.init()에서 설정
     player.bind(ecsManager.getWorld(), playerId)
     player.init()  -- 월드 시작 위치로 설정
     
-    -- 🧪 테스트용 적 엔티티 (플레이어 위쪽에 배치)
     local startX, startY = player.getPosition()
-    local ecsEnemyId = ecsManager.createEnemy(startX, startY + 3)
 
     debug.add("world info", 
     function()
@@ -108,6 +106,14 @@ function love.load()
                 "Player HP", h.hp, h.maxHp, status, inv, h.hitCount)
         end
         return "Player HP : N/A"
+    end);
+
+    debug.add("waves",
+    function()
+        local stats = ecsManager.getStats()
+        local s = stats.spawner
+        return string.format("%10s : wave %d (%.0fs elapsed)",
+            "Spawner", s.waveNumber, s.timer)
     end);
 
     debug.toggleConsole()   -- debug watch panel auto-show (dev)

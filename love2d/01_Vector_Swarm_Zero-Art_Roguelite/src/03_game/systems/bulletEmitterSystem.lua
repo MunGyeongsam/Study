@@ -10,7 +10,7 @@ local sin = math.sin
 local cos = math.cos
 local pi2 = math.pi * 2
 
-local function createBulletEmitterSystem(bulletPool)
+local function createBulletEmitterSystem(bulletPool, getPlayerPos)
 
     local BulletEmitterSystem = System.new("BulletEmitter", {"Transform", "BulletEmitter"},
         function(ecs, dt, entities)
@@ -52,16 +52,43 @@ local function createBulletEmitterSystem(bulletPool)
                         emitter.angle = emitter.angle + emitter.turnRate * interval
 
                     elseif pattern == "aimed" then
-                        -- Aimed at world origin (placeholder for player targeting)
-                        local dx = 0 - ox
-                        local dy = 0 - oy
-                        local dist = math.sqrt(dx * dx + dy * dy)
-                        if dist > 0 then
-                            dx, dy = dx / dist, dy / dist
-                        else
-                            dx, dy = 0, -1
+                        -- Aimed at player position
+                        local tx, ty = getPlayerPos()
+                        if tx and ty then
+                            local dx = tx - ox
+                            local dy = ty - oy
+                            local dist = math.sqrt(dx * dx + dy * dy)
+                            if dist > 0 then
+                                dx, dy = dx / dist, dy / dist
+                            else
+                                dx, dy = 0, -1
+                            end
+                            -- Spread: emit bulletCount aimed bullets with slight angle offset
+                            local count = emitter.bulletCount
+                            if count <= 1 then
+                                bulletPool:spawn(ox, oy, dx * speed, dy * speed, opts)
+                            else
+                                local spread = 0.3  -- total spread in radians
+                                local baseAngle = math.atan2(dy, dx)
+                                for i = 0, count - 1 do
+                                    local offset = -spread / 2 + (i / (count - 1)) * spread
+                                    local a = baseAngle + offset
+                                    bulletPool:spawn(ox, oy, cos(a) * speed, sin(a) * speed, opts)
+                                end
+                            end
                         end
-                        bulletPool:spawn(ox, oy, dx * speed, dy * speed, opts)
+
+                    elseif pattern == "wave" then
+                        -- Sinusoidal wave: bullets travel downward with sine offset
+                        local count = emitter.bulletCount
+                        local baseAngle = emitter.angle
+                        for i = 0, count - 1 do
+                            local a = baseAngle + (i / count) * pi2
+                            local vx = sin(a) * speed * 0.3
+                            local vy = -speed
+                            bulletPool:spawn(ox, oy, vx, vy, opts)
+                        end
+                        emitter.angle = emitter.angle + emitter.turnRate * interval
                     end
                 end
 
