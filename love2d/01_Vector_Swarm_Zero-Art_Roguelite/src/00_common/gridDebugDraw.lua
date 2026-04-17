@@ -1,11 +1,22 @@
--- screen_debug_draw.lua
+-- gridDebugDraw.lua
 -- LOVE2D 스크린 스페이스 기준 그리드 및 좌표축 표시 유틸리티
 -- 좌측 상단 (0,0), 우측 하단 (width, height)
 
-local screenDebugDraw = {}
+local gridDebugDraw = {}
 
--- 스크린 스페이스에 그리드와 좌상단 축 표시
-function screenDebugDraw.drawScreenGrid(gridSize, gridColor, axisLength)
+local visible = false
+
+function gridDebugDraw.toggle()
+    visible = not visible
+end
+
+function gridDebugDraw.isVisible()
+    return visible
+end
+
+-- 스크린 스페이스에 그리드와 좌상단 축 표시 (visible일 때만)
+function gridDebugDraw.draw(gridSize, gridColor, axisLength)
+    if not visible then return end
     local lg = love.graphics
     local width, height = lg.getDimensions()
     
@@ -72,4 +83,4 @@ function screenDebugDraw.drawScreenGrid(gridSize, gridColor, axisLength)
     lg.setLineWidth(lineWidth)
 end
 
-return screenDebugDraw
+return gridDebugDraw

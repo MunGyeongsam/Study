@@ -103,7 +103,7 @@ world.funElements = {
 
 -- 초기화
 function world.init()
-    logger.info("🌍 Expanded world system initialized")
+    logger.info("[WORLD] Expanded world system initialized")
     logger.info(string.format("World size: %.0fx%.0f units (%.0fx%.0f screen ratio)", 
         world.size.width, world.size.height, 
         world.size.width/10, world.size.height/10))  -- 10유닛 = 2배 화면 가정
@@ -114,7 +114,7 @@ function world.init()
     for name, zone in pairs(world.zones) do
         zoneCount = zoneCount + 1
     end
-    logger.info(string.format("📍 %d zones configured for maximum fun", zoneCount))
+    logger.info(string.format("[WORLD] %d zones configured", zoneCount))
 end
 
 -- 🎨 확장된 월드 그리드 그리기 (구역별 색상 표시)
@@ -290,7 +290,7 @@ function world.collectPowerUp(playerX, playerY, radius)
             local distance = math.sqrt((powerUp.x - playerX)^2 + (powerUp.y - playerY)^2)
             if distance <= radius then
                 powerUp.active = false  -- 수집됨
-                logger.info("🎁 Power-up collected: " .. powerUp.type)
+                logger.info("[WORLD] Power-up collected: " .. powerUp.type)
                 return powerUp.type
             end
         end
@@ -307,7 +307,7 @@ function world.activateCheckpoint(playerX, playerY, radius)
             local distance = math.sqrt((checkpoint.x - playerX)^2 + (checkpoint.y - playerY)^2)
             if distance <= radius then
                 checkpoint.active = true
-                logger.info("🏁 Checkpoint activated!")
+                logger.info("[WORLD] Checkpoint activated!")
                 return i
             end
         end
@@ -328,7 +328,7 @@ function world.discoverSecretPath(playerX, playerY, radius)
             
             if distance <= radius then
                 path.discovered = true
-                logger.info("🔍 Secret path discovered!")
+                logger.info("[WORLD] Secret path discovered!")
                 return i
             end
         end
@@ -368,7 +368,7 @@ function world.resetFunElements()
         path.discovered = false
     end
     
-    logger.info("🎮 World fun elements reset for new game")
+    logger.info("[WORLD] Fun elements reset for new game")
 end
 
 -- 🏆 게임 진행률 계산 (0,0 중심 기준)

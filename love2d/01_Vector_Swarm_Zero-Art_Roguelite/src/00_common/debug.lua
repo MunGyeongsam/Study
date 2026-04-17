@@ -33,19 +33,26 @@ function debug.remove(key)
 end
 
 -- 디버그 정보 출력 (등록 순서)
-function debug.draw(x, y, lineHeight)
+function debug.draw(x, y, font)
     if not debugConsoleVisible then return end
 
     x = x or 10
     y = y or 30
-    lineHeight = lineHeight or 16
+
+    local lg = love.graphics
+    local prevFont = lg.getFont()
+    if font then lg.setFont(font) end
+
+    local lineHeight = lg.getFont():getHeight() + 2
     for i, v in ipairs(debugList) do
         local text = v.func()
         if text and text ~= "" then
-            love.graphics.print(text, x, y)
+            lg.print(text, x, y)
             y = y + lineHeight
         end
     end
+
+    if font then lg.setFont(prevFont) end
 end
 
 function debug.toggleConsole()

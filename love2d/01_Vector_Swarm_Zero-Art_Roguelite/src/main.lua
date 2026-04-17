@@ -7,13 +7,14 @@ local global = require("00_common.global")
 -- Load modules
 local logger = require("00_common.logger")
 local debug = require("00_common.debug")
-local screenDebugDraw = require("00_common.grid_debug_draw")
+local screenDebugDraw = require("00_common.gridDebugDraw")
 local world = require("01_core.world")
-local camera = require("02_renderer.camera")
+local cameraManager = require("02_renderer.cameraManager")
 local uiManager = require("04_ui.uiManager")  -- UI 시스템 추가
 local player = require("03_game.entities.player")  -- 플레이어 엔티티
+local ecsManager = require("01_core.ecsManager")  -- ECS 시스템
 
-local mainCamera = nil  -- 전역 카메라 인스턴스 (필요 시 생성)
+local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
 
 function love.load()
     -- Initialize global utilities first
@@ -31,15 +32,23 @@ function love.load()
     }
     love.graphics.setFont(fonts.medium)  -- 기본 폰트를 중간 크기로 설정
 
-    -- Unity 스타일 카메라 생성
+    -- 카메라 매니저 초기화
     local orthographicSize = 5
-    mainCamera = camera.new(0, 0, orthographicSize)  -- 임시 위치
+    cameraManager.init(orthographicSize)
     
     -- Initialize core systems
     world.init()
     
-    -- �‍♂️ 플레이어 초기화
-    player.init()
+    -- 🏗️ ECS 시스템 초기화
+    ecsManager.init()
+    
+    -- 🎮 플레이어 ECS 엔티티 생성 + 파사드 바인딩
+    local playerId = ecsManager.createPlayer(0, 0)  -- 임시 위치, player.init()에서 설정
+    player.bind(ecsManager.getWorld(), playerId)
+    player.init()  -- 월드 시작 위치로 설정
+    
+    -- 🧪 테스트용 적 엔티티
+    local ecsEnemyId = ecsManager.createEnemy(1, 2)
 
     debug.add("world info", 
     function()
@@ -52,12 +61,37 @@ function love.load()
         local x, y = player.getPosition()
         return string.format("%10s : (%.1f, %.1f)", "Player Pos", x, y) 
     end);
-    debug.toggleConsole()  -- 디버그 콘솔 자동 표시 (개발 편의용)
+    
+    debug.add("ECS stats", 
+    function()
+        local stats = ecsManager.getStats()
+        return string.format("%10s : %d entities", "ECS Total", stats.world.activeEntities) 
+    end);
+    
+    debug.add("ECS components", 
+    function()
+        local stats = ecsManager.getStats()
+        local componentCounts = stats.world.componentTypes or {}
+        local text = "Components: "
+        for name, count in pairs(componentCounts) do
+            text = text .. string.format("%s(%d) ", name, count)
+        end
+        return text
+    end);
+    
+    debug.add("camera mode",
+    function()
+        local cam = cameraManager.getActive()
+        local cx, cy = cam:pos()
+        return string.format("%10s : %s (%.1f, %.1f) zoom=%.1f",
+            "Camera", cameraManager.getMode(), cx, cy, cam:getOrthographicSize())
+    end);
+    debug.toggleConsole()   -- debug watch panel auto-show (dev)
     
     -- 🌍 카메라를 플레이어 시작 위치로 이동
     local startX, startY = player.getPosition()
-    mainCamera:lookAt(startX, startY)
-    logger.info(string.format("📍 Camera positioned at player start: (%.1f, %.1f)", startX, startY))
+    cameraManager.getGameCamera():lookAt(startX, startY)
+    logger.info(string.format("[CAM] Positioned at player start: (%.1f, %.1f)", startX, startY))
     
     -- Initialize UI system
     uiManager.init()
@@ -65,13 +99,15 @@ function love.load()
     -- UI 버튼 콜백 설정
     uiManager.setButtonCallbacks({
         onZoomIn = function()
-            local newSize = mainCamera:getOrthographicSize() * 0.8
-            mainCamera:setOrthographicSize(newSize)
+            local cam = cameraManager.getActive()
+            local newSize = cam:getOrthographicSize() * 0.8
+            cam:setOrthographicSize(newSize)
             log(string.format("Zoom In - Orthographic Size: %.2f", newSize))
         end,
         onZoomOut = function()
-            local newSize = mainCamera:getOrthographicSize() * 1.25
-            mainCamera:setOrthographicSize(newSize)
+            local cam = cameraManager.getActive()
+            local newSize = cam:getOrthographicSize() * 1.25
+            cam:setOrthographicSize(newSize)
             log(string.format("Zoom Out - Orthographic Size: %.2f", newSize))
         end,
         onReset = function()
@@ -80,9 +116,9 @@ function love.load()
             world.resetFunElements()
             
             local startX, startY = player.getPosition()
-            mainCamera:lookAt(startX, startY)
-            mainCamera:setOrthographicSize(5)
-            mainCamera:setViewportToCenter()
+            cameraManager.getGameCamera():lookAt(startX, startY)
+            cameraManager.getGameCamera():setOrthographicSize(5)
+            cameraManager.getGameCamera():setViewportToCenter()
             log("Game reset - Player and world initialized")
         end,
         onDebugToggle = function()
@@ -93,17 +129,20 @@ function love.load()
     log("All systems initialized successfully")
     log(string.format("Camera orthographic size: %.1f (viewing %.1f world units height)", 
          orthographicSize, orthographicSize * 2))
-    log(string.format("Pixels per unit: %.1f", mainCamera:getPixelsPerUnit()))
+    log(string.format("Pixels per unit: %.1f", cameraManager.getActive():getPixelsPerUnit()))
     
 end
 
 function love.update(dt)
-    -- 🏃‍♂️ 플레이어 업데이트 (입력 처리 및 이동)
+    -- �️ ECS 시스템 업데이트 (새로운 엔티티들)
+    ecsManager.update(dt)
+    
+    -- 🏃‍♂️ 플레이어 업데이트 (입력 처리 및 이동, 기존 OOP)
     player.update(dt, {})  -- 나중에 터치 입력 시스템 연결
     
-    -- 📹 카메라가 플레이어를 따라가기
+    -- 📹 카메라 업데이트 (게임 모드면 플레이어 추적, 디버그 모드면 자유)
     local playerX, playerY = player.getCameraTarget()
-    mainCamera:lookAt(playerX, playerY)
+    cameraManager.update(dt, playerX, playerY)
     
     -- UI 업데이트
     uiManager.update(dt)
@@ -127,85 +166,80 @@ end
 
 local function drawWorld()
     -- 월드 좌표계 그리드 (중심 0,0)
-    world.drawGrid(1, mainCamera)  -- 2 유닛 간격 그리드, 카메라 정보 전달
+    local cam = cameraManager.getActive()
+    world.drawGrid(1, cam)  -- 1 유닛 간격 그리드, 카메라 정보 전달
     
     -- 🏃‍♂️ 플레이어 렌더링
-    player.draw(mainCamera)
+    player.draw(cam)
+    
+    -- 🏗️ ECS 엔티티 렌더링
+    ecsManager.draw()
 end
 
 function love.draw()
-    -- 월드 렌더링 (카메라 적용)
-    mainCamera:draw(drawWorld)
+    -- 월드 렌더링 (활성 카메라 적용)
+    cameraManager.draw(drawWorld)
     
     -- UI 렌더링 (스크린 좌표계) 
     uiManager.draw()
     
     -- 디버그 정보 그리기 (기존 시스템)
-    debug.draw(10, 50)
-    logger.drawConsole(fonts.small)  -- 인게임 디버그 콘솔 (작은 폰트)
+    debug.draw(10, 50, fonts.small)
+    logger.drawConsole(fonts.small)  -- 인게임 디버그 콘솔
 
-    -- 스크린 좌표계 그리드 (참고용) - 주석 처리
-    --screenDebugDraw.drawScreenGrid(50)
+    -- 스크린 좌표계 그리드 (F4 토글)
+    screenDebugDraw.draw(50)
 end
 
 -- Debug console functions are now handled automatically by Logger
 
 function love.keypressed(key)
     if key == "f1" then
-        debug.toggleConsole()  -- F1키로 디버그 콘솔 토글
+        debug.toggleConsole()   -- F1: 디버그 watch panel 토글
+    elseif key == "`" then
+        logger.toggleConsole()  -- ` (백틱): 로거 콘솔 토글
     elseif key == "f2" then
         uiManager.toggleVisibility()  -- F2키로 UI 토글
     elseif key == "f3" then
         uiManager.toggleDebugMode()  -- F3키로 UI 디버그 모드 토글
+    elseif key == "f4" then
+        screenDebugDraw.toggle()    -- F4: 스크린 그리드 토글
+    elseif key == "f5" then
+        cameraManager.toggle()      -- F5: 게임/디버그 카메라 전환
     end
     if key == 'escape' then
         love.event.quit()  -- ESC키로 게임 종료
     end
     
-    -- Orthographic Size 조정 (Unity 스타일) - PC 프로토타입용
-    if key == "=" or key == "+" then
-        local newSize = mainCamera:getOrthographicSize() * 0.8  -- 줌인 (크기 축소)
-        mainCamera:setOrthographicSize(newSize)
-        log(string.format("Zoom In - Orthographic Size: %.2f", newSize))
+    -- 디버그 카메라 모드: +/- 키로 줌 조절
+    if cameraManager.isDebug() then
+        if key == "=" or key == "+" then
+            local cam = cameraManager.getActive()
+            local newSize = cam:getOrthographicSize() * 0.8
+            cam:setOrthographicSize(newSize)
+        elseif key == "-" then
+            local cam = cameraManager.getActive()
+            local newSize = cam:getOrthographicSize() * 1.25
+            cam:setOrthographicSize(newSize)
+        elseif key == "space" then
+            -- 플레이어 위치로 복귀
+            local px, py = player.getPosition()
+            cameraManager.getActive():lookAt(px, py)
+        end
     end
-    if key == "-" then
-        local newSize = mainCamera:getOrthographicSize() * 1.25  -- 줌아웃 (크기 확대)
-        mainCamera:setOrthographicSize(newSize)
-        log(string.format("Zoom Out - Orthographic Size: %.2f", newSize))
-    end
-    
-    -- 카메라 이동 테스트 (PC 프로토타입)
-    -- TODO: 모바일에서는 터치 드래그로 대체 예정
-    local moveSpeed = 1
-    if key == "w" then mainCamera:move(0, moveSpeed) end
-    if key == "s" then mainCamera:move(0, -moveSpeed) end
-    if key == "a" then mainCamera:move(-moveSpeed, 0) end
-    if key == "d" then mainCamera:move(moveSpeed, 0) end
-    if key == "space" then mainCamera:lookAt(0, 0) end  -- 원점으로 복귀 (더블탭으로 대체 가능)
-    
-    --[[ 카메라 줌 테스트 (PC 프로토타입)
-    -- Viewport 테스트 (화살표 키)
-    -- TODO: 모바일에서는 UI 버튼으로 대체 예정
-    local w, h = love.graphics.getDimensions()
-    if key == "up" then mainCamera:setViewport(w/2, h/4) end      -- 상단 
-    if key == "down" then mainCamera:setViewport(w/2, h*3/4) end  -- 하단
-    if key == "left" then mainCamera:setViewport(w/4, h/2) end    -- 좌측
-    if key == "right" then mainCamera:setViewport(w*3/4, h/2) end -- 우측
-    if key == "return" then mainCamera:setViewportToCenter() end  -- 중심 복귀
-    --]]
 end
 
 -- 모바일 터치 입력 처리
 function love.touchpressed(id, x, y, dx, dy, pressure)
     -- UI 터치 처리
     if uiManager.touchpressed(id, x, y, dx, dy, pressure) then
-        return  -- UI에서 터치를 소비했으면 게임 로직으로 전달하지 않음
+        return
     end
     
     -- 게임 플레이 영역 터치 처리
     local mobileLayout = require("04_ui.mobileLayout")
     if mobileLayout.isTouchInArea(x, y, "play") then
-        local worldX, worldY = mainCamera:worldCoords(x, y)
+        local worldX, worldY = cameraManager.worldCoords(x, y)
         log(string.format("Touch at world: (%.1f, %.1f)", worldX, worldY))
     end
 end
@@ -213,40 +247,46 @@ end
 function love.touchmoved(id, x, y, dx, dy, pressure)
     -- UI 터치 이동 처리
     if uiManager.touchmoved(id, x, y, dx, dy, pressure) then
-        return  -- UI에서 처리됨
+        return
     end
     
-    -- 게임 플레이 영역에서 터치 드래그로 카메라 이동
-    local mobileLayout = require("04_ui.mobileLayout")
-    if mobileLayout.isTouchInArea(x, y, "play") then
-        -- 터치 드래그로 카메라 이동
-        mainCamera:move(-dx * mainCamera:getUnitsPerPixel(), 
-                        dy * mainCamera:getUnitsPerPixel())  -- Y축 반전
+    -- 디버그 모드: 터치 드래그로 카메라 이동
+    if cameraManager.isDebug() then
+        cameraManager.debugMove(dx, dy)
     end
 end
 
 function love.touchreleased(id, x, y, dx, dy, pressure)
-    -- UI 터치 릴리즈 처리
     uiManager.touchreleased(id, x, y, dx, dy, pressure)
 end
 
--- PC 프로토타입용 마우스 입력을 터치로 시뮬레이션
+-- PC: 마우스 입력
 function love.mousepressed(x, y, button, istouch, presses)
-    if not istouch then  -- 실제 마우스 클릭인 경우만
+    if not istouch then
         love.touchpressed("mouse", x, y, 0, 0, 1)
     end
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-    if not istouch and love.mouse.isDown(1) then  -- 마우스 드래그
-        love.touchmoved("mouse", x, y, dx, dy, 1)
+    if not istouch and love.mouse.isDown(1) then
+        -- 디버그 모드: 마우스 드래그로 카메라 자유 이동
+        if cameraManager.isDebug() then
+            cameraManager.debugMove(dx, dy)
+        else
+            love.touchmoved("mouse", x, y, dx, dy, 1)
+        end
     end
 end
 
 function love.mousereleased(x, y, button, istouch, presses)
-    if not istouch then  -- 실제 마우스 릴리즈인 경우만
+    if not istouch then
         love.touchreleased("mouse", x, y, 0, 0, 1)
     end
+end
+
+-- 마우스 휠: 디버그 카메라 줌
+function love.wheelmoved(x, y)
+    cameraManager.wheelmoved(x, y)
 end
 
 -- Close log file when game quits
@@ -256,14 +296,7 @@ end
 
 -- 화면 리사이즈 콜백
 function love.resize(w, h)
-    log(string.format("Screen resized to: %dx%d", w, h))
-    -- UI 레이아웃 업데이트
-    uiManager.updateLayout()
-end
-function love.resize(w, h)
     logger.info(string.format("Screen resized to %dx%d", w, h))
-    
-    -- Orthographic Size는 그대로, 픽셀당 유닛만 다시 계산됨 
-    log(string.format("New pixels per unit: %.1f", mainCamera:getPixelsPerUnit()))
-    --World.onResize()  -- 월드 좌표계 업데이트
+    uiManager.updateLayout()
+    log(string.format("New pixels per unit: %.1f", cameraManager.getActive():getPixelsPerUnit()))
 end
