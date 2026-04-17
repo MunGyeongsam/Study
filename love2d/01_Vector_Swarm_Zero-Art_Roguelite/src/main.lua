@@ -141,15 +141,7 @@ function love.load()
             log(string.format("Zoom Out - Orthographic Size: %.2f", newSize))
         end,
         onReset = function()
-            -- 플레이어와 월드 리셋
-            player.reset()
-            world.resetFunElements()
-            
-            local startX, startY = player.getPosition()
-            cameraManager.getGameCamera():lookAt(startX, startY)
-            cameraManager.getGameCamera():setOrthographicSize(5)
-            cameraManager.getGameCamera():setViewportToCenter()
-            log("Game reset - Player and world initialized")
+            restartGame()
         end,
         onDebugToggle = function()
             uiManager.toggleDebugMode()
