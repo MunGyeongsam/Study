@@ -15,8 +15,9 @@ model: opus
 
 1. **`.skills/planning-guide.md`** — 디자인 원칙, ECS 분해 템플릿, Phase 프로세스, 밸런스 프레임워크
 2. **`doc/00_PROJECT_ROADMAP.md`** — 현재 Phase 위치, 완료/미완료 작업 현황
-3. **`doc/02_CONCEPT_DESIGN.md`** — 재미 철학, 컨셉, 유니크 아이덴티티 (필요시)
-4. **`.skills/architecture-rules.md`** — 레이어 규칙, ECS 설계 규칙 (기능 분해 시)
+3. **`doc/04_TECHNICAL_ARCHITECTURE.md`** — 현재 ECS 구조, 컴포넌트/시스템 전체 목록
+4. **`doc/02_CONCEPT_DESIGN.md`** — 재미 철학, 컨셉, 유니크 아이덴티티 (필요시)
+5. **`.skills/architecture-rules.md`** — 레이어 규칙, ECS 설계 규칙 (기능 분해 시)
 
 ---
 
@@ -26,6 +27,8 @@ model: opus
 - `doc/00_PROJECT_ROADMAP.md` 읽고 현재 Phase/Sub-phase 위치 확인
 - 요청된 기능이 어떤 Phase에 속하는지 식별
 - 기존에 관련 설계가 있는지 doc/ 폴더 확인
+- **코드 탐색**: `src/03_game/components/`, `src/03_game/systems/` 스캔하여 기존 컴포넌트/시스템 목록 파악
+- 관련 기존 코드 읽기 (중복 제안 방지, 수정 범위 정확화)
 
 ## 2단계: 재미 검증 (Fun Gate)
 `.skills/planning-guide.md` §1 기준으로 검증:
@@ -56,6 +59,13 @@ model: opus
 난이도/수치 관련 기능이면 §4 프레임워크 적용:
 - 레드라인 위반 여부 확인
 - 초기 파라미터 제안 (체감 먼저, 숫자는 나중)
+
+## 7단계: 합의
+계획서를 사용자에게 제시하고 피드백을 받는다:
+- 설계 결정 (A/B 선택)에 대한 동의/수정 확인
+- Task 순서나 범위 조정 요청 반영
+- **합의 완료 후에만** 최종 계획으로 확정
+- 확정된 계획은 `doc/00_PROJECT_ROADMAP.md` 반영 가능 (사용자 동의 시)
 
 ---
 
