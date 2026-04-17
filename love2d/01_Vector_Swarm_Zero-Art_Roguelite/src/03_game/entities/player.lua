@@ -89,6 +89,11 @@ function player.getPosition()
     return transform.x, transform.y
 end
 
+-- 엔티티 ID 반환
+function player.getEntityId()
+    return entityId
+end
+
 -- 카메라가 따라갈 대상 위치
 function player.getCameraTarget()
     return player.getPosition()

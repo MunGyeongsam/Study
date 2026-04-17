@@ -13,6 +13,8 @@ local Health        = require("03_game.components.health")
 local BulletEmitter = require("03_game.components.bulletEmitter")
 local EnemyAI       = require("03_game.components.enemyAI")
 local PlayerWeapon  = require("03_game.components.playerWeapon")
+local Dash          = require("03_game.components.dash")
+local Focus         = require("03_game.components.focus")
 
 local EntityFactory = {}
 
@@ -84,6 +86,10 @@ function EntityFactory.createPlayer(world, x, y)
     world:addComponent(entityId, "PlayerWeapon", PlayerWeapon.new({
         fireRate = 4, bulletSpeed = 4, bulletCount = 1, range = 6,
     }))
+    world:addComponent(entityId, "Dash", Dash.new({
+        distance = 2.0, cooldown = 3.0, iFrames = 0.3,
+    }))
+    world:addComponent(entityId, "Focus", Focus.new())
 
     logInfo(string.format("[ENTITY] Player created: %d", entityId))
     return entityId

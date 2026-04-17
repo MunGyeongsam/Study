@@ -18,6 +18,8 @@ local createCollisionSystem     = require("03_game.systems.collisionSystem")
 local createEnemyCollisionSystem = require("03_game.systems.enemyCollisionSystem")
 local createPlayerWeaponSystem  = require("03_game.systems.playerWeaponSystem")
 local createEnemyAISystem       = require("03_game.systems.enemyAISystem")
+local DashSystem                = require("03_game.systems.dashSystem")
+local FocusSystem               = require("03_game.systems.focusSystem")
 local EnemySpawner              = require("03_game.systems.enemySpawner")
 
 -- Entity factories (03_game/entities/)
@@ -209,25 +211,29 @@ end
 -- 기본 시스템들 등록 (실행 순서가 중요!)
 function ECSManager._registerBasicSystems()
     local getPlayerPos = ECSManager.getPlayerPos
-    -- 1. Input: 키보드/터치 → Velocity
+    -- 1. Input: 키보드/터치 → Velocity + Dash/Focus 요청
     ECSManager.addSystem(InputSystem)
-    -- 2. EnemyAI: AI 행동 → Velocity
+    -- 2. Focus: 슬로모 + 판정축소 + 에너지
+    ECSManager.addSystem(FocusSystem)
+    -- 3. Dash: 순간이동 + 무적
+    ECSManager.addSystem(DashSystem)
+    -- 4. EnemyAI: AI 행동 → Velocity
     ECSManager.addSystem(createEnemyAISystem(getPlayerPos))
-    -- 3. Movement: Velocity → Transform
+    -- 5. Movement: Velocity → Transform
     ECSManager.addSystem(MovementSystem)
-    -- 4. Boundary: 월드 경계 clamping
+    -- 6. Boundary: 월드 경계 clamping
     ECSManager.addSystem(BoundarySystem)
-    -- 5. LifeSpan: 수명 만료 제거
+    -- 7. LifeSpan: 수명 만료 제거
     ECSManager.addSystem(LifeSpanSystem)
-    -- 6. BulletEmitter: 이미터 → BulletPool spawn
+    -- 8. BulletEmitter: 이미터 → BulletPool spawn
     ECSManager.addSystem(createBulletEmitterSystem(ECSManager.bulletPool, getPlayerPos))
-    -- 7. PlayerWeapon: 자동 조준 + 발사
+    -- 9. PlayerWeapon: 자동 조준 + 발사
     ECSManager.addSystem(createPlayerWeaponSystem(ECSManager.bulletPool))
-    -- 8. Collision: 플레이어 ↔ 적 불릿 충돌
+    -- 10. Collision: 플레이어 ↔ 적 불릿 충돌
     ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool))
-    -- 9. EnemyCollision: 플레이어 불릿 ↔ 적 충돌
+    -- 11. EnemyCollision: 플레이어 불릿 ↔ 적 충돌
     ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool))
-    -- 10-11. Render: draw()에서만 실행
+    -- 12-13. Render: draw()에서만 실행
     ECSManager.addSystem(RenderSystem)
     ECSManager.addSystem(PlayerRenderSystem)
 end

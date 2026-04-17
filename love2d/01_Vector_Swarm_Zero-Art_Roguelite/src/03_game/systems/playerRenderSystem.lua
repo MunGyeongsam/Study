@@ -53,6 +53,36 @@ local PlayerRenderSystem = System.new("PlayerRender", {"PlayerTag", "Transform",
                 end
             end
 
+            -- 포커스 모드 시각효과: 보라색 아우라 + 축소 판정 표시
+            if ecs:hasComponent(entityId, "Focus") then
+                local focus = ecs:getComponent(entityId, "Focus")
+                if focus.active then
+                    -- 보라색 펄스 아우라
+                    local pulse = 0.6 + 0.4 * math.sin(time * 6)
+                    setColor(180, 100, 255, pulse * 180)
+                    lg.setLineWidth(r * 0.15)
+                    lg.circle("line", x, y, r * 2.0)
+                    -- 축소된 판정 표시 (작은 원)
+                    local collider = ecs:getComponent(entityId, "Collider")
+                    if collider then
+                        setColor(255, 200, 255, 150)
+                        lg.setLineWidth(r * 0.1)
+                        lg.circle("line", x, y, collider.radius)
+                    end
+                end
+            end
+
+            -- 대쉬 쿨타임 표시: 쿨타임 중이면 빨간 링
+            if ecs:hasComponent(entityId, "Dash") then
+                local dash = ecs:getComponent(entityId, "Dash")
+                if dash.cooldownTimer > 0 then
+                    local ratio = dash.cooldownTimer / dash.cooldown
+                    setColor(255, 80, 80, ratio * 200)
+                    lg.setLineWidth(r * 0.15)
+                    lg.arc("line", "open", x, y, r * 1.5, -math.pi/2, -math.pi/2 + (1 - ratio) * math.pi * 2)
+                end
+            end
+
             ::continue::
         end
 

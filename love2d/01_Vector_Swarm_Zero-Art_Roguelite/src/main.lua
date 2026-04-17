@@ -117,6 +117,21 @@ function love.load()
             "Spawner", s.waveNumber, s.timer)
     end);
 
+    debug.add("dash/focus",
+    function()
+        local w = ecsManager.getWorld()
+        local entities = w:queryEntities({"PlayerTag", "Dash", "Focus"})
+        if #entities > 0 then
+            local dash = w:getComponent(entities[1], "Dash")
+            local focus = w:getComponent(entities[1], "Focus")
+            local dcd = dash.cooldownTimer > 0 and string.format("CD:%.1f", dash.cooldownTimer) or "READY"
+            local fActive = focus.active and "ON" or "off"
+            return string.format("%10s : Dash[%s] Focus[%s E:%.0f%%] TS:%.1fx",
+                "Dash/Focus", dcd, fActive, focus.energy, gameState.getTimeScale())
+        end
+        return "Dash/Focus : N/A"
+    end);
+
     debug.toggleConsole()   -- debug watch panel auto-show (dev)
     
     -- 🌍 카메라를 플레이어 시작 위치로 이동
@@ -186,8 +201,9 @@ function love.update(dt)
         return
     end
 
-    -- ECS 시스템 업데이트
-    ecsManager.update(dt)
+    -- ECS 시스템 업데이트 (포커스 슬로모 적용)
+    local scaledDt = dt * gameState.getTimeScale()
+    ecsManager.update(scaledDt)
     
     -- 🏃‍♂️ 플레이어 업데이트 (입력 처리 및 이동, 기존 OOP)
     player.update(dt, {})  -- 나중에 터치 입력 시스템 연결
@@ -271,6 +287,17 @@ function love.keypressed(key)
     elseif key == "r" then
         if gameState.canRestart() then
             restartGame()
+        end
+    elseif key == "lshift" or key == "rshift" then
+        -- 대쉬 요청 → Input 컴포넌트로 전달
+        if gameState.isPlaying() then
+            local playerId = player.getEntityId()
+            if playerId then
+                local inp = ecsManager.getWorld():getComponent(playerId, "Input")
+                if inp then
+                    inp.dash = true
+                end
+            end
         end
     end
     if key == 'escape' then

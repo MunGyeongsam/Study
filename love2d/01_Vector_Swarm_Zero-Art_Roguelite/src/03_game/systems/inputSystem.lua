@@ -27,6 +27,30 @@ local InputSystem = System.new("Input", {"Input", "Velocity"},
                 if love.keyboard.isDown("d", "right") then
                     input.moveX = input.moveX + 1
                 end
+
+                -- 대쉬: Shift 키 (이번 프레임 눌림 감지는 keypressed로)
+                -- → DashSystem이 처리
+                if ecs:hasComponent(entityId, "Dash") then
+                    local dash = ecs:getComponent(entityId, "Dash")
+                    if input.dash then
+                        -- 이동 방향으로 대쉬 (입력 없으면 위쪽)
+                        if math.abs(input.moveX) > 0.01 or math.abs(input.moveY) > 0.01 then
+                            dash.dirX = input.moveX
+                            dash.dirY = input.moveY
+                        else
+                            dash.dirX = 0
+                            dash.dirY = 1
+                        end
+                        dash.requested = true
+                        input.dash = false
+                    end
+                end
+
+                -- 포커스: Space 키 (홀드)
+                if ecs:hasComponent(entityId, "Focus") then
+                    local focus = ecs:getComponent(entityId, "Focus")
+                    focus.active = love.keyboard.isDown("space")
+                end
             end
 
             -- 입력 → Velocity 반영 (대각선 보정)

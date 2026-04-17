@@ -20,12 +20,14 @@ local state = {
     waveReached = 0,
     gameOverTimer = 0,      -- time since game over (for UI delay)
     restartDelay = 1.0,     -- seconds before restart is allowed
+    timeScale    = 1.0,     -- 시간 배율 (포커스 슬로모용)
 }
 
 function GameState.init()
     state.current     = GameState.PLAYING
     state.score       = 0
     state.gameOverTimer = 0
+    state.timeScale    = 1.0
 end
 
 function GameState.update(dt, playerHealth)
@@ -124,7 +126,16 @@ function GameState.getState()
         score     = state.score,
         bestScore = state.bestScore,
         waveReached = state.waveReached,
+        timeScale   = state.timeScale,
     }
+end
+
+function GameState.setTimeScale(scale)
+    state.timeScale = scale
+end
+
+function GameState.getTimeScale()
+    return state.timeScale
 end
 
 return GameState
