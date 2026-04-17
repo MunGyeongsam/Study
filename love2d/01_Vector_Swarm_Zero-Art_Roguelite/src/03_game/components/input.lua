@@ -8,8 +8,7 @@ Input.name = "Input"
 Input.defaults = {
     moveX = 0,        -- 이동 방향 X (-1 ~ 1)
     moveY = 0,        -- 이동 방향 Y (-1 ~ 1)
-    dash = false,     -- 대쉬 요청
-    focus = false,    -- 포커스 모드 (슬로모)
+    dash = false,     -- 대쉬 요청 (keypressed → true → InputSystem에서 Dash 컴포넌트로 전달)
 }
 
 function Input.new(data)
@@ -17,7 +16,6 @@ function Input.new(data)
         moveX = data and data.moveX or Input.defaults.moveX,
         moveY = data and data.moveY or Input.defaults.moveY,
         dash  = data and data.dash  or false,
-        focus = data and data.focus or false,
     }
 end
 

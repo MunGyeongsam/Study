@@ -6,8 +6,6 @@ local PlayerTag = {}
 PlayerTag.name = "PlayerTag"
 
 PlayerTag.defaults = {
-    health = 100,
-    invulnerable = false,
     powerUps = {},
     checkpointsSaved = {},
     currentZone = nil,
@@ -16,8 +14,6 @@ PlayerTag.defaults = {
 
 function PlayerTag.new(data)
     return {
-        health           = data and data.health           or PlayerTag.defaults.health,
-        invulnerable     = data and data.invulnerable     or false,
         powerUps         = data and data.powerUps         or {},
         checkpointsSaved = data and data.checkpointsSaved or {},
         currentZone      = data and data.currentZone      or nil,

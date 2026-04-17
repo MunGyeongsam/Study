@@ -81,13 +81,6 @@ function angleBetween(x1, y1, x2, y2)
     return math.atan2(y2 - y1, x2 - x1)
 end
 
--- ===== 시간 유틸리티 =====
-
--- FPS 기반 시간 정규화 (60 FPS 기준)
-function normalize60fps(dt) 
-    return dt * 60
-end
-
 -- ===== 화면 유틸리티 =====
 
 -- 화면 중심점

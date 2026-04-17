@@ -46,11 +46,8 @@ local function createEnemyCollisionSystem(bulletPool)
 
                         if health.hp <= 0 then
                             health.alive = false
-                            logInfo(string.format("[ENEMY] Destroyed entity %d", entityId))
                             ecs:destroyEntity(entityId)
                             goto nextEnemy
-                        else
-                            logDebug(string.format("[ENEMY] Hit entity %d HP: %d/%d", entityId, health.hp, health.maxHp))
                         end
                     else
                         i = i + 1

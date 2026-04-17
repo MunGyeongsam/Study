@@ -121,8 +121,11 @@ function player.getStats()
 
     local progress = world.getProgressPercentage(transform.y)
 
+    local health = ecsWorld:getComponent(entityId, "Health")
+    local hp = health and health.hp or 0
+
     return {
-        health = tag.health,
+        health = hp,
         powerUps = tag.powerUps,
         currentZone = tag.currentZone or "outside",
         progress = progress,
@@ -150,12 +153,18 @@ function player.reset()
 
     local tag = ecsWorld:getComponent(entityId, "PlayerTag")
     if tag then
-        tag.health = 100
-        tag.invulnerable = false
         tag.powerUps = {}
         tag.checkpointsSaved = {}
         tag.currentZone = nil
         tag.zoneHistory = {}
+    end
+
+    local health = ecsWorld:getComponent(entityId, "Health")
+    if health then
+        health.hp = health.maxHp
+        health.alive = true
+        health.iTimer = 0
+        health.hitCount = 0
     end
 end
 
