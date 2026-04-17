@@ -17,6 +17,7 @@ local gameState = require("03_game.states.gameState")
 local levelUp = require("03_game.states.levelUp")
 
 local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
+local restartGame       -- forward declaration (콜백에서 참조)
 
 function love.load()
     -- Initialize global utilities first
@@ -169,7 +170,8 @@ function love.load()
             log(string.format("Zoom Out - Orthographic Size: %.2f", newSize))
         end,
         onReset = function()
-            restartGame()
+            cameraManager.getActive():setOrthographicSize(orthographicSize)
+            log(string.format("Zoom Reset - Orthographic Size: %.2f", orthographicSize))
         end,
         onDebugToggle = function()
             uiManager.toggleDebugMode()
@@ -187,7 +189,7 @@ function love.load()
 end
 
 -- 게임 리스타트
-local function restartGame()
+restartGame = function()
     -- ECS 월드 초기화 (엔티티 + 불릿 + 스포너)
     ecsManager.restart()
 
