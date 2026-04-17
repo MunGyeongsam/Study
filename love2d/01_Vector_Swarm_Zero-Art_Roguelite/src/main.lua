@@ -96,6 +96,20 @@ function love.load()
             "Bullets", b.active, b.peakActive, b.spawned)
     end);
 
+    debug.add("player HP",
+    function()
+        local w = ecsManager.getWorld()
+        local entities = w:queryEntities({"PlayerTag", "Health"})
+        if #entities > 0 then
+            local h = w:getComponent(entities[1], "Health")
+            local status = h.alive and "ALIVE" or "DEAD"
+            local inv = h.iTimer > 0 and string.format(" [INV %.1f]", h.iTimer) or ""
+            return string.format("%10s : %d/%d %s%s (hits: %d)",
+                "Player HP", h.hp, h.maxHp, status, inv, h.hitCount)
+        end
+        return "Player HP : N/A"
+    end);
+
     debug.toggleConsole()   -- debug watch panel auto-show (dev)
     
     -- 🌍 카메라를 플레이어 시작 위치로 이동

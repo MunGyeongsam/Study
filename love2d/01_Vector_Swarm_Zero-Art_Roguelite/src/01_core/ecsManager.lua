@@ -14,6 +14,7 @@ local PlayerRenderSystem = require("03_game.systems.playerRenderSystem")
 -- Bullet system (pool-based, not per-entity ECS)
 local BulletPool                = require("03_game.systems.bulletPool")
 local createBulletEmitterSystem = require("03_game.systems.bulletEmitterSystem")
+local createCollisionSystem     = require("03_game.systems.collisionSystem")
 
 -- Entity factories (03_game/entities/)
 local EntityFactory = require("03_game.entities.entityFactory")
@@ -184,7 +185,9 @@ function ECSManager._registerBasicSystems()
     ECSManager.addSystem(LifeSpanSystem)
     -- 5. BulletEmitter: 이미터 → BulletPool spawn
     ECSManager.addSystem(createBulletEmitterSystem(ECSManager.bulletPool))
-    -- 6-7. Render: draw()에서만 실행
+    -- 6. Collision: 플레이어 ↔ 불릿 충돌
+    ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool))
+    -- 7-8. Render: draw()에서만 실행
     ECSManager.addSystem(RenderSystem)
     ECSManager.addSystem(PlayerRenderSystem)
 end

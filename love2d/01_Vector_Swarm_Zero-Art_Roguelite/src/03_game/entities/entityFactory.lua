@@ -9,6 +9,7 @@ local LifeSpan      = require("03_game.components.lifespan")
 local Input         = require("03_game.components.input")
 local PlayerTag     = require("03_game.components.playerTag")
 local WorldBound    = require("03_game.components.worldBound")
+local Health        = require("03_game.components.health")
 local BulletEmitter = require("03_game.components.bulletEmitter")
 
 local EntityFactory = {}
@@ -39,6 +40,7 @@ function EntityFactory.createPlayer(world, x, y)
     world:addComponent(entityId, "Input", Input.new())
     world:addComponent(entityId, "PlayerTag", PlayerTag.new())
     world:addComponent(entityId, "WorldBound", WorldBound.new())
+    world:addComponent(entityId, "Health", Health.new({ hp = 5, maxHp = 5, iFrames = 1.5 }))
 
     logInfo(string.format("[ENTITY] Player created: %d", entityId))
     return entityId

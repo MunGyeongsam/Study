@@ -8,14 +8,23 @@ local PlayerRenderSystem = System.new("PlayerRender", {"PlayerTag", "Transform",
     function(ecs, dt, entities)
         local lg = love.graphics
         local prevLineWidth = lg.getLineWidth()
+        local time = love.timer.getTime()
 
         for _, entityId in ipairs(entities) do
             local transform  = ecs:getComponent(entityId, "Transform")
             local renderable = ecs:getComponent(entityId, "Renderable")
             local velocity   = ecs:getComponent(entityId, "Velocity")
+            local health     = ecs:getComponent(entityId, "Health")
 
             if not renderable.visible then
                 goto continue
+            end
+
+            -- iFrame blink: skip every other 0.1s frame when invincible
+            if health and health.iTimer > 0 then
+                if math.floor(time * 10) % 2 == 0 then
+                    goto continue
+                end
             end
 
             local x, y = transform.x, transform.y
