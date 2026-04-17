@@ -183,6 +183,27 @@ function ECSManager.getBulletPool()
     return ECSManager.bulletPool
 end
 
+-- 게임 리스타트: 월드 초기화, 불릿 클리어, 스포너 리셋
+function ECSManager.restart()
+    -- 모든 불릿 제거
+    ECSManager.bulletPool:clear()
+
+    -- 모든 엔티티 제거
+    local world = ECSManager.world
+    local toDestroy = {}
+    for entityId, _ in pairs(world.entities) do
+        toDestroy[#toDestroy + 1] = entityId
+    end
+    for _, entityId in ipairs(toDestroy) do
+        world:destroyEntity(entityId)
+    end
+
+    -- 스포너 리셋
+    ECSManager.enemySpawner = EnemySpawner.new(ECSManager, ECSManager.getPlayerPos)
+
+    logInfo("[ECS] World restarted")
+end
+
 -- 기본 시스템들 등록 (실행 순서가 중요!)
 function ECSManager._registerBasicSystems()
     local getPlayerPos = ECSManager.getPlayerPos

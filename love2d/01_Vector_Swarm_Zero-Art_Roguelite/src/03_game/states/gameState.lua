@@ -1,0 +1,126 @@
+-- Game State Manager
+-- Manages game states: playing, game_over
+-- Tracks score (survival time) and handles restart.
+
+local GameState = {}
+
+-- States
+GameState.PLAYING   = "playing"
+GameState.GAME_OVER = "game_over"
+
+-- State
+local state = {
+    current     = GameState.PLAYING,
+    score       = 0,        -- survival time in seconds
+    bestScore   = 0,        -- best survival time
+    waveReached = 0,
+    gameOverTimer = 0,      -- time since game over (for UI delay)
+    restartDelay = 1.0,     -- seconds before restart is allowed
+}
+
+function GameState.init()
+    state.current     = GameState.PLAYING
+    state.score       = 0
+    state.gameOverTimer = 0
+end
+
+function GameState.update(dt, playerHealth)
+    if state.current == GameState.PLAYING then
+        state.score = state.score + dt
+
+        -- Check death
+        if playerHealth and not playerHealth.alive then
+            state.current = GameState.GAME_OVER
+            state.gameOverTimer = 0
+            if state.score > state.bestScore then
+                state.bestScore = state.score
+            end
+            logInfo(string.format("[GAME] Game Over! Score: %.1fs (Best: %.1fs)", state.score, state.bestScore))
+        end
+
+    elseif state.current == GameState.GAME_OVER then
+        state.gameOverTimer = state.gameOverTimer + dt
+    end
+end
+
+function GameState.draw()
+    if state.current ~= GameState.GAME_OVER then return end
+
+    local lg = love.graphics
+    local w, h = lg.getDimensions()
+
+    -- Dim overlay
+    lg.setColor(0, 0, 0, 0.7)
+    lg.rectangle("fill", 0, 0, w, h)
+
+    -- Game Over text
+    lg.setColor(1, 0.2, 0.2, 1)
+    local title = "GAME OVER"
+    local titleFont = lg.newFont(36)
+    lg.setFont(titleFont)
+    local tw = titleFont:getWidth(title)
+    lg.print(title, (w - tw) / 2, h * 0.3)
+
+    -- Score
+    lg.setColor(1, 1, 1, 1)
+    local scoreFont = lg.newFont(20)
+    lg.setFont(scoreFont)
+    local scoreText = string.format("%.1f sec", state.score)
+    local sw = scoreFont:getWidth(scoreText)
+    lg.print(scoreText, (w - sw) / 2, h * 0.42)
+
+    -- Best
+    lg.setColor(1, 0.8, 0, 1)
+    local bestText = string.format("Best: %.1f sec", state.bestScore)
+    local bw = scoreFont:getWidth(bestText)
+    lg.print(bestText, (w - bw) / 2, h * 0.48)
+
+    -- Wave
+    lg.setColor(0.7, 0.7, 0.7, 1)
+    local waveText = string.format("Wave: %d", state.waveReached)
+    local ww = scoreFont:getWidth(waveText)
+    lg.print(waveText, (w - ww) / 2, h * 0.54)
+
+    -- Restart prompt (after delay)
+    if state.gameOverTimer >= state.restartDelay then
+        local alpha = 0.5 + 0.5 * math.sin(love.timer.getTime() * 3)
+        lg.setColor(1, 1, 1, alpha)
+        local restartText = "Tap or press R to restart"
+        local rw = scoreFont:getWidth(restartText)
+        lg.print(restartText, (w - rw) / 2, h * 0.65)
+    end
+
+    lg.setColor(1, 1, 1, 1)
+end
+
+function GameState.canRestart()
+    return state.current == GameState.GAME_OVER
+       and state.gameOverTimer >= state.restartDelay
+end
+
+function GameState.isPlaying()
+    return state.current == GameState.PLAYING
+end
+
+function GameState.isGameOver()
+    return state.current == GameState.GAME_OVER
+end
+
+function GameState.getScore()
+    return state.score
+end
+
+function GameState.setWaveReached(wave)
+    state.waveReached = wave
+end
+
+function GameState.getState()
+    return {
+        current   = state.current,
+        score     = state.score,
+        bestScore = state.bestScore,
+        waveReached = state.waveReached,
+    }
+end
+
+return GameState

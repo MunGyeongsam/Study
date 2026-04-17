@@ -13,6 +13,7 @@ local cameraManager = require("02_renderer.cameraManager")
 local uiManager = require("04_ui.uiManager")  -- UI 시스템 추가
 local player = require("03_game.entities.player")  -- 플레이어 엔티티
 local ecsManager = require("01_core.ecsManager")  -- ECS 시스템
+local gameState = require("03_game.states.gameState")
 
 local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
 
@@ -160,10 +161,40 @@ function love.load()
          orthographicSize, orthographicSize * 2))
     log(string.format("Pixels per unit: %.1f", cameraManager.getActive():getPixelsPerUnit()))
     
+    -- 게임 상태 초기화
+    gameState.init()
+    
+end
+
+-- 게임 리스타트
+local function restartGame()
+    -- ECS 월드 초기화 (엔티티 + 불릿 + 스포너)
+    ecsManager.restart()
+
+    -- 플레이어 재생성 + 바인딩
+    local playerId = ecsManager.createPlayer(0, 0)
+    player.bind(ecsManager.getWorld(), playerId)
+    player.init()
+
+    -- 카메라 리셋
+    local px, py = player.getPosition()
+    cameraManager.getGameCamera():lookAt(px, py)
+    cameraManager.getGameCamera():setOrthographicSize(5)
+
+    -- 게임 상태 리셋
+    gameState.init()
+
+    logInfo("[GAME] Restarted!")
 end
 
 function love.update(dt)
-    -- �️ ECS 시스템 업데이트 (새로운 엔티티들)
+    -- 게임 오버 상태로 게임 로직 정지
+    if gameState.isGameOver() then
+        gameState.update(dt, nil)
+        return
+    end
+
+    -- ECS 시스템 업데이트
     ecsManager.update(dt)
     
     -- 🏃‍♂️ 플레이어 업데이트 (입력 처리 및 이동, 기존 OOP)
@@ -181,7 +212,7 @@ function love.update(dt)
     local playerStats = player.getStats()
     
     uiManager.setGameData({
-        score = 1250,  -- 예시 데이터
+        score = math.floor(gameState.getScore()),
         lives = 3,
         level = playerStats.zonesVisited + 1,  -- 방문한 구역 수 + 1
         fps = love.timer.getFPS(),
@@ -191,6 +222,13 @@ function love.update(dt)
         currentZone = playerStats.currentZone or "outside",
         checkpoints = playerStats.checkpoints
     })
+
+    -- 게임 상태 업데이트 (HP 검사 → 게임오버 판정)
+    local w = ecsManager.getWorld()
+    local playerEntities = w:queryEntities({"PlayerTag", "Health"})
+    local playerHealth = #playerEntities > 0 and w:getComponent(playerEntities[1], "Health") or nil
+    gameState.setWaveReached(ecsManager.getStats().spawner.waveNumber)
+    gameState.update(dt, playerHealth)
 end
 
 local function drawWorld()
@@ -218,6 +256,9 @@ function love.draw()
 
     -- 스크린 좌표계 그리드 (F4 토글)
     screenDebugDraw.draw(50)
+
+    -- 게임 오버 오버레이 (스크린 좌표계, 최상위)
+    gameState.draw()
 end
 
 -- Debug console functions are now handled automatically by Logger
@@ -235,6 +276,10 @@ function love.keypressed(key)
         screenDebugDraw.toggle()    -- F4: 스크린 그리드 토글
     elseif key == "f5" then
         cameraManager.toggle()      -- F5: 게임/디버그 카메라 전환
+    elseif key == "r" then
+        if gameState.canRestart() then
+            restartGame()
+        end
     end
     if key == 'escape' then
         love.event.quit()  -- ESC키로 게임 종료
@@ -260,6 +305,12 @@ end
 
 -- 모바일 터치 입력 처리
 function love.touchpressed(id, x, y, dx, dy, pressure)
+    -- 게임 오버 시 터치로 리스타트
+    if gameState.canRestart() then
+        restartGame()
+        return
+    end
+
     -- UI 터치 처리
     if uiManager.touchpressed(id, x, y, dx, dy, pressure) then
         return
