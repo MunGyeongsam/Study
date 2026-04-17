@@ -12,6 +12,7 @@ local WorldBound    = require("03_game.components.worldBound")
 local Health        = require("03_game.components.health")
 local BulletEmitter = require("03_game.components.bulletEmitter")
 local EnemyAI       = require("03_game.components.enemyAI")
+local PlayerWeapon  = require("03_game.components.playerWeapon")
 
 local EntityFactory = {}
 
@@ -20,6 +21,7 @@ local ENEMY_TYPES = {
     basic = {
         color       = {1, 0.2, 0.2, 1},
         radius      = 0.15,
+        hp          = 3,
         ai          = { behavior = "drift", driftVx = 0, driftVy = -0.3 },
         emitter     = { pattern = "circle", emitRate = 0.8, bulletSpeed = 1.2, bulletCount = 6,
                         bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1, 0.4, 0.4, 1} },
@@ -27,6 +29,7 @@ local ENEMY_TYPES = {
     spiral = {
         color       = {0.8, 0.2, 1, 1},
         radius      = 0.18,
+        hp          = 5,
         ai          = { behavior = "orbit", orbitRadius = 1.5, orbitSpeed = 0.8, speed = 1.2 },
         emitter     = { pattern = "spiral", emitRate = 1.5, bulletSpeed = 1.0, bulletCount = 4,
                         bulletLifetime = 5, bulletRadius = 0.03, bulletColor = {0.8, 0.4, 1, 1},
@@ -35,6 +38,7 @@ local ENEMY_TYPES = {
     aimed = {
         color       = {1, 0.8, 0.1, 1},
         radius      = 0.12,
+        hp          = 2,
         ai          = { behavior = "chase", chaseSpeed = 0.4 },
         emitter     = { pattern = "aimed", emitRate = 1.2, bulletSpeed = 2.0, bulletCount = 3,
                         bulletLifetime = 3, bulletRadius = 0.035, bulletColor = {1, 0.9, 0.3, 1} },
@@ -42,6 +46,7 @@ local ENEMY_TYPES = {
     wave = {
         color       = {0.2, 1, 0.4, 1},
         radius      = 0.14,
+        hp          = 4,
         ai          = { behavior = "drift", driftVx = 0.3, driftVy = -0.2 },
         emitter     = { pattern = "wave", emitRate = 1.0, bulletSpeed = 1.5, bulletCount = 5,
                         bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {0.4, 1, 0.6, 1},
@@ -76,6 +81,9 @@ function EntityFactory.createPlayer(world, x, y)
     world:addComponent(entityId, "PlayerTag", PlayerTag.new())
     world:addComponent(entityId, "WorldBound", WorldBound.new())
     world:addComponent(entityId, "Health", Health.new({ hp = 5, maxHp = 5, iFrames = 1.5 }))
+    world:addComponent(entityId, "PlayerWeapon", PlayerWeapon.new({
+        fireRate = 4, bulletSpeed = 4, bulletCount = 1, range = 6,
+    }))
 
     logInfo(string.format("[ENTITY] Player created: %d", entityId))
     return entityId
@@ -110,6 +118,9 @@ function EntityFactory.createEnemy(world, x, y, enemyType)
 
     world:addComponent(entityId, "EnemyAI", EnemyAI.new(preset.ai))
     world:addComponent(entityId, "BulletEmitter", BulletEmitter.new(preset.emitter))
+    world:addComponent(entityId, "Health", Health.new({
+        hp = preset.hp or 3, maxHp = preset.hp or 3, iFrames = 0,
+    }))
 
     -- Set orbit center to spawn position
     if preset.ai.behavior == "orbit" then

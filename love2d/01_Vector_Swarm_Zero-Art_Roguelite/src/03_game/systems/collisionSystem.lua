@@ -32,10 +32,17 @@ local function createCollisionSystem(bulletPool)
                 local px, py    = transform.x, transform.y
                 local pRadius   = collider.radius
 
-                -- Check all active bullets
+                -- Check all active enemy bullets
                 local i = 1
                 while i <= bulletPool.activeCount do
                     local b = bulletPool.active[i]
+
+                    -- Only check enemy bullets
+                    if b.layer ~= "enemy_bullet" then
+                        i = i + 1
+                        goto nextBullet
+                    end
+
                     local dx = b.x - px
                     local dy = b.y - py
                     local dist2 = dx * dx + dy * dy
@@ -63,6 +70,8 @@ local function createCollisionSystem(bulletPool)
                     else
                         i = i + 1
                     end
+
+                    ::nextBullet::
                 end
 
                 ::nextEntity::

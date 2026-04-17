@@ -15,6 +15,8 @@ local PlayerRenderSystem = require("03_game.systems.playerRenderSystem")
 local BulletPool                = require("03_game.systems.bulletPool")
 local createBulletEmitterSystem = require("03_game.systems.bulletEmitterSystem")
 local createCollisionSystem     = require("03_game.systems.collisionSystem")
+local createEnemyCollisionSystem = require("03_game.systems.enemyCollisionSystem")
+local createPlayerWeaponSystem  = require("03_game.systems.playerWeaponSystem")
 local createEnemyAISystem       = require("03_game.systems.enemyAISystem")
 local EnemySpawner              = require("03_game.systems.enemySpawner")
 
@@ -219,9 +221,13 @@ function ECSManager._registerBasicSystems()
     ECSManager.addSystem(LifeSpanSystem)
     -- 6. BulletEmitter: 이미터 → BulletPool spawn
     ECSManager.addSystem(createBulletEmitterSystem(ECSManager.bulletPool, getPlayerPos))
-    -- 7. Collision: 플레이어 ↔ 불릿 충돌
+    -- 7. PlayerWeapon: 자동 조준 + 발사
+    ECSManager.addSystem(createPlayerWeaponSystem(ECSManager.bulletPool))
+    -- 8. Collision: 플레이어 ↔ 적 불릿 충돌
     ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool))
-    -- 8-9. Render: draw()에서만 실행
+    -- 9. EnemyCollision: 플레이어 불릿 ↔ 적 충돌
+    ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool))
+    -- 10-11. Render: draw()에서만 실행
     ECSManager.addSystem(RenderSystem)
     ECSManager.addSystem(PlayerRenderSystem)
 end

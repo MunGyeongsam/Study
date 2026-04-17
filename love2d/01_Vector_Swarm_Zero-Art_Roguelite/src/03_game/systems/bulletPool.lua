@@ -57,6 +57,7 @@ function BulletPool:spawn(x, y, vx, vy, opts)
     bullet.color       = opts.color or {0.4, 0.8, 1, 1}
     bullet.active      = true
     bullet.layer       = opts.layer or "enemy_bullet"
+    bullet.damage      = opts.damage or 1
 
     -- Push to active
     self.activeCount = self.activeCount + 1
@@ -146,6 +147,7 @@ function BulletPool:_createBullet()
         color = {0.4, 0.8, 1, 1},
         active = false,
         layer = "enemy_bullet",
+        damage = 1,
     }
 end
 
