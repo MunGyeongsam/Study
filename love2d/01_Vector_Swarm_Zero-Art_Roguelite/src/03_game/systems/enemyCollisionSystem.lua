@@ -5,7 +5,7 @@
 
 local System = require("01_core.system")
 
-local function createEnemyCollisionSystem(bulletPool)
+local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
 
     local EnemyCollisionSystem = System.new("EnemyCollision", {"EnemyAI", "Transform", "Collider", "Health"},
         function(ecs, dt, entities)
@@ -46,6 +46,11 @@ local function createEnemyCollisionSystem(bulletPool)
 
                         if health.hp <= 0 then
                             health.alive = false
+                            -- XP 오브 드롭 콜백
+                            if onEnemyDeath then
+                                local enemyAI = ecs:getComponent(entityId, "EnemyAI")
+                                onEnemyDeath(ecs, ex, ey, enemyAI and enemyAI.xpValue or 1)
+                            end
                             ecs:destroyEntity(entityId)
                             goto nextEnemy
                         end

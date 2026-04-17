@@ -20,6 +20,8 @@ EnemyAI.defaults = {
     -- drift params
     driftVx = 0,
     driftVy = -0.5,        -- default: slow downward
+    -- reward
+    xpValue = 1,           -- XP dropped on death
 }
 
 function EnemyAI.new(data)
@@ -36,6 +38,7 @@ function EnemyAI.new(data)
         chaseSpeed   = d.chaseSpeed   or def.chaseSpeed,
         driftVx      = d.driftVx      or def.driftVx,
         driftVy      = d.driftVy      or def.driftVy,
+        xpValue      = d.xpValue     or def.xpValue,
     }
 end
 

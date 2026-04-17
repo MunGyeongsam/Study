@@ -20,6 +20,7 @@ local createPlayerWeaponSystem  = require("03_game.systems.playerWeaponSystem")
 local createEnemyAISystem       = require("03_game.systems.enemyAISystem")
 local DashSystem                = require("03_game.systems.dashSystem")
 local FocusSystem               = require("03_game.systems.focusSystem")
+local createXpCollectionSystem  = require("03_game.systems.xpCollectionSystem")
 local EnemySpawner              = require("03_game.systems.enemySpawner")
 
 -- Entity factories (03_game/entities/)
@@ -231,9 +232,14 @@ function ECSManager._registerBasicSystems()
     ECSManager.addSystem(createPlayerWeaponSystem(ECSManager.bulletPool))
     -- 10. Collision: 플레이어 ↔ 적 불릿 충돌
     ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool))
-    -- 11. EnemyCollision: 플레이어 불릿 ↔ 적 충돌
-    ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool))
-    -- 12-13. Render: draw()에서만 실행
+    -- 11. EnemyCollision: 플레이어 불릿 ↔ 적 충돌 + XP 드롭
+    local onEnemyDeath = function(ecs, x, y, xpValue)
+        EntityFactory.createXpOrb(ecs, x, y, xpValue)
+    end
+    ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath))
+    -- 12. XpCollection: XP 오브 자석 수집 + 레벨업
+    ECSManager.addSystem(createXpCollectionSystem(getPlayerPos))
+    -- 13-14. Render: draw()에서만 실행
     ECSManager.addSystem(RenderSystem)
     ECSManager.addSystem(PlayerRenderSystem)
 end

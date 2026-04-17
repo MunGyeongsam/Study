@@ -14,6 +14,7 @@ local uiManager = require("04_ui.uiManager")  -- UI 시스템 추가
 local player = require("03_game.entities.player")  -- 플레이어 엔티티
 local ecsManager = require("01_core.ecsManager")  -- ECS 시스템
 local gameState = require("03_game.states.gameState")
+local levelUp = require("03_game.states.levelUp")
 
 local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
 
@@ -132,6 +133,18 @@ function love.load()
         return "Dash/Focus : N/A"
     end);
 
+    debug.add("xp/level",
+    function()
+        local w = ecsManager.getWorld()
+        local entities = w:queryEntities({"PlayerTag", "PlayerXP"})
+        if #entities > 0 then
+            local xp = w:getComponent(entities[1], "PlayerXP")
+            return string.format("%10s : Lv.%d XP:%d/%d Mag:%.1f",
+                "XP", xp.level, xp.xp, xp.xpToNext, xp.magnetRange)
+        end
+        return "XP : N/A"
+    end);
+
     debug.toggleConsole()   -- debug watch panel auto-show (dev)
     
     -- 🌍 카메라를 플레이어 시작 위치로 이동
@@ -195,6 +208,11 @@ local function restartGame()
 end
 
 function love.update(dt)
+    -- 레벨업 선택 중이면 게임 로직 정지
+    if levelUp.isActive() then
+        return
+    end
+
     -- 게임 오버 상태로 게임 로직 정지
     if gameState.isGameOver() then
         gameState.update(dt, nil)
@@ -237,6 +255,16 @@ function love.update(dt)
     local playerHealth = #playerEntities > 0 and w:getComponent(playerEntities[1], "Health") or nil
     gameState.setWaveReached(ecsManager.getStats().spawner.waveNumber)
     gameState.update(dt, playerHealth)
+
+    -- 레벨업 체크
+    local xpEntities = w:queryEntities({"PlayerTag", "PlayerXP"})
+    if #xpEntities > 0 then
+        local playerXP = w:getComponent(xpEntities[1], "PlayerXP")
+        if playerXP.pendingLevelUp then
+            playerXP.pendingLevelUp = false
+            levelUp.show(w, xpEntities[1])
+        end
+    end
 end
 
 local function drawWorld()
@@ -267,11 +295,17 @@ function love.draw()
 
     -- 게임 오버 오버레이 (스크린 좌표계, 최상위)
     gameState.draw()
+
+    -- 레벨업 선택 UI (최상위)
+    levelUp.draw()
 end
 
 -- Debug console functions are now handled automatically by Logger
 
 function love.keypressed(key)
+    -- 레벨업 선택 우선 처리
+    if levelUp.keypressed(key) then return end
+
     if key == "f1" then
         debug.toggleConsole()   -- F1: 디버그 watch panel 토글
     elseif key == "`" then
@@ -324,6 +358,9 @@ end
 
 -- 모바일 터치 입력 처리
 function love.touchpressed(id, x, y, dx, dy, pressure)
+    -- 레벨업 선택 우선 처리
+    if levelUp.touchpressed(x, y) then return end
+
     -- 게임 오버 시 터치로 리스타트
     if gameState.canRestart() then
         restartGame()

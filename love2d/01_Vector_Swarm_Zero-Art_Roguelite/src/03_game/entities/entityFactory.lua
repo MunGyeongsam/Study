@@ -15,6 +15,8 @@ local EnemyAI       = require("03_game.components.enemyAI")
 local PlayerWeapon  = require("03_game.components.playerWeapon")
 local Dash          = require("03_game.components.dash")
 local Focus         = require("03_game.components.focus")
+local PlayerXP      = require("03_game.components.playerXP")
+local XpOrb         = require("03_game.components.xpOrb")
 
 local EntityFactory = {}
 
@@ -24,6 +26,7 @@ local ENEMY_TYPES = {
         color       = {1, 0.2, 0.2, 1},
         radius      = 0.15,
         hp          = 3,
+        xpValue     = 2,
         ai          = { behavior = "drift", driftVx = 0, driftVy = -0.3 },
         emitter     = { pattern = "circle", emitRate = 0.8, bulletSpeed = 1.2, bulletCount = 6,
                         bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1, 0.4, 0.4, 1} },
@@ -32,6 +35,7 @@ local ENEMY_TYPES = {
         color       = {0.8, 0.2, 1, 1},
         radius      = 0.18,
         hp          = 5,
+        xpValue     = 5,
         ai          = { behavior = "orbit", orbitRadius = 1.5, orbitSpeed = 0.8, speed = 1.2 },
         emitter     = { pattern = "spiral", emitRate = 1.5, bulletSpeed = 1.0, bulletCount = 4,
                         bulletLifetime = 5, bulletRadius = 0.03, bulletColor = {0.8, 0.4, 1, 1},
@@ -41,6 +45,7 @@ local ENEMY_TYPES = {
         color       = {1, 0.8, 0.1, 1},
         radius      = 0.12,
         hp          = 2,
+        xpValue     = 3,
         ai          = { behavior = "chase", chaseSpeed = 0.4 },
         emitter     = { pattern = "aimed", emitRate = 1.2, bulletSpeed = 2.0, bulletCount = 3,
                         bulletLifetime = 3, bulletRadius = 0.035, bulletColor = {1, 0.9, 0.3, 1} },
@@ -49,6 +54,7 @@ local ENEMY_TYPES = {
         color       = {0.2, 1, 0.4, 1},
         radius      = 0.14,
         hp          = 4,
+        xpValue     = 3,
         ai          = { behavior = "drift", driftVx = 0.3, driftVy = -0.2 },
         emitter     = { pattern = "wave", emitRate = 1.0, bulletSpeed = 1.5, bulletCount = 5,
                         bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {0.4, 1, 0.6, 1},
@@ -90,6 +96,7 @@ function EntityFactory.createPlayer(world, x, y)
         distance = 2.0, cooldown = 3.0, iFrames = 0.3,
     }))
     world:addComponent(entityId, "Focus", Focus.new())
+    world:addComponent(entityId, "PlayerXP", PlayerXP.new())
 
     logInfo(string.format("[ENTITY] Player created: %d", entityId))
     return entityId
@@ -122,7 +129,16 @@ function EntityFactory.createEnemy(world, x, y, enemyType)
         time = 30, destroyOffScreen = true,
     }))
 
-    world:addComponent(entityId, "EnemyAI", EnemyAI.new(preset.ai))
+    world:addComponent(entityId, "EnemyAI", EnemyAI.new({
+        behavior     = preset.ai.behavior,
+        speed        = preset.ai.speed,
+        orbitRadius  = preset.ai.orbitRadius,
+        orbitSpeed   = preset.ai.orbitSpeed,
+        chaseSpeed   = preset.ai.chaseSpeed,
+        driftVx      = preset.ai.driftVx,
+        driftVy      = preset.ai.driftVy,
+        xpValue      = preset.xpValue or 1,
+    }))
     world:addComponent(entityId, "BulletEmitter", BulletEmitter.new(preset.emitter))
     world:addComponent(entityId, "Health", Health.new({
         hp = preset.hp or 3, maxHp = preset.hp or 3, iFrames = 0,
@@ -136,6 +152,34 @@ function EntityFactory.createEnemy(world, x, y, enemyType)
     end
 
     logInfo(string.format("[ENTITY] Enemy created: %d (%s)", entityId, enemyType or "basic"))
+    return entityId
+end
+
+-- XP 오브 엔티티 생성
+function EntityFactory.createXpOrb(world, x, y, value)
+    local entityId = world:createEntity()
+
+    world:addComponent(entityId, "Transform", Transform.new({
+        x = x or 0, y = y or 0,
+    }))
+
+    world:addComponent(entityId, "Velocity", Velocity.new({
+        speed = 0, maxSpeed = 10, damping = 1.0,
+    }))
+
+    world:addComponent(entityId, "Renderable", Renderable.new({
+        type = "circle", radius = 0.05,
+        color = {0.2, 1.0, 0.4, 1},  -- 초록색 XP 오브
+    }))
+
+    world:addComponent(entityId, "LifeSpan", LifeSpan.new({
+        maxLifetime = 15,  -- 15초 후 소멸
+    }))
+
+    world:addComponent(entityId, "XpOrb", XpOrb.new({
+        value = value or 1,
+    }))
+
     return entityId
 end
 
