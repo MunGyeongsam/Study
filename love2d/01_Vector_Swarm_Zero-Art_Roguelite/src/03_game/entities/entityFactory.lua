@@ -10,7 +10,6 @@ local Input         = require("03_game.components.input")
 local PlayerTag     = require("03_game.components.playerTag")
 local WorldBound    = require("03_game.components.worldBound")
 local BulletEmitter = require("03_game.components.bulletEmitter")
-local BulletEmitter = require("03_game.components.bulletEmitter")
 
 local EntityFactory = {}
 

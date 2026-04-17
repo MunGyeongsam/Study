@@ -111,6 +111,7 @@ function BulletPool:draw()
         lg.setColor(b.color[1], b.color[2], b.color[3], b.color[4])
         lg.circle("fill", b.x, b.y, b.radius)
     end
+    lg.setColor(1, 1, 1, 1)  -- restore default color
 end
 
 --- Remove all active bullets (e.g. on stage clear).

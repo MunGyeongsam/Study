@@ -22,18 +22,20 @@ BulletEmitter.defaults = {
 }
 
 function BulletEmitter.new(data)
+    local d = data or {}
+    local def = BulletEmitter.defaults
     return {
-        pattern        = data and data.pattern        or BulletEmitter.defaults.pattern,
-        emitRate       = data and data.emitRate       or BulletEmitter.defaults.emitRate,
-        bulletSpeed    = data and data.bulletSpeed    or BulletEmitter.defaults.bulletSpeed,
-        bulletCount    = data and data.bulletCount    or BulletEmitter.defaults.bulletCount,
-        bulletLifetime = data and data.bulletLifetime or BulletEmitter.defaults.bulletLifetime,
-        bulletRadius   = data and data.bulletRadius   or BulletEmitter.defaults.bulletRadius,
-        bulletColor    = data and data.bulletColor    or BulletEmitter.defaults.bulletColor,
-        active         = data and data.active ~= nil and data.active or BulletEmitter.defaults.active,
+        pattern        = d.pattern        or def.pattern,
+        emitRate       = d.emitRate       or def.emitRate,
+        bulletSpeed    = d.bulletSpeed    or def.bulletSpeed,
+        bulletCount    = d.bulletCount    or def.bulletCount,
+        bulletLifetime = d.bulletLifetime or def.bulletLifetime,
+        bulletRadius   = d.bulletRadius   or def.bulletRadius,
+        bulletColor    = d.bulletColor    or def.bulletColor,
+        active         = d.active ~= nil and d.active or def.active,
         timer          = 0,
         angle          = 0,
-        turnRate       = data and data.turnRate       or BulletEmitter.defaults.turnRate,
+        turnRate       = d.turnRate       or def.turnRate,
     }
 end
 
