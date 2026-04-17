@@ -11,6 +11,10 @@ local LifeSpanSystem     = require("03_game.systems.lifespanSystem")
 local RenderSystem       = require("03_game.systems.renderSystem")
 local PlayerRenderSystem = require("03_game.systems.playerRenderSystem")
 
+-- Bullet system (pool-based, not per-entity ECS)
+local BulletPool                = require("03_game.systems.bulletPool")
+local createBulletEmitterSystem = require("03_game.systems.bulletEmitterSystem")
+
 -- Entity factories (03_game/entities/)
 local EntityFactory = require("03_game.entities.entityFactory")
 
@@ -21,9 +25,21 @@ function ECSManager.init()
     ECSManager.systems = {}
     ECSManager.systemsOrder = {}  -- 실행 순서 보장
     
+    -- Bullet pool (shared by emitter system and render)
+    ECSManager.bulletPool = BulletPool.new(2000)
+
+    -- World bounds for bullet culling
+    local world = require("01_core.world")
+    local halfW = world.size.width  / 2
+    local halfH = world.size.height / 2
+    ECSManager.bulletBounds = {
+        minX = -halfW, maxX = halfW,
+        minY = world.center.y - halfH, maxY = world.center.y + halfH,
+    }
+
     logInfo("[ECS] ECS Manager initialized")
     
-    -- 기본 시스템들 등록 (다음 단계에서 구현)
+    -- 기본 시스템들 등록
     ECSManager._registerBasicSystems()
     
     return true
@@ -81,6 +97,9 @@ function ECSManager.update(dt)
             end
         end
     end
+
+    -- Bullet pool update (movement + lifetime + culling)
+    ECSManager.bulletPool:update(dt, ECSManager.bulletBounds)
 end
 
 -- 렌더링 (카메라 변환은 호출자가 적용 — main.lua의 drawWorld 내부에서 호출됨)
@@ -95,7 +114,10 @@ function ECSManager.draw()
         renderSystem:update(ECSManager.world, 0)
     end
 
-    -- 플레이어 전용 렌더 (외곽선, 방향)
+    -- Bullet pool rendering (all active bullets)
+    ECSManager.bulletPool:draw()
+
+    -- 플레이어 전용 렌더 (외곽선, 방향 — 불릿 위에 그려짐)
     local playerRenderSystem = ECSManager.systems["PlayerRender"]
     if playerRenderSystem then
         playerRenderSystem:update(ECSManager.world, 0)
@@ -135,13 +157,19 @@ function ECSManager.getStats()
     
     return {
         world = worldStats,
-        systems = systemStats
+        systems = systemStats,
+        bullets = ECSManager.bulletPool:getStats(),
     }
 end
 
 -- ECS 월드 참조 반환 (player.lua bind용)
 function ECSManager.getWorld()
     return ECSManager.world
+end
+
+-- Bullet pool 참조 반환
+function ECSManager.getBulletPool()
+    return ECSManager.bulletPool
 end
 
 -- 기본 시스템들 등록 (실행 순서가 중요!)
@@ -154,7 +182,9 @@ function ECSManager._registerBasicSystems()
     ECSManager.addSystem(BoundarySystem)
     -- 4. LifeSpan: 수명 만료 제거
     ECSManager.addSystem(LifeSpanSystem)
-    -- 5-6. Render: draw()에서만 실행
+    -- 5. BulletEmitter: 이미터 → BulletPool spawn
+    ECSManager.addSystem(createBulletEmitterSystem(ECSManager.bulletPool))
+    -- 6-7. Render: draw()에서만 실행
     ECSManager.addSystem(RenderSystem)
     ECSManager.addSystem(PlayerRenderSystem)
 end

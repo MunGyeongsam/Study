@@ -1,14 +1,16 @@
 -- Entity Factory
 -- 엔티티 생성 헬퍼 함수 모음
 
-local Transform  = require("03_game.components.transform")
-local Velocity   = require("03_game.components.velocity")
-local Collider   = require("03_game.components.collider")
-local Renderable = require("03_game.components.renderable")
-local LifeSpan   = require("03_game.components.lifespan")
-local Input      = require("03_game.components.input")
-local PlayerTag  = require("03_game.components.playerTag")
-local WorldBound = require("03_game.components.worldBound")
+local Transform     = require("03_game.components.transform")
+local Velocity      = require("03_game.components.velocity")
+local Collider      = require("03_game.components.collider")
+local Renderable    = require("03_game.components.renderable")
+local LifeSpan      = require("03_game.components.lifespan")
+local Input         = require("03_game.components.input")
+local PlayerTag     = require("03_game.components.playerTag")
+local WorldBound    = require("03_game.components.worldBound")
+local BulletEmitter = require("03_game.components.bulletEmitter")
+local BulletEmitter = require("03_game.components.bulletEmitter")
 
 local EntityFactory = {}
 
@@ -67,6 +69,16 @@ function EntityFactory.createEnemy(world, x, y, enemyType)
 
     world:addComponent(entityId, "LifeSpan", LifeSpan.new({
         time = 30, destroyOffScreen = true,
+    }))
+
+    world:addComponent(entityId, "BulletEmitter", BulletEmitter.new({
+        pattern     = "circle",
+        emitRate    = 1,          -- 1 burst per second
+        bulletSpeed = 1.5,
+        bulletCount = 8,
+        bulletLifetime = 4,
+        bulletRadius   = 0.04,
+        bulletColor    = {1, 0.4, 0.4, 1},  -- reddish
     }))
 
     logInfo(string.format("[ENTITY] Enemy created: %d", entityId))

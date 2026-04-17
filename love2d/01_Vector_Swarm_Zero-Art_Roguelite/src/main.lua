@@ -47,8 +47,9 @@ function love.load()
     player.bind(ecsManager.getWorld(), playerId)
     player.init()  -- 월드 시작 위치로 설정
     
-    -- 🧪 테스트용 적 엔티티
-    local ecsEnemyId = ecsManager.createEnemy(1, 2)
+    -- 🧪 테스트용 적 엔티티 (플레이어 위쪽에 배치)
+    local startX, startY = player.getPosition()
+    local ecsEnemyId = ecsManager.createEnemy(startX, startY + 3)
 
     debug.add("world info", 
     function()
@@ -86,10 +87,18 @@ function love.load()
         return string.format("%10s : %s (%.1f, %.1f) zoom=%.1f",
             "Camera", cameraManager.getMode(), cx, cy, cam:getOrthographicSize())
     end);
+
+    debug.add("bullets",
+    function()
+        local stats = ecsManager.getStats()
+        local b = stats.bullets
+        return string.format("%10s : %d active / %d peak / %d spawned",
+            "Bullets", b.active, b.peakActive, b.spawned)
+    end);
+
     debug.toggleConsole()   -- debug watch panel auto-show (dev)
     
     -- 🌍 카메라를 플레이어 시작 위치로 이동
-    local startX, startY = player.getPosition()
     cameraManager.getGameCamera():lookAt(startX, startY)
     logger.info(string.format("[CAM] Positioned at player start: (%.1f, %.1f)", startX, startY))
     
