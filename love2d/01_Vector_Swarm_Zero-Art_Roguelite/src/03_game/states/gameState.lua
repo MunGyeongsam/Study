@@ -8,6 +8,10 @@ local GameState = {}
 GameState.PLAYING   = "playing"
 GameState.GAME_OVER = "game_over"
 
+-- Cached fonts (created once on first draw)
+local titleFont = nil
+local scoreFont = nil
+
 -- State
 local state = {
     current     = GameState.PLAYING,
@@ -56,14 +60,14 @@ function GameState.draw()
     -- Game Over text
     lg.setColor(1, 0.2, 0.2, 1)
     local title = "GAME OVER"
-    local titleFont = lg.newFont(36)
+    if not titleFont then titleFont = lg.newFont(36) end
     lg.setFont(titleFont)
     local tw = titleFont:getWidth(title)
     lg.print(title, (w - tw) / 2, h * 0.3)
 
     -- Score
     lg.setColor(1, 1, 1, 1)
-    local scoreFont = lg.newFont(20)
+    if not scoreFont then scoreFont = lg.newFont(20) end
     lg.setFont(scoreFont)
     local scoreText = string.format("%.1f sec", state.score)
     local sw = scoreFont:getWidth(scoreText)
