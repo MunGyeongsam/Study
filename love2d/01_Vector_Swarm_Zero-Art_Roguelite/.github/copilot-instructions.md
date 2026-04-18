@@ -111,6 +111,8 @@ return M
 | F3 | UI debug mode toggle |
 | F4 | Screen grid toggle |
 | F5 | Camera mode toggle (game ↔ debug) |
+| F7 | God mode toggle |
+| F8 | Stage skip (debug) |
 | ESC | Quit game |
 
 ### Global helpers (injected by `00_common/global.lua`)
@@ -205,6 +207,7 @@ perf:     성능 최적화
 ### 4. 테스트 (Test)
 - 게임 실행 (`F5` 또는 `run.bat` / `run.sh`)
 - **체크리스트 기반 검증** (테스트 전에 체크리스트 먼저 작성)
+- **회귀 테스트 (Regression Test)**: 리팩터링이 기존 기능을 건드렸을 때, 영향받는 기존 기능들을 먼저 테스트한 후 신규 기능 테스트
 
 ### 5. 검증 (Verify)
 - 테스트 결과 확인
