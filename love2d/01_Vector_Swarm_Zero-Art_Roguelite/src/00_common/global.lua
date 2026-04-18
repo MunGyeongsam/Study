@@ -93,46 +93,6 @@ function screenSize()
     return love.graphics.getWidth(), love.graphics.getHeight()
 end
 
--- ===== 디버그 유틸리티 =====
-
--- 간단한 텍스트 출력 (디버그용)
-function drawText(text, x, y, color)
-    if color then setColor(color[1], color[2], color[3], color[4])
-    else resetColor() end
-    love.graphics.print(text, x or 10, y or 10)
-    resetColor()
-end
-
--- 점 그리기  
-function drawPoint(x, y, size, color)
-    if color then setColor(color[1], color[2], color[3], color[4])
-    else setColor(255, 0, 0) end
-    love.graphics.circle("fill", x, y, size or 2)
-    resetColor()
-end
-
--- 선 그리기
-function drawLine(x1, y1, x2, y2, color)
-    if color then setColor(color[1], color[2], color[3], color[4])
-    else setColor(255, 255, 255) end
-    love.graphics.line(x1, y1, x2, y2)
-    resetColor()
-end
-
--- ===== 입력 유틸리티 =====
-
--- 마우스 월드 위치 (나중에 카메라 연동)
-function mouseWorldPos()
-    -- 카메라 인스턴스가 있을 때만 사용 가능
-    -- 예: local cam = camera.new(); cam:mousepos()
-    return love.mouse.getPosition()  -- 일단 기본 스크린 좌표 반환
-end
-
--- 키 눌림 체크
-function isKeyDown(key)
-    return love.keyboard.isDown(key)
-end
-
 -- ===== 전역 초기화 =====
 function initGlobals()
     log("Global utilities initialized")

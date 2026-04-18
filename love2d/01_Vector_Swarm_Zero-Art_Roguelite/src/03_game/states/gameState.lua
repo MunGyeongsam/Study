@@ -44,6 +44,7 @@ function GameState.update(dt, playerHealth)
         if playerHealth and not playerHealth.alive then
             state.current = GameState.GAME_OVER
             state.gameOverTimer = 0
+            state.timeScale = 1.0  -- 포커스 슬로모 해제
             if state.score > state.bestScore then
                 state.bestScore = state.score
             end

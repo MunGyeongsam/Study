@@ -10,8 +10,11 @@ WorldBound.defaults = {
 }
 
 function WorldBound.new(data)
+    local d = data or {}
+    local en = d.enabled
+    if en == nil then en = WorldBound.defaults.enabled end
     return {
-        enabled = data and data.enabled ~= nil and data.enabled or true,
+        enabled = en,
     }
 end
 

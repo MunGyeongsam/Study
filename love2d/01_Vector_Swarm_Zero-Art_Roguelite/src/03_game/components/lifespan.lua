@@ -11,9 +11,12 @@ LifeSpan.defaults = {
 }
 
 function LifeSpan.new(data)
+    local d = data or {}
+    local offScreen = d.destroyOffScreen
+    if offScreen == nil then offScreen = LifeSpan.defaults.destroyOffScreen end
     return {
-        time             = data and data.time             or LifeSpan.defaults.time,
-        destroyOffScreen = data and data.destroyOffScreen ~= nil and data.destroyOffScreen or LifeSpan.defaults.destroyOffScreen,
+        time             = d.time or LifeSpan.defaults.time,
+        destroyOffScreen = offScreen,
     }
 end
 

@@ -188,7 +188,7 @@ function EntityFactory.createXpOrb(world, x, y, value)
     }))
 
     world:addComponent(entityId, "LifeSpan", LifeSpan.new({
-        maxLifetime = 15,  -- 15초 후 소멸
+        time = 15,  -- 15초 후 소멸
     }))
 
     world:addComponent(entityId, "XpOrb", XpOrb.new({

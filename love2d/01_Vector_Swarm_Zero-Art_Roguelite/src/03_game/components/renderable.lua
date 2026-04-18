@@ -15,13 +15,16 @@ Renderable.defaults = {
 }
 
 function Renderable.new(data)
+    local d = data or {}
+    local vis = d.visible
+    if vis == nil then vis = Renderable.defaults.visible end
     return {
-        type    = data and data.type    or Renderable.defaults.type,
-        radius  = data and data.radius  or Renderable.defaults.radius,
-        width   = data and data.width   or Renderable.defaults.width,
-        height  = data and data.height  or Renderable.defaults.height,
-        color   = data and data.color   or Renderable.defaults.color,
-        visible = data and data.visible ~= nil and data.visible or Renderable.defaults.visible,
+        type    = d.type    or Renderable.defaults.type,
+        radius  = d.radius  or Renderable.defaults.radius,
+        width   = d.width   or Renderable.defaults.width,
+        height  = d.height  or Renderable.defaults.height,
+        color   = d.color   or Renderable.defaults.color,
+        visible = vis,
     }
 end
 

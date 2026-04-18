@@ -8,7 +8,8 @@ local gameState = require("03_game.states.gameState")
 local FocusSystem = System.new("Focus", {"Focus", "Collider", "Velocity"},
     function(ecs, dt, entities)
         -- dt는 timeScale 적용된 값 → 에너지 관리에는 실제 dt 사용
-        local realDt = dt / gameState.getTimeScale()
+        local scale = gameState.getTimeScale()
+        local realDt = (scale > 0.001) and (dt / scale) or dt
 
         for _, entityId in ipairs(entities) do
             local focus    = ecs:getComponent(entityId, "Focus")

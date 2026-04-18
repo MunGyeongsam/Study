@@ -77,10 +77,6 @@ function player.update(dt, inputState)
 end
 
 -- 렌더링 — PlayerRenderSystem이 담당. 빈 함수로 유지.
-function player.draw(camera)
-    -- ECS PlayerRenderSystem에서 처리
-end
-
 -- 위치 정보 반환
 function player.getPosition()
     if not ecsWorld or not entityId then return 0, 0 end
@@ -132,40 +128,6 @@ function player.getStats()
         zonesVisited = #tag.zoneHistory,
         checkpoints = #tag.checkpointsSaved,
     }
-end
-
--- 플레이어 리셋 (새 게임)
-function player.reset()
-    if not ecsWorld or not entityId then return end
-
-    local startX, startY = world.getStartPosition()
-    local transform = ecsWorld:getComponent(entityId, "Transform")
-    if transform then
-        transform.x = startX
-        transform.y = startY
-    end
-
-    local velocity = ecsWorld:getComponent(entityId, "Velocity")
-    if velocity then
-        velocity.vx = 0
-        velocity.vy = 0
-    end
-
-    local tag = ecsWorld:getComponent(entityId, "PlayerTag")
-    if tag then
-        tag.powerUps = {}
-        tag.checkpointsSaved = {}
-        tag.currentZone = nil
-        tag.zoneHistory = {}
-    end
-
-    local health = ecsWorld:getComponent(entityId, "Health")
-    if health then
-        health.hp = health.maxHp
-        health.alive = true
-        health.iTimer = 0
-        health.hitCount = 0
-    end
 end
 
 return player
