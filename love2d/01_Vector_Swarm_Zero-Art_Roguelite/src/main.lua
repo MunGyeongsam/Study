@@ -211,6 +211,7 @@ restartGame = function()
 
     -- 게임 상태 리셋
     gameState.init()
+    levelUp.reset()  -- 감쇠 스택 초기화
 
     logInfo("[GAME] Restarted!")
 end

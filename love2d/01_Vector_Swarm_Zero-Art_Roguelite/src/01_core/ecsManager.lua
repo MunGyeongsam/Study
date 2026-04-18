@@ -24,6 +24,9 @@ local createXpCollectionSystem  = require("03_game.systems.xpCollectionSystem")
 local StageManager              = require("03_game.systems.stageManager")
 local createBossSystem          = require("03_game.systems.bossSystem")
 
+-- Game state (for XP scaling by stage)
+local gameState = require("03_game.states.gameState")
+
 -- Entity factories (03_game/entities/)
 local EntityFactory = require("03_game.entities.entityFactory")
 
@@ -243,7 +246,11 @@ function ECSManager._registerBasicSystems()
     ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool))
     -- 11. EnemyCollision: 플레이어 불릿 ↔ 적 충돌 + XP 드롭
     local onEnemyDeath = function(ecs, x, y, xpValue)
-        EntityFactory.createXpOrb(ecs, x, y, xpValue)
+        -- XP 스케일링: 스테이지가 올라갈수록 XP 보상 증가
+        local stage = gameState.getStageInfo()
+        local xpMult = 1.0 + (stage - 1) * 0.15
+        local scaledXP = math.max(1, math.floor(xpValue * xpMult + 0.5))
+        EntityFactory.createXpOrb(ecs, x, y, scaledXP)
     end
     ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath))
     -- 12. XpCollection: XP 오브 자석 수집 + 레벨업

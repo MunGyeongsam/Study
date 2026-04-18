@@ -11,52 +11,60 @@ local UPGRADE_POOL = {
     -- 무기 업그레이드
     {
         id = "fire_rate",
-        name = "Fire Rate +20%",
+        name = "Fire Rate",
         desc = "Attack speed increased",
         category = "weapon",
-        apply = function(ecs, playerId)
+        baseValue = 0.20,  -- +20%
+        apply = function(ecs, playerId, factor)
             local w = ecs:getComponent(playerId, "PlayerWeapon")
-            if w then w.fireRate = w.fireRate * 1.2 end
+            if w then w.fireRate = w.fireRate * (1 + 0.20 * factor) end
         end,
     },
     {
         id = "bullet_count",
-        name = "Multi Shot +1",
+        name = "Multi Shot",
         desc = "Fire additional bullet",
         category = "weapon",
-        apply = function(ecs, playerId)
+        baseValue = 1,
+        apply = function(ecs, playerId, factor)
             local w = ecs:getComponent(playerId, "PlayerWeapon")
-            if w then w.bulletCount = w.bulletCount + 1 end
+            if w then w.bulletCount = w.bulletCount + 1 end  -- 고정 +1 (감쇠 없음, 대신 출현 자체가 드묾)
         end,
     },
     {
         id = "bullet_damage",
-        name = "Damage +1",
+        name = "Damage",
         desc = "Each bullet deals more damage",
         category = "weapon",
-        apply = function(ecs, playerId)
+        baseValue = 1,
+        apply = function(ecs, playerId, factor)
             local w = ecs:getComponent(playerId, "PlayerWeapon")
-            if w then w.bulletDamage = w.bulletDamage + 1 end
+            if w then
+                local bonus = math.max(1, math.floor(1 * factor + 0.5))
+                w.bulletDamage = w.bulletDamage + bonus
+            end
         end,
     },
     {
         id = "bullet_speed",
-        name = "Bullet Speed +25%",
+        name = "Bullet Speed",
         desc = "Bullets fly faster",
         category = "weapon",
-        apply = function(ecs, playerId)
+        baseValue = 0.25,
+        apply = function(ecs, playerId, factor)
             local w = ecs:getComponent(playerId, "PlayerWeapon")
-            if w then w.bulletSpeed = w.bulletSpeed * 1.25 end
+            if w then w.bulletSpeed = w.bulletSpeed * (1 + 0.25 * factor) end
         end,
     },
     {
         id = "attack_range",
-        name = "Range +20%",
+        name = "Range",
         desc = "Auto-aim reaches further",
         category = "weapon",
-        apply = function(ecs, playerId)
+        baseValue = 0.20,
+        apply = function(ecs, playerId, factor)
             local w = ecs:getComponent(playerId, "PlayerWeapon")
-            if w then w.range = w.range * 1.2 end
+            if w then w.range = w.range * (1 + 0.20 * factor) end
         end,
     },
     -- 패시브 스킬
@@ -65,54 +73,60 @@ local UPGRADE_POOL = {
         name = "Max HP +1",
         desc = "Increase maximum health",
         category = "passive",
-        apply = function(ecs, playerId)
+        baseValue = 1,
+        apply = function(ecs, playerId, factor)
             local h = ecs:getComponent(playerId, "Health")
             if h then
-                h.maxHp = h.maxHp + 1
+                h.maxHp = h.maxHp + 1  -- HP는 항상 +1 (감쇠 없음)
                 h.hp = h.hp + 1
             end
         end,
     },
     {
         id = "move_speed",
-        name = "Move Speed +15%",
+        name = "Move Speed",
         desc = "Move faster",
         category = "passive",
-        apply = function(ecs, playerId)
+        baseValue = 0.15,
+        apply = function(ecs, playerId, factor)
             local v = ecs:getComponent(playerId, "Velocity")
-            if v then v.speed = v.speed * 1.15 end
+            if v then v.speed = v.speed * (1 + 0.15 * factor) end
         end,
     },
     {
         id = "magnet_range",
-        name = "Magnet +30%",
+        name = "Magnet",
         desc = "XP orb pickup range increased",
         category = "passive",
-        apply = function(ecs, playerId)
+        baseValue = 0.30,
+        apply = function(ecs, playerId, factor)
             local xp = ecs:getComponent(playerId, "PlayerXP")
-            if xp then xp.magnetRange = xp.magnetRange * 1.3 end
+            if xp then xp.magnetRange = xp.magnetRange * (1 + 0.30 * factor) end
         end,
     },
     {
         id = "dash_cooldown",
-        name = "Dash CD -20%",
+        name = "Dash CD",
         desc = "Dash recharges faster",
         category = "passive",
-        apply = function(ecs, playerId)
+        baseValue = 0.20,
+        apply = function(ecs, playerId, factor)
             local d = ecs:getComponent(playerId, "Dash")
-            if d then d.cooldown = d.cooldown * 0.8 end
+            if d then d.cooldown = d.cooldown * (1 - 0.20 * factor) end
         end,
     },
     {
         id = "focus_energy",
-        name = "Focus +25%",
+        name = "Focus",
         desc = "More focus energy",
         category = "passive",
-        apply = function(ecs, playerId)
+        baseValue = 0.25,
+        apply = function(ecs, playerId, factor)
             local f = ecs:getComponent(playerId, "Focus")
             if f then
-                f.maxEnergy = f.maxEnergy * 1.25
-                f.energy = f.energy + f.maxEnergy * 0.25
+                local bonus = f.maxEnergy * 0.25 * factor
+                f.maxEnergy = f.maxEnergy + bonus
+                f.energy = f.energy + bonus
             end
         end,
     },
@@ -126,6 +140,16 @@ local state = {
     playerId = nil,
     ecs = nil,
 }
+
+-- 감쇠 스택: 업그레이드별 선택 횟수 추적
+local pickCounts = {}  -- { [id] = count }
+
+-- 감쇠 계수: n번째 선택 시 효과 배율
+-- 1회: 100%, 2회: 70%, 3회: 50%, 4회: 35%, ...
+local function getDiminishingFactor(pickCount)
+    if pickCount <= 0 then return 1.0 end
+    return 0.7 ^ pickCount  -- 매번 30% 감소
+end
 
 -- 캐시된 폰트
 local titleFont = nil
@@ -157,8 +181,28 @@ function LevelUp.show(ecs, playerId)
     state.playerId = playerId
     state.ecs = ecs
     gameState.setTimeScale(0)  -- 게임 일시정지
+
+    -- 옵션 이름에 현재 효과량 표시
+    for _, opt in ipairs(state.options) do
+        local count = pickCounts[opt.id] or 0
+        local factor = getDiminishingFactor(count)
+        if opt.id == "bullet_count" or opt.id == "max_hp" then
+            opt.displayName = opt.name .. " +1"
+        elseif opt.id == "bullet_damage" then
+            local bonus = math.max(1, math.floor(1 * factor + 0.5))
+            opt.displayName = opt.name .. string.format(" +%d", bonus)
+        else
+            local pct = math.floor(opt.baseValue * factor * 100 + 0.5)
+            if opt.id == "dash_cooldown" then
+                opt.displayName = opt.name .. string.format(" -%d%%", pct)
+            else
+                opt.displayName = opt.name .. string.format(" +%d%%", pct)
+            end
+        end
+    end
+
     logInfo(string.format("[LEVELUP] Options: %s, %s, %s",
-        state.options[1].name, state.options[2].name, state.options[3].name))
+        state.options[1].displayName, state.options[2].displayName, state.options[3].displayName))
 end
 
 function LevelUp.isActive()
@@ -170,8 +214,17 @@ function LevelUp.select(index)
     if index < 1 or index > #state.options then return end
 
     local option = state.options[index]
-    option.apply(state.ecs, state.playerId)
-    logInfo(string.format("[LEVELUP] Selected: %s", option.name))
+
+    -- 감쇠 계산
+    local count = pickCounts[option.id] or 0
+    local factor = getDiminishingFactor(count)
+    option.apply(state.ecs, state.playerId, factor)
+
+    -- 선택 횟수 기록
+    pickCounts[option.id] = count + 1
+
+    logInfo(string.format("[LEVELUP] Selected: %s (pick #%d, factor: %.0f%%)",
+        option.displayName or option.name, count + 1, factor * 100))
 
     state.active = false
     state.options = {}
@@ -237,11 +290,12 @@ function LevelUp.draw()
         lg.setColor(0.5, 0.5, 0.5, 1)
         lg.print(tostring(i), cx + 8, cardY + 8)
 
-        -- 이름
+        -- 이름 (감쇠 효과량 포함)
         lg.setFont(optionFont)
         lg.setColor(1, 1, 1, 1)
-        local nameW = optionFont:getWidth(option.name)
-        lg.print(option.name, cx + (cardW - nameW) / 2, cardY + cardH * 0.3)
+        local displayName = option.displayName or option.name
+        local nameW = optionFont:getWidth(displayName)
+        lg.print(displayName, cx + (cardW - nameW) / 2, cardY + cardH * 0.3)
 
         -- 설명
         lg.setFont(descFont)
@@ -294,6 +348,13 @@ function LevelUp.touchpressed(x, y)
         end
     end
     return false
+end
+
+function LevelUp.reset()
+    state.active = false
+    state.options = {}
+    state.selectedIndex = 0
+    pickCounts = {}
 end
 
 return LevelUp
