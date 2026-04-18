@@ -5,6 +5,31 @@
 
 local System = require("01_core.system")
 
+local cos = math.cos
+local sin = math.sin
+local pi2 = math.pi * 2
+local random = math.random
+
+-- 적 사망 시 파편 파티클 스폰
+local function spawnDeathDebris(bulletPool, x, y, color, radius)
+    local count = 6 + random(0, 2)  -- 6~8개
+    local baseRadius = radius * 0.3
+    for i = 1, count do
+        local angle = (i / count) * pi2 + (random() - 0.5) * 0.4
+        local speed = 2 + random() * 2  -- 2~4
+        local r = baseRadius * (0.5 + random() * 0.7)  -- 크기 변화
+        bulletPool:spawn(x, y, cos(angle) * speed, sin(angle) * speed, {
+            maxLifetime = 0.3 + random() * 0.2,  -- 0.3~0.5초
+            radius      = r,
+            color       = {color[1], color[2], color[3], 1},
+            layer       = "debris",
+            damage      = 0,
+            damping     = 0.02,    -- 빠르게 감속 (0.02^dt ≈ 매 초 98% 감소)
+            fadeAlpha   = true,
+        })
+    end
+end
+
 local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
 
     local EnemyCollisionSystem = System.new("EnemyCollision", {"EnemyAI", "Transform", "Collider", "Health"},
@@ -59,10 +84,19 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
                                 end
                                 -- Mark defeated (BossSystem reads this)
                                 bossTag.defeated = true
+                                -- 보스 사망 debris (큰 파편)
+                                local rend = ecs:getComponent(entityId, "Renderable")
+                                if rend then
+                                    spawnDeathDebris(bulletPool, ex, ey, rend.color, eRadius)
+                                end
                                 -- Don't destroyEntity — let StageManager handle cleanup
                                 goto nextEnemy
                             end
-                            -- Normal enemy: single XP drop + destroy
+                            -- Normal enemy: debris + XP drop + destroy
+                            local rend = ecs:getComponent(entityId, "Renderable")
+                            if rend then
+                                spawnDeathDebris(bulletPool, ex, ey, rend.color, eRadius)
+                            end
                             if onEnemyDeath then
                                 local enemyAI = ecs:getComponent(entityId, "EnemyAI")
                                 onEnemyDeath(ecs, ex, ey, enemyAI and enemyAI.xpValue or 1)

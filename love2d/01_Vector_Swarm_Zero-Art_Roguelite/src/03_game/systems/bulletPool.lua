@@ -58,6 +58,8 @@ function BulletPool:spawn(x, y, vx, vy, opts)
     bullet.active      = true
     bullet.layer       = opts.layer or "enemy_bullet"
     bullet.damage      = opts.damage or 1
+    bullet.damping     = opts.damping or 1
+    bullet.fadeAlpha   = opts.fadeAlpha or false
 
     -- Push to active
     self.activeCount = self.activeCount + 1
@@ -85,6 +87,13 @@ function BulletPool:update(dt, bounds)
         b.y = b.y + b.vy * dt
         b.lifetime = b.lifetime + dt
 
+        -- Damping (감속)
+        if b.damping ~= 1 then
+            local d = b.damping ^ dt
+            b.vx = b.vx * d
+            b.vy = b.vy * d
+        end
+
         -- Check death conditions
         local dead = b.lifetime >= b.maxLifetime
 
@@ -109,7 +118,11 @@ function BulletPool:draw()
     local lg = love.graphics
     for i = 1, self.activeCount do
         local b = self.active[i]
-        lg.setColor(b.color[1], b.color[2], b.color[3], b.color[4])
+        local alpha = b.color[4]
+        if b.fadeAlpha then
+            alpha = alpha * (1 - b.lifetime / b.maxLifetime)
+        end
+        lg.setColor(b.color[1], b.color[2], b.color[3], alpha)
         lg.circle("fill", b.x, b.y, b.radius)
     end
     lg.setColor(1, 1, 1, 1)  -- restore default color
@@ -160,6 +173,8 @@ function BulletPool:_createBullet()
         active = false,
         layer = "enemy_bullet",
         damage = 1,
+        damping = 1,         -- 속도 감쇠 (1=없음, <1=매 프레임 감속)
+        fadeAlpha = false,   -- true면 수명에 따라 알파 페이드
     }
 end
 
