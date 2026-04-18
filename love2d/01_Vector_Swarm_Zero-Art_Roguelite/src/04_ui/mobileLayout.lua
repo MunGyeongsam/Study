@@ -79,26 +79,12 @@ function mobileLayout.calculateTouchScale()
     end
 end
 
--- 현재 레이아웃 정보 반환
+-- 현재 레이아웃 정보 반환 (읽기 전용 — 수정 금지)
 function mobileLayout.getLayout()
     if screenInfo.needsUpdate then
         mobileLayout.updateScreenInfo()
     end
-    
-    -- 복사본 반환 (수정 방지)
-    return {
-        screenWidth = screenInfo.screenWidth,
-        screenHeight = screenInfo.screenHeight,
-        
-        topAreaHeight = screenInfo.topAreaHeight,
-        playAreaStart = screenInfo.playAreaStart,
-        playAreaHeight = screenInfo.playAreaHeight,
-        bottomAreaStart = screenInfo.bottomAreaStart,
-        bottomAreaHeight = screenInfo.bottomAreaHeight,
-        
-        dpiScale = screenInfo.dpiScale,
-        touchScale = screenInfo.touchScale
-    }
+    return screenInfo
 end
 
 -- 터치 좌표가 특정 영역에 있는지 확인

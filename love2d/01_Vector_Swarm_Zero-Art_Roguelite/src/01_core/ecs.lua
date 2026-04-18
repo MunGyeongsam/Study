@@ -21,6 +21,10 @@ function ECS.new()
         -- addComponent/removeComponent 시점에 자동 업데이트되므로
         -- 쿼리 시 O(N_전체) 대신 O(N_최소셋) 으로 줄어든다.
         componentIndex = {},
+
+        -- 컴포넌트 인덱스 크기 카운터 (O(1) 피벗 선택용)
+        -- 구조: [componentName] = number
+        componentIndexSize = {},
         
         -- 통계
         stats = {
@@ -108,8 +112,10 @@ function ECS:addComponent(entityId, componentName, data)
     -- 인덱스 캐시 업데이트: 이 컴포넌트를 가진 엔티티 목록에 추가
     if not self.componentIndex[componentName] then
         self.componentIndex[componentName] = {}
+        self.componentIndexSize[componentName] = 0
     end
     self.componentIndex[componentName][entityId] = true
+    self.componentIndexSize[componentName] = self.componentIndexSize[componentName] + 1
     
     return true
 end
@@ -143,8 +149,9 @@ function ECS:removeComponent(entityId, componentName)
     end
     
     -- 인덱스 캐시 업데이트: 이 컴포넌트의 엔티티 목록에서 제거
-    if self.componentIndex[componentName] then
+    if self.componentIndex[componentName] and self.componentIndex[componentName][entityId] then
         self.componentIndex[componentName][entityId] = nil
+        self.componentIndexSize[componentName] = self.componentIndexSize[componentName] - 1
     end
     
     return true
@@ -219,15 +226,9 @@ function ECS:queryEntities(componentNames)
     return results
 end
 
--- 내부 함수: 인덱스 크기 계산 (피벗 선택용)
+-- 내부 함수: 인덱스 크기 반환 (피벗 선택용, O(1))
 function ECS:_indexSize(componentName)
-    local idx = self.componentIndex[componentName]
-    if not idx then return 0 end
-    local count = 0
-    for _ in pairs(idx) do
-        count = count + 1
-    end
-    return count
+    return self.componentIndexSize[componentName] or 0
 end
 
 -- 통계 정보 반환
