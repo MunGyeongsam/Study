@@ -25,6 +25,10 @@ BossTag.defaults = {
     teleportCooldown = 0.3,  -- post-teleport invulnerability
     teleporting      = false,-- true during warning blink phase
 
+    -- Minion spawning (RECURSION)
+    minion           = nil,  -- per-phase config table: {[phase]={max, interval, type, hpMult}}
+    minionTimer      = 0,    -- counts up toward current phase interval
+
     -- Intro/defeat
     introTimer = 0,          -- intro sequence timer
     introDuration = 1.5,     -- intro duration before active
@@ -49,6 +53,8 @@ function BossTag.new(data)
         teleportWarning  = d.teleportWarning  or def.teleportWarning,
         teleportCooldown = d.teleportCooldown or def.teleportCooldown,
         teleporting      = false,
+        minion           = d.minion or nil,
+        minionTimer      = 0,
         introTimer      = 0,
         introDuration   = d.introDuration   or def.introDuration,
         introComplete   = false,

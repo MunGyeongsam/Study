@@ -5,6 +5,7 @@
 
 local System = require("01_core.system")
 local worldMod = require("01_core.world")
+local EntityFactory = require("03_game.entities.entityFactory")
 
 -- Helper: apply a pattern step to the BulletEmitter component
 local function applyPattern(emitter, step)
@@ -42,7 +43,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
     end
 
     -- === PHASE CHECK: HP threshold triggers phase transition ===
-    local function handlePhaseCheck(boss, health, emitter)
+    local function handlePhaseCheck(ecs, entityId, boss, health, emitter)
         boss.phaseChanged = false
         local hpRatio = health.hp / health.maxHp
         local threshold = boss.phaseThresholds[boss.phase]
@@ -51,11 +52,24 @@ local function createBossSystem(bulletPool, getPlayerPos)
             boss.phaseChanged = true
             boss.patternIndex = 1
             boss.patternTimer = 0
+            boss.minionTimer = 0
 
             if bulletPool then
                 bulletPool:clearLayer("enemy_bullet")
             end
             health.iTimer = 0.5
+
+            -- Clear existing minions on phase transition
+            if boss.minion then
+                local world = ecs
+                local allEnemies = world:queryEntities({"EnemyAI"})
+                for _, eid in ipairs(allEnemies) do
+                    if eid ~= entityId then
+                        world:destroyEntity(eid)
+                    end
+                end
+                logInfo(string.format("[BOSS] %s minions cleared for phase %d", boss.bossType, boss.phase))
+            end
 
             local phasePatterns = boss.patterns[boss.phase]
             applyPattern(emitter, phasePatterns and phasePatterns[1])
@@ -86,6 +100,34 @@ local function createBossSystem(bulletPool, getPlayerPos)
                 emitter.angle = 0
             end
         end
+    end
+
+    -- === MINION SPAWNING: periodic spawn up to max (RECURSION) ===
+    local function handleMinionSpawn(ecs, entityId, boss, transform, dt)
+        if not boss.minion then return end
+        local config = boss.minion[boss.phase]
+        if not config or config.max == 0 then return end
+
+        boss.minionTimer = boss.minionTimer + dt
+        if boss.minionTimer < config.interval then return end
+        boss.minionTimer = boss.minionTimer - config.interval
+
+        -- Count non-boss enemies
+        local allEnemies = ecs:queryEntities({"EnemyAI"})
+        local minionCount = #allEnemies - 1  -- subtract boss itself
+        if minionCount >= config.max then return end
+
+        -- Spawn minions up to max
+        local toSpawn = config.max - minionCount
+        local world = ecs
+        for i = 1, toSpawn do
+            local angle = (i / toSpawn) * math.pi * 2
+            local spawnX = transform.x + math.cos(angle) * 2.0
+            local spawnY = transform.y + math.sin(angle) * 2.0
+            EntityFactory.createEnemy(world, spawnX, spawnY, config.type or "basic",
+                { enemyHpMult = config.hpMult or 0.5 })
+        end
+        logInfo(string.format("[BOSS] %s spawned %d minions (phase %d)", boss.bossType, toSpawn, boss.phase))
     end
 
     -- === MOVEMENT: teleport (HEAP) or drift ping-pong (others) ===
@@ -128,19 +170,26 @@ local function createBossSystem(bulletPool, getPlayerPos)
                 end
             end
         else
-            -- Horizontal bounds ping-pong
-            if transform.x >= right - margin then
-                ai.driftVx = -math.abs(ai.driftVx or 0.4)
-            elseif transform.x <= left + margin then
-                ai.driftVx = math.abs(ai.driftVx or 0.4)
-            end
+            if boss.bossType == "RECURSION" then
+                -- Orbit around player: update orbit center to player pos
+                local px, _ = getPlayerPos()
+                ai.orbitCenterX = px or 0
+                ai.orbitCenterY = (py or 0) + 2.0
+            else
+                -- Horizontal bounds ping-pong
+                if transform.x >= right - margin then
+                    ai.driftVx = -math.abs(ai.driftVx or 0.4)
+                elseif transform.x <= left + margin then
+                    ai.driftVx = math.abs(ai.driftVx or 0.4)
+                end
 
-            -- Per-boss vertical tracking
-            local targetOffset = (boss.bossType == "STACK") and 3.0 or 3.5
-            local vertSpeed    = (boss.bossType == "STACK") and 0.2 or 0.3
-            local targetY = (py or 0) + targetOffset
-            local yDiff = targetY - transform.y
-            ai.driftVy = yDiff > 0.1 and vertSpeed or (yDiff < -0.1 and -vertSpeed or 0)
+                -- Per-boss vertical tracking
+                local targetOffset = (boss.bossType == "STACK") and 3.0 or 3.5
+                local vertSpeed    = (boss.bossType == "STACK") and 0.2 or 0.3
+                local targetY = (py or 0) + targetOffset
+                local yDiff = targetY - transform.y
+                ai.driftVy = yDiff > 0.1 and vertSpeed or (yDiff < -0.1 and -vertSpeed or 0)
+            end
         end
     end
 
@@ -157,8 +206,9 @@ local function createBossSystem(bulletPool, getPlayerPos)
                 if boss.defeated then goto nextBoss end
                 if handleIntro(boss, emitter, dt) then goto nextBoss end
 
-                handlePhaseCheck(boss, health, emitter)
+                handlePhaseCheck(ecs, entityId, boss, health, emitter)
                 handlePatternCycling(boss, emitter, dt)
+                handleMinionSpawn(ecs, entityId, boss, transform, dt)
                 handleMovement(ecs, entityId, boss, transform, ai, health, dt)
 
                 ::nextBoss::

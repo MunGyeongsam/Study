@@ -321,6 +321,47 @@ local BOSS_TYPES = {
             },
         },
     },
+    RECURSION = {
+        color    = {0.5, 0.1, 0.9, 1},
+        radius   = 0.7,
+        hp       = 200,
+        xpValue  = 300,
+        maxPhase = 3,
+        phaseThresholds = {0.66, 0.33},
+        ai       = { behavior = "orbit", speed = 0.5, orbitRadius = 3.5, orbitSpeed = 0.8 },
+        -- Minion spawning params (consumed by bossSystem)
+        minion = {
+            [1] = { max = 0, interval = 0,   type = "basic", hpMult = 0.5 },
+            [2] = { max = 3, interval = 8.0, type = "basic", hpMult = 0.5 },
+            [3] = { max = 5, interval = 6.0, type = "basic", hpMult = 0.5 },
+        },
+        patterns = {
+            -- Phase 1: slow spiral (learn the orbit movement)
+            [1] = {
+                { pattern = "spiral", emitRate = 0.6, bulletSpeed = 2.0, bulletCount = 4,
+                  bulletLifetime = 5, bulletRadius = 0.04, bulletColor = {0.6, 0.2, 1.0, 1},
+                  turnRate = 1.2, duration = 4.0 },
+                { pattern = "none", duration = 2.0 },
+            },
+            -- Phase 2: faster spiral (+ minions provide circle pressure)
+            [2] = {
+                { pattern = "spiral", emitRate = 0.8, bulletSpeed = 2.5, bulletCount = 6,
+                  bulletLifetime = 5, bulletRadius = 0.04, bulletColor = {0.7, 0.2, 1.0, 1},
+                  turnRate = 1.5, duration = 3.5 },
+                { pattern = "none", duration = 1.5 },
+            },
+            -- Phase 3: fast spiral + aimed bursts (+ more minions)
+            [3] = {
+                { pattern = "spiral", emitRate = 1.0, bulletSpeed = 3.0, bulletCount = 8,
+                  bulletLifetime = 5, bulletRadius = 0.035, bulletColor = {0.8, 0.3, 1.0, 1},
+                  turnRate = 2.0, duration = 3.0 },
+                { pattern = "aimed", emitRate = 1.2, bulletSpeed = 3.5, bulletCount = 3,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 0.5, 1.0, 1},
+                  duration = 2.0 },
+                { pattern = "none", duration = 1.0 },
+            },
+        },
+    },
 }
 function EntityFactory.createBoss(world, x, y, bossType)
     local preset = BOSS_TYPES[bossType] or BOSS_TYPES.NULL
@@ -345,11 +386,13 @@ function EntityFactory.createBoss(world, x, y, bossType)
     }))
 
     world:addComponent(entityId, "EnemyAI", EnemyAI.new({
-        behavior = preset.ai.behavior,
-        speed    = preset.ai.speed or 0.4,
-        driftVx  = preset.ai.driftVx or 0,
-        driftVy  = preset.ai.driftVy or 0,
-        xpValue  = preset.xpValue or 50,
+        behavior    = preset.ai.behavior,
+        speed       = preset.ai.speed or 0.4,
+        driftVx     = preset.ai.driftVx or 0,
+        driftVy     = preset.ai.driftVy or 0,
+        orbitRadius = preset.ai.orbitRadius or 3.5,
+        orbitSpeed  = preset.ai.orbitSpeed or 0.8,
+        xpValue     = preset.xpValue or 50,
     }))
 
     world:addComponent(entityId, "Health", Health.new({
@@ -378,6 +421,7 @@ function EntityFactory.createBoss(world, x, y, bossType)
         teleportInterval = preset.teleportInterval or 0,
         teleportWarning  = preset.teleportWarning or 1.0,
         teleportCooldown = preset.teleportCooldown or 0.3,
+        minion           = preset.minion or nil,
     }))
 
     logInfo(string.format("[ENTITY] Boss created: %d (%s) HP:%d", entityId, bossType or "NULL", preset.hp))
