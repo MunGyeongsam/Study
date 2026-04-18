@@ -1,6 +1,6 @@
 # 05. 탄막 시스템 가이드 — Vector Swarm
 
-> 마지막 갱신: 2026-04-17 (Phase 2C 완료 기준)
+> 마지막 갱신: 2026-04-19 (Phase 3A 완료 기준)
 > 이 문서는 현재 구현된 코드 기준으로 작성되었습니다.
 
 ---
@@ -47,8 +47,10 @@ local pool = BulletPool.new(2000)   -- 2000개 사전 할당
     radius = 0.04,           -- 충돌 반경 (월드 유닛)
     color = {0.4, 0.8, 1, 1}, -- RGBA (0-1)
     active = false,
-    layer = "enemy_bullet",  -- "enemy_bullet" | "player_bullet"
+    layer = "enemy_bullet",  -- "enemy_bullet" | "player_bullet" | "debris"
     damage = 1,              -- 데미지
+    damping = 1,             -- 속도 감쇠 (1=없음, <1=매 프레임 damping^dt 감속)
+    fadeAlpha = false,       -- true면 수명 비율로 알파 페이드
 }
 ```
 
@@ -56,10 +58,11 @@ local pool = BulletPool.new(2000)   -- 2000개 사전 할당
 
 | 메서드 | 설명 |
 |--------|------|
-| `pool:spawn(x, y, vx, vy, opts)` | 탄막 생성 (풀에서 추출). opts: maxLifetime, radius, color, layer, damage |
+| `pool:spawn(x, y, vx, vy, opts)` | 탄막 생성 (풀에서 추출). opts: maxLifetime, radius, color, layer, damage, damping, fadeAlpha |
 | `pool:update(dt, bounds)` | 이동 + 수명/경계 체크 + 죽은 탄막 재활용 |
 | `pool:draw()` | 모든 활성 탄막 렌더링 |
 | `pool:clear()` | 전체 재활용 (스테이지 클리어 등) |
+| `pool:clearLayer(layer)` | 특정 레이어 탄막만 소거 (보스 처치 시 "enemy_bullet" 소거) |
 | `pool:getStats()` | active, inactive, max, spawned, recycled, peakActive |
 
 ### 2.4. 성능 설계
@@ -220,10 +223,12 @@ ECSManager.bulletBounds = {
 - [x] CollisionSystem (적탄 ↔ 플레이어)
 - [x] EnemyCollisionSystem (아군탄 ↔ 적)
 - [x] PlayerWeaponSystem (자동 조준)
+- [x] 보스 전용 탄막 시퀀스 (페이즈별 패턴 순환)
+- [x] damping/fadeAlpha 확장 (파편 파티클 등)
+- [x] clearLayer() 레이어별 소거
 
 ### 미구현 (Phase 3+)
 - [ ] Canvas 배치 렌더링 (draw call 1000 → 1)
 - [ ] 공간 파티셔닝 (spatialGrid, 충돌 검사 최적화)
 - [ ] 고급 탄막 패턴 (호밍, 베지어 곡선)
 - [ ] 탄막 파티클 이펙트
-- [ ] 보스 전용 탄막 시퀀스

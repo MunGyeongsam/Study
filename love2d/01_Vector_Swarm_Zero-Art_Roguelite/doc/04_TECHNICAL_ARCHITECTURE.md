@@ -1,6 +1,6 @@
 # 04. 기술 아키텍처 — Vector Swarm
 
-> 마지막 갱신: 2026-04-17 (Phase 2C 완료 기준)
+> 마지막 갱신: 2026-04-19 (Phase 3A 완료 기준)
 > 이 문서는 현재 코드베이스의 **실제 구현**을 기준으로 작성되었습니다.
 
 ---
@@ -24,7 +24,7 @@ src/
 │   ├── global.lua           # 전역 함수 (log, clamp, lerp, setColor, …)
 │   ├── logger.lua           # 4레벨 로깅 + 인게임 콘솔 (` 키)
 │   ├── debug.lua            # 디버그 watch panel (F1)
-│   ├── grid_debug_draw.lua  # 스크린 그리드 오버레이 (F4)
+│   ├── gridDebugDraw.lua    # 스크린 그리드 오버레이 (F4)
 │   ├── kutil.lua            # 기타 유틸리티
 │   └── math/
 │       ├── vector.lua       # 2D 벡터 연산
@@ -41,10 +41,10 @@ src/
 │   └── cameraManager.lua    # game/debug 카메라 모드 (F5 토글)
 │
 ├── 03_game/               # 게임 로직
-│   ├── components/ (16종)   # 순수 데이터 ECS 컴포넌트
-│   ├── systems/ (16종)      # ECS 시스템 + BulletPool
+│   ├── components/ (17종)   # 순수 데이터 ECS 컴포넌트
+│   ├── systems/ (17종)      # ECS 시스템 + BulletPool + StageManager
 │   ├── entities/            # 엔티티 팩토리 + Player 파사드
-│   │   ├── entityFactory.lua  # createPlayer(), createEnemy(), createXpOrb()
+│   │   ├── entityFactory.lua  # createPlayer(), createEnemy(), createBoss(), createXpOrb()
 │   │   └── player.lua         # ECS 파사드 (bind/update/getPosition)
 │   ├── patterns/            # 탄막 패턴 (예정)
 │   └── states/
@@ -149,7 +149,7 @@ end
 return M
 ```
 
-### 4.5. 컴포넌트 목록 (16종)
+### 4.5. 컴포넌트 목록 (17종)
 
 | 컴포넌트 | 주요 필드 | 용도 |
 |----------|----------|------|
@@ -169,6 +169,7 @@ return M
 | Focus | maxEnergy, energy, drainRate, active | 포커스 모드 |
 | PlayerXP | xp, xpToNext, level, magnetRange | 경험치/레벨 |
 | XpOrb | value, magnetRange, collectRadius | XP 오브 |
+| BossTag | phases, currentPhase, patterns, … | 보스 상태/페이즈/텔레포트 |
 
 ---
 
@@ -191,16 +192,17 @@ love.update(scaledDt):
   │ 10. Collision      enemy_bullet ↔ Player 충돌      │
   │ 11. EnemyCollision player_bullet ↔ Enemy 충돌+XP   │
   │ 12. XpCollection   XP 오브 자석 수집               │
+  │ 13. Boss           보스 인트로/페이즈/탄막/이동     │
   └──────────────────────────────────────────────────┘
   → bulletPool:update(scaledDt, bounds)
-  → enemySpawner:update(scaledDt)
+  → stageManager:update(scaledDt)
 
 love.draw():
   cameraManager.draw(function()
     ┌─────────────────────────────────────┐
-    │ 13. Render         일반 엔티티 렌더링 │
+    │ 14. Render         일반 엔티티 렌더링 │
     │     bulletPool:draw()               │
-    │ 14. PlayerRender   플레이어 렌더링    │
+    │ 15. PlayerRender   플레이어 렌더링    │
     └─────────────────────────────────────┘
   end)
   → UI / Debug overlay / Logger console
@@ -266,6 +268,10 @@ EntityFactory.createEnemy(ecs, x, y, enemyType)
 
 EntityFactory.createXpOrb(ecs, x, y, value)
 -- XP 오브 엔티티 (자석 수집)
+
+EntityFactory.createBoss(ecs, x, y, bossType)
+-- 보스 엔티티 (BossTag + 페이즈 + 탄막 순환)
+-- bossType: "NULL"(S3), "STACK"(S6), "HEAP"(S9), "RECURSION"(S12), "OVERFLOW"(S15)
 ```
 
 ### Player 파사드 (`03_game/entities/player.lua`)
@@ -299,6 +305,7 @@ gameState.setTimeScale(scale)     -- 시간 배율 설정
 - 10종 업그레이드 풀에서 랜덤 3개 카드 표시
 - 무기 5종: 발사속도, 사거리, 데미지, 탄수, 관통
 - 패시브 5종: 최대HP, 이동속도, 대쉬쿨, 자석범위, 최대에너지
+- 감쇠 스택: 같은 업그레이드 반복 선택 시 `0.7^n` 감쇠 (예외: Multi Shot, Max HP)
 - 키 1/2/3 또는 터치로 선택
 
 ---
@@ -330,6 +337,8 @@ gameState.setTimeScale(scale)     -- 시간 배율 설정
 | F3 | UI 디버그 모드 토글 |
 | F4 | Screen grid 토글 |
 | F5 | Camera 모드 전환 (game ↔ debug) |
+| F7 | God mode 토글 (플레이어 무적) |
+| F8 | Stage skip (디버그 스테이지 건너뛰기) |
 
 ---
 

@@ -216,7 +216,7 @@ requires: [Transform, EnemyAI, Health, BossTag, BulletEmitter]
 | `bulletEmitterSystem.lua` | 보스 전용 패턴 추가 (boss_circle, boss_spiral, boss_aimed, boss_wave) |
 | `enemyCollisionSystem.lua` | BossTag 엔티티 처치 시 대량 XP + 보스 처치 이벤트 발행 |
 | `topHud.lua` | 보스 HP바 렌더링 (화면 상단, 보스명 표시) |
-| `bulletPool.lua` | 보스 탄막 전소 함수 `clearEnemyBullets()` 추가 |
+| `bulletPool.lua` | 보스 탄막 전소 함수 `clearLayer(layer)` 추가 |
 
 ### 3.4 UI 변경
 

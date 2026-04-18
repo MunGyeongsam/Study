@@ -1,7 +1,7 @@
 # Vector Swarm — 프로젝트 로드맵 & TODO
 
-> 마지막 갱신: 2026-04-18
-> 현재 위치: **Phase 3A 진행 중** (MVP 보스 시스템 구현 완료, STACK 보스 추가)
+> 마지막 갱신: 2026-04-19
+> 현재 위치: **Phase 3A 완료** — 보스 5종 + 밸런스 패스 + 성능 최적화. 다음: 3C.1 Bloom 셰이더 / 3B 적 다양성
 
 ---
 
@@ -11,7 +11,7 @@
 Phase 0  ███████████  기반 구축 (완료)
 Phase 1  ███████████  MVP 게임 루프 (완료)
 Phase 2  ███████████  게임플레이 확장 (완료)
-Phase 3  ███░░░░░░░░  콘텐츠 & 비주얼 ← 진행 중 (3A MVP)
+Phase 3  ████░░░░░░░  콘텐츠 & 비주얼 ← 진행 중 (3A 완료)
 Phase 4  ░░░░░░░░░░░  폴리싱 & 출시
 ```
 
@@ -159,7 +159,9 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시
 - [x] ~~gameState.lua 폰트 캐싱~~ (이미 lazy init 적용됨, 메모만 outdated)
 - [x] ~~bulletEmitterSystem angle 오버플로~~ (modulo 2π 감싸기 적용)
 - [x] ~~컴포넌트 테이블 공유 참조 버그~~ (collider/renderable/bulletEmitter/playerWeapon)
-- [ ] 적 처치 파편 파티클 효과 (2A.3) 미구현
+- [x] ~~ecs._indexSize O(1) 카운터 최적화~~ (`2d17115`)
+- [x] ~~mobileLayout.getLayout() GC 제거~~ (`2d17115`)
+- [x] ~~적 처치 파편 파티클 효과 (2A.3)~~ (`bdab36c`)
 - [ ] 구역 전환 연출 (배경색 변화, 텍스트) — Phase 3으로 이동
 - [ ] 보스 처치 연출 풀 버전: 탄막→XP 변환, 회복 애니메이션, 글리치 텍스트 — Phase 3C
 - [x] ~~HEAP/RECURSION/OVERFLOW 보스 프리셋 구현 (3A.10~12)~~
@@ -196,3 +198,13 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시
 | Day 4 | | NULL 보스 (Stage 3) + STACK 보스 (Stage 6) 구현 |
 | Day 4 | | 무적 모드 (F7) 디버그 기능 추가 |
 | Day 4 | | 코드 리뷰 2회 (refactor-cleaner) |
+| Day 4 | `ede88c9` | Phase 3A MVP: 보스 시스템 (NULL + STACK) |
+| Day 4 | `80c6690` | HEAP 보스 + 텔레포트 + F8 스테이지 스킵 |
+| Day 4 | `98ff572` | RECURSION 보스 + 미니언 소환 |
+| Day 4 | `34e0045` | OVERFLOW 최종 보스 (4Phase 폭주) |
+| Day 4 | `126731a` | 코드 전체 점검 — 크리티컬 버그 2건 수정 |
+| Day 5 | `258e2ac` | 자동 챙김 규칙 추가 |
+| Day 5 | `8fb064b` | 공유 참조 버그 4건 + angle 오버플로 + lovec 콘솔 설정 |
+| Day 5 | `bdab36c` | 적 처치 파편 파티클 (2A.3) |
+| Day 5 | `d066a67` | 밸런스 패스 — 감쇠 스택 + XP 스케일링 |
+| Day 5 | `2d17115` | ecs._indexSize O(1) + mobileLayout GC 제거 |

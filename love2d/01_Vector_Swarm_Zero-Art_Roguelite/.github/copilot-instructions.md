@@ -42,17 +42,27 @@ src/
 │   ├── camera.lua    # Unity-style orthographic camera
 │   └── cameraManager.lua  # Game/debug camera modes (F5 toggle)
 ├── 03_game/          # Game logic
-│   ├── components/   # Pure-data ECS components (8 types)
+│   ├── components/   # Pure-data ECS components (17 types)
 │   │   ├── transform.lua, velocity.lua, collider.lua, renderable.lua
 │   │   ├── lifespan.lua, playerTag.lua, input.lua, worldBound.lua
-│   ├── systems/      # ECS systems (6 types)
+│   │   ├── health.lua, dash.lua, focus.lua, enemyAI.lua
+│   │   ├── bulletEmitter.lua, playerWeapon.lua, playerXP.lua
+│   │   ├── xpOrb.lua, bossTag.lua
+│   ├── systems/      # ECS systems (17 files)
 │   │   ├── inputSystem.lua, movementSystem.lua, boundarySystem.lua
 │   │   ├── lifespanSystem.lua, renderSystem.lua, playerRenderSystem.lua
+│   │   ├── bulletEmitterSystem.lua, bulletPool.lua, collisionSystem.lua
+│   │   ├── dashSystem.lua, focusSystem.lua, enemyAISystem.lua
+│   │   ├── playerWeaponSystem.lua, enemyCollisionSystem.lua
+│   │   ├── xpCollectionSystem.lua, bossSystem.lua
+│   │   ├── stageManager.lua, enemySpawner.lua
 │   ├── entities/     # Entity factories & façades
-│   │   ├── entityFactory.lua  # createPlayer(), createEnemy()
+│   │   ├── entityFactory.lua  # createPlayer(), createEnemy(), createBoss(), createXpOrb()
 │   │   └── player.lua         # ECS façade (bind, update, getPosition)
 │   ├── patterns/     # Bullet patterns (planned)
-│   └── states/       # Game states (planned)
+│   └── states/       # Game states
+│       ├── gameState.lua      # Game state machine (playing/game_over/level_up)
+│       └── levelUp.lua        # Level-up 3-choice UI + diminishing returns
 └── 04_ui/            # HUD, mobile layout, button controls
     ├── uiManager.lua
     ├── topHud.lua
