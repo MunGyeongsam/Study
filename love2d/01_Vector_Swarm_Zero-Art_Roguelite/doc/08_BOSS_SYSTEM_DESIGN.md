@@ -343,23 +343,26 @@ Stage 3 도달 시점 플레이어 레벨 추정:
 
 **전략적 딜레마:** 미니언을 잡으면 XP + 잠시 편해짐, 하지만 계속 보충됨 → 보스 집중이 정답
 
-### 4.5 OVERFLOW — 최종 보스 (Stage 15)
+### 4.5 OVERFLOW — 최종 보스 (Stage 15) ✅ 구현 완료
 
-> 데이터스피어 붕괴의 근원. 모든 패턴의 종합.
+> 데이터스피어 붕괴의 근원. 모든 패턴의 종합. "읽을 수 있는 폭주".
 
 | 파라미터 | 값 |
 |----------|-----|
 | HP | 300 |
 | 페이즈 | 4 (75%, 50%, 25%) |
 | 히트박스 반지름 | 1.2 |
-| 색상 | {1.0, 0.0, 0.0} → 페이즈마다 변화 |
+| 색상 | 빨강 → 초록 → 보라 → 흰색 (Phase별 변화) |
 | XP 보상 | 500 |
-| 이동 | 중앙 고정 → 추적 → 텔레포트 |
+| 이동 | P1-P2 drift → P3 텔레포트(5s) → P4 텔레포트(3s) |
+| 미니언 | P1-P2 없음 → P3-P4 max 3마리/8초 |
 
-**Phase 1** — NULL 패턴 재현 (circle, 빠름)  
-**Phase 2** — STACK 패턴 재현 (동심원, 빠름)  
-**Phase 3** — HEAP + RECURSION 혼합 (burst + 미니언)  
-**Phase 4** — 전 패턴 랜덤 순환 + 화면 전체 sweep
+**Phase 1** — NULL 오마주: circle only, 빨간색, drift. "이거 봤다" 안심감  
+**Phase 2** — STACK 오마주: circle + aimed, 초록색, drift. "좀 세지네" 긴장  
+**Phase 3** — HEAP+RECURSION 혼합: burst + wave, 보라색, **텔레포트 5초** + 미니언 3마리. "텔포까지?!"  
+**Phase 4** — OVERFLOW 폭주: 4종 패턴 빠른 순환 (spiral→circle→aimed→wave), 흰색, **텔레포트 3초** + 미니언 3마리. "넘친다!"
+
+**핵심 구현**: `phaseTeleport` / `phaseColors` 데이터로 Phase 전환 시 이동 모드/색상 자동 전환. bossSystem은 `teleportInterval > 0` 조건으로 분기 — 코드 추가 없이 데이터만으로 동작.
 
 ---
 

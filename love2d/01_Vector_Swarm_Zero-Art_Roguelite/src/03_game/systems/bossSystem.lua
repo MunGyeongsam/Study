@@ -71,6 +71,21 @@ local function createBossSystem(bulletPool, getPlayerPos)
                 logInfo(string.format("[BOSS] %s minions cleared for phase %d", boss.bossType, boss.phase))
             end
 
+            -- Phase-specific teleport interval (OVERFLOW)
+            if boss.phaseTeleport then
+                boss.teleportInterval = boss.phaseTeleport[boss.phase] or 0
+                boss.teleportTimer = 0
+                boss.teleporting = false
+            end
+
+            -- Phase-specific color change (OVERFLOW)
+            if boss.phaseColors then
+                local renderable = ecs:getComponent(entityId, "Renderable")
+                if renderable and boss.phaseColors[boss.phase] then
+                    renderable.color = boss.phaseColors[boss.phase]
+                end
+            end
+
             local phasePatterns = boss.patterns[boss.phase]
             applyPattern(emitter, phasePatterns and phasePatterns[1])
 
@@ -130,66 +145,61 @@ local function createBossSystem(bulletPool, getPlayerPos)
         logInfo(string.format("[BOSS] %s spawned %d minions (phase %d)", boss.bossType, toSpawn, boss.phase))
     end
 
-    -- === MOVEMENT: teleport (HEAP) or drift ping-pong (others) ===
+    -- === MOVEMENT: teleport (interval>0) / orbit (RECURSION) / drift (default) ===
     local function handleMovement(ecs, entityId, boss, transform, ai, health, dt)
         if not ai then return end
         local _, py = getPlayerPos()
         local left, _, right, _ = worldMod.getBounds()
         local margin = 2
 
-        if boss.bossType == "HEAP" then
-            -- Random teleport every N seconds with warning blink
+        if boss.teleportInterval > 0 then
+            -- Teleport mode (HEAP always, OVERFLOW P3-P4)
             local renderable = ecs:getComponent(entityId, "Renderable")
-            if boss.teleportInterval > 0 then
-                boss.teleportTimer = boss.teleportTimer + dt
-                local warnStart = boss.teleportInterval - boss.teleportWarning
+            boss.teleportTimer = boss.teleportTimer + dt
+            local warnStart = boss.teleportInterval - boss.teleportWarning
 
-                if boss.teleportTimer >= warnStart and not boss.teleporting then
-                    boss.teleporting = true
-                    logInfo("[BOSS] HEAP teleport warning")
-                end
-
-                if boss.teleporting and renderable then
-                    renderable.visible = (math.floor(boss.teleportTimer * 10) % 2 == 0)
-                end
-
-                if boss.teleportTimer >= boss.teleportInterval then
-                    local _, bottom, _, top = worldMod.getBounds()
-                    local newX = left + margin + math.random() * (right - left - margin * 2)
-                    local newY = (py or 0) + 2.0 + math.random() * 3.0
-                    newY = math.min(newY, top - margin)
-                    newY = math.max(newY, bottom + margin)
-
-                    transform.x = newX
-                    transform.y = newY
-                    boss.teleportTimer = 0
-                    boss.teleporting = false
-                    health.iTimer = boss.teleportCooldown
-                    if renderable then renderable.visible = true end
-                    logInfo(string.format("[BOSS] HEAP teleported to (%.1f, %.1f)", newX, newY))
-                end
+            if boss.teleportTimer >= warnStart and not boss.teleporting then
+                boss.teleporting = true
+                logInfo(string.format("[BOSS] %s teleport warning", boss.bossType))
             end
+
+            if boss.teleporting and renderable then
+                renderable.visible = (math.floor(boss.teleportTimer * 10) % 2 == 0)
+            end
+
+            if boss.teleportTimer >= boss.teleportInterval then
+                local _, bottom, _, top = worldMod.getBounds()
+                local newX = left + margin + math.random() * (right - left - margin * 2)
+                local newY = (py or 0) + 2.0 + math.random() * 3.0
+                newY = math.min(newY, top - margin)
+                newY = math.max(newY, bottom + margin)
+
+                transform.x = newX
+                transform.y = newY
+                boss.teleportTimer = 0
+                boss.teleporting = false
+                health.iTimer = boss.teleportCooldown
+                if renderable then renderable.visible = true end
+                logInfo(string.format("[BOSS] %s teleported to (%.1f, %.1f)", boss.bossType, newX, newY))
+            end
+        elseif boss.bossType == "RECURSION" then
+            -- Orbit around player
+            local px, _ = getPlayerPos()
+            ai.orbitCenterX = px or 0
+            ai.orbitCenterY = (py or 0) + 2.0
         else
-            if boss.bossType == "RECURSION" then
-                -- Orbit around player: update orbit center to player pos
-                local px, _ = getPlayerPos()
-                ai.orbitCenterX = px or 0
-                ai.orbitCenterY = (py or 0) + 2.0
-            else
-                -- Horizontal bounds ping-pong
-                if transform.x >= right - margin then
-                    ai.driftVx = -math.abs(ai.driftVx or 0.4)
-                elseif transform.x <= left + margin then
-                    ai.driftVx = math.abs(ai.driftVx or 0.4)
-                end
-
-                -- Per-boss vertical tracking
-                local targetOffset = (boss.bossType == "STACK") and 3.0 or 3.5
-                local vertSpeed    = (boss.bossType == "STACK") and 0.2 or 0.3
-                local targetY = (py or 0) + targetOffset
-                local yDiff = targetY - transform.y
-                ai.driftVy = yDiff > 0.1 and vertSpeed or (yDiff < -0.1 and -vertSpeed or 0)
+            -- Drift ping-pong (NULL, STACK, OVERFLOW P1-P2)
+            if transform.x >= right - margin then
+                ai.driftVx = -math.abs(ai.driftVx or 0.4)
+            elseif transform.x <= left + margin then
+                ai.driftVx = math.abs(ai.driftVx or 0.4)
             end
+
+            local targetOffset = (boss.bossType == "STACK") and 3.0 or 3.5
+            local vertSpeed    = (boss.bossType == "STACK") and 0.2 or 0.3
+            local targetY = (py or 0) + targetOffset
+            local yDiff = targetY - transform.y
+            ai.driftVy = yDiff > 0.1 and vertSpeed or (yDiff < -0.1 and -vertSpeed or 0)
         end
     end
 

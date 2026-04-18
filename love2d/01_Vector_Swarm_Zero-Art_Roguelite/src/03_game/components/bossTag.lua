@@ -29,6 +29,10 @@ BossTag.defaults = {
     minion           = nil,  -- per-phase config table: {[phase]={max, interval, type, hpMult}}
     minionTimer      = 0,    -- counts up toward current phase interval
 
+    -- Phase-specific overrides (OVERFLOW)
+    phaseTeleport    = nil,  -- {[phase]=interval} overrides teleportInterval on transition
+    phaseColors      = nil,  -- {[phase]={r,g,b,a}} overrides Renderable.color on transition
+
     -- Intro/defeat
     introTimer = 0,          -- intro sequence timer
     introDuration = 1.5,     -- intro duration before active

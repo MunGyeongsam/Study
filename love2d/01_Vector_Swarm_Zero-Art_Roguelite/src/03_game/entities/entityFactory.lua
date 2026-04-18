@@ -362,6 +362,84 @@ local BOSS_TYPES = {
             },
         },
     },
+    OVERFLOW = {
+        color    = {1.0, 0.2, 0.2, 1},
+        radius   = 1.2,
+        hp       = 300,
+        xpValue  = 500,
+        maxPhase = 4,
+        phaseThresholds = {0.75, 0.50, 0.25},
+        ai       = { behavior = "drift", driftVx = 0.3, driftVy = 0, speed = 0.3 },
+        -- Phase-specific teleport (0 = drift, >0 = teleport interval)
+        phaseTeleport = {
+            [1] = 0, [2] = 0, [3] = 5.0, [4] = 3.0,
+        },
+        -- Phase-specific color changes
+        phaseColors = {
+            [1] = {1.0, 0.2, 0.2, 1},  -- red (NULL tribute)
+            [2] = {0.2, 1.0, 0.2, 1},  -- green (STACK tribute)
+            [3] = {0.9, 0.3, 0.9, 1},  -- purple (HEAP+RECURSION)
+            [4] = {1.0, 1.0, 1.0, 1},  -- white (all combined)
+        },
+        teleportWarning  = 1.0,
+        teleportCooldown = 0.3,
+        -- Minions: P3-P4 only
+        minion = {
+            [1] = { max = 0, interval = 0,   type = "basic", hpMult = 0.5 },
+            [2] = { max = 0, interval = 0,   type = "basic", hpMult = 0.5 },
+            [3] = { max = 3, interval = 8.0, type = "basic", hpMult = 0.5 },
+            [4] = { max = 3, interval = 8.0, type = "basic", hpMult = 0.5 },
+        },
+        patterns = {
+            -- Phase 1: NULL tribute (circle only, comfortable)
+            [1] = {
+                { pattern = "circle", emitRate = 0.6, bulletSpeed = 2.5, bulletCount = 10,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 0.3, 0.3, 1},
+                  duration = 3.0 },
+                { pattern = "none", duration = 2.0 },
+                { pattern = "circle", emitRate = 0.7, bulletSpeed = 2.8, bulletCount = 14,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 0.3, 0.3, 1},
+                  duration = 3.0 },
+                { pattern = "none", duration = 2.0 },
+            },
+            -- Phase 2: STACK tribute (circle + aimed)
+            [2] = {
+                { pattern = "circle", emitRate = 0.7, bulletSpeed = 2.5, bulletCount = 14,
+                  bulletLifetime = 5, bulletRadius = 0.04, bulletColor = {0.3, 1.0, 0.3, 1},
+                  duration = 3.0 },
+                { pattern = "aimed", emitRate = 1.0, bulletSpeed = 3.2, bulletCount = 4,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 1.0, 0.3, 1},
+                  duration = 2.0 },
+                { pattern = "none", duration = 1.5 },
+            },
+            -- Phase 3: HEAP+RECURSION (burst + wave, teleport kicks in + minions)
+            [3] = {
+                { pattern = "circle", emitRate = 1.0, bulletSpeed = 3.0, bulletCount = 14,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {0.9, 0.4, 0.9, 1},
+                  duration = 2.5 },
+                { pattern = "wave", emitRate = 0.8, bulletSpeed = 2.5, bulletCount = 5,
+                  bulletLifetime = 5, bulletRadius = 0.035, bulletColor = {0.9, 0.5, 0.9, 1},
+                  turnRate = 2.0, duration = 3.0 },
+                { pattern = "none", duration = 1.0 },
+            },
+            -- Phase 4: OVERFLOW — rapid pattern cycling ("it's overflowing!")
+            [4] = {
+                { pattern = "spiral", emitRate = 1.0, bulletSpeed = 3.0, bulletCount = 6,
+                  bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {1.0, 1.0, 1.0, 1},
+                  turnRate = 2.0, duration = 2.0 },
+                { pattern = "circle", emitRate = 1.0, bulletSpeed = 3.0, bulletCount = 16,
+                  bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {1.0, 0.8, 0.8, 1},
+                  duration = 2.0 },
+                { pattern = "aimed", emitRate = 1.2, bulletSpeed = 3.5, bulletCount = 4,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 1.0, 0.5, 1},
+                  duration = 1.5 },
+                { pattern = "wave", emitRate = 0.8, bulletSpeed = 2.8, bulletCount = 5,
+                  bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {0.8, 0.8, 1.0, 1},
+                  turnRate = 2.5, duration = 2.0 },
+                { pattern = "none", duration = 0.8 },
+            },
+        },
+    },
 }
 function EntityFactory.createBoss(world, x, y, bossType)
     local preset = BOSS_TYPES[bossType] or BOSS_TYPES.NULL
@@ -422,6 +500,8 @@ function EntityFactory.createBoss(world, x, y, bossType)
         teleportWarning  = preset.teleportWarning or 1.0,
         teleportCooldown = preset.teleportCooldown or 0.3,
         minion           = preset.minion or nil,
+        phaseTeleport    = preset.phaseTeleport or nil,
+        phaseColors      = preset.phaseColors or nil,
     }))
 
     logInfo(string.format("[ENTITY] Boss created: %d (%s) HP:%d", entityId, bossType or "NULL", preset.hp))
