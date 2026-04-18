@@ -46,7 +46,23 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
 
                         if health.hp <= 0 then
                             health.alive = false
-                            -- XP 오브 드롭 콜백
+                            -- Boss: drop multiple XP orbs in burst pattern
+                            local bossTag = ecs:getComponent(entityId, "BossTag")
+                            if bossTag and onEnemyDeath then
+                                local orbCount = 25
+                                local xpPerOrb = math.floor((bossTag and ecs:getComponent(entityId, "EnemyAI").xpValue or 50) / orbCount + 0.5)
+                                xpPerOrb = math.max(1, xpPerOrb)
+                                for o = 1, orbCount do
+                                    local angle = (o / orbCount) * math.pi * 2
+                                    local dist = 0.3 + math.random() * 0.5
+                                    onEnemyDeath(ecs, ex + math.cos(angle) * dist, ey + math.sin(angle) * dist, xpPerOrb)
+                                end
+                                -- Mark defeated (BossSystem reads this)
+                                bossTag.defeated = true
+                                -- Don't destroyEntity — let StageManager handle cleanup
+                                goto nextEnemy
+                            end
+                            -- Normal enemy: single XP drop + destroy
                             if onEnemyDeath then
                                 local enemyAI = ecs:getComponent(entityId, "EnemyAI")
                                 onEnemyDeath(ecs, ex, ey, enemyAI and enemyAI.xpValue or 1)

@@ -22,6 +22,7 @@ local DashSystem                = require("03_game.systems.dashSystem")
 local FocusSystem               = require("03_game.systems.focusSystem")
 local createXpCollectionSystem  = require("03_game.systems.xpCollectionSystem")
 local StageManager              = require("03_game.systems.stageManager")
+local createBossSystem          = require("03_game.systems.bossSystem")
 
 -- Entity factories (03_game/entities/)
 local EntityFactory = require("03_game.entities.entityFactory")
@@ -90,14 +91,14 @@ function ECSManager.removeSystem(systemName)
     return true
 end
 
+-- 렌더 시스템 이름 목록 (draw에서만 실행, 한 번만 생성)
+local renderSystems = { Render = true, PlayerRender = true }
+
 -- 모든 시스템 업데이트 (Render 시스템 제외 — draw()에서만 실행)
 function ECSManager.update(dt)
     if not ECSManager.world then
         return
     end
-    
-    -- 렌더 시스템 이름 목록 (draw에서만 실행)
-    local renderSystems = { Render = true, PlayerRender = true }
 
     -- 등록된 순서대로 시스템 실행 (렌더 계열 제외)
     for _, systemName in ipairs(ECSManager.systemsOrder) do
@@ -110,10 +111,14 @@ function ECSManager.update(dt)
     end
 
     -- Bullet pool update (movement + lifetime + culling)
-    ECSManager.bulletPool:update(dt, ECSManager.bulletBounds)
+    if ECSManager.bulletPool then
+        ECSManager.bulletPool:update(dt, ECSManager.bulletBounds)
+    end
 
     -- Stage manager (wave spawning + stage progression)
-    ECSManager.stageManager:update(dt)
+    if ECSManager.stageManager then
+        ECSManager.stageManager:update(dt)
+    end
 end
 
 -- 렌더링 (카메라 변환은 호출자가 적용 — main.lua의 drawWorld 내부에서 호출됨)
@@ -238,6 +243,8 @@ function ECSManager._registerBasicSystems()
     ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath))
     -- 12. XpCollection: XP 오브 자석 수집 + 레벨업
     ECSManager.addSystem(createXpCollectionSystem(getPlayerPos))
+    -- 12.5. Boss: 보스 라이프사이클 (페이즈 + 패턴 순환 + 이동)
+    ECSManager.addSystem(createBossSystem(ECSManager.bulletPool, getPlayerPos))
     -- 13-14. Render: draw()에서만 실행
     ECSManager.addSystem(RenderSystem)
     ECSManager.addSystem(PlayerRenderSystem)

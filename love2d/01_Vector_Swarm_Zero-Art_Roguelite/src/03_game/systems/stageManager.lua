@@ -4,6 +4,7 @@
 -- Not an ECS system — called from ecsManager.update().
 
 local world = require("01_core.world")
+local EntityFactory = require("03_game.entities.entityFactory")
 
 local StageManager = {}
 StageManager.__index = StageManager
@@ -14,6 +15,18 @@ StageManager.STATE_SPAWNING    = "spawning"
 StageManager.STATE_CLEARING    = "clearing"
 StageManager.STATE_STAGE_CLEAR = "stage_clear"
 StageManager.STATE_NEXT_STAGE  = "next_stage"
+StageManager.STATE_BOSS_INTRO  = "boss_intro"
+StageManager.STATE_BOSS_ACTIVE = "boss_active"
+StageManager.STATE_BOSS_CLEAR  = "boss_clear"
+
+-- ===== Boss stage mapping =====
+local BOSS_STAGES = {
+    [3]  = "NULL",
+    [6]  = "STACK",
+    [9]  = "HEAP",
+    [12] = "RECURSION",
+    [15] = "OVERFLOW",
+}
 
 -- ===== Stage Definitions (hand-designed) =====
 -- Stages beyond this table are auto-generated via _generateStageConfig().
@@ -51,6 +64,10 @@ function StageManager.new(ecsManager, getPlayerPos)
         totalWaves = 0,
 
         active = true,
+
+        -- Boss tracking
+        bossEntityId = nil,
+        bossType     = nil,
     }, StageManager)
     return mgr
 end
@@ -88,6 +105,13 @@ function StageManager:update(dt)
     local config = self:_getStageConfig()
 
     if st == StageManager.STATE_WAVE_INTRO then
+        -- Check if this is a boss stage
+        if BOSS_STAGES[self.stage] then
+            self:_spawnBoss()
+            self.state = StageManager.STATE_BOSS_INTRO
+            return
+        end
+
         self.waveTimer = self.waveTimer + dt
         local diff = self:getDifficulty()
         local delay = (self.wave == 0) and 1.0 or diff.spawnDelay
@@ -121,10 +145,73 @@ function StageManager:update(dt)
             self:_advanceStage()
         end
 
+    -- === BOSS STATES ===
+    elseif st == StageManager.STATE_BOSS_INTRO then
+        -- BossSystem handles intro timer; we wait for introComplete
+        if self.bossEntityId then
+            local w = self.ecsManager.getWorld()
+            if w then
+                local bossTag = w:getComponent(self.bossEntityId, "BossTag")
+                if bossTag and bossTag.introComplete then
+                    self.state = StageManager.STATE_BOSS_ACTIVE
+                    logInfo(string.format("[STAGE] Boss %s fight started!", self.bossType))
+                end
+            end
+        end
+
+    elseif st == StageManager.STATE_BOSS_ACTIVE then
+        -- Check if boss is dead
+        if self.bossEntityId then
+            local w = self.ecsManager.getWorld()
+            if w then
+                local health = w:getComponent(self.bossEntityId, "Health")
+                if not health or not health.alive then
+                    self.state = StageManager.STATE_BOSS_CLEAR
+                    self.clearTimer = 0
+                    logInfo(string.format("[STAGE] Boss %s DEFEATED!", self.bossType))
+                end
+            end
+        end
+
+    elseif st == StageManager.STATE_BOSS_CLEAR then
+        self.clearTimer = self.clearTimer + dt
+        if self.clearTimer < 0.05 then
+            self.ecsManager.bulletPool:clearLayer("enemy_bullet")
+        end
+        if self.clearTimer >= self.clearDuration + 1.0 then  -- extra second for boss
+            -- Destroy boss entity from ECS
+            if self.bossEntityId then
+                local w = self.ecsManager.getWorld()
+                if w then
+                    w:destroyEntity(self.bossEntityId)
+                    logInfo(string.format("[STAGE] Boss entity %d destroyed", self.bossEntityId))
+                end
+            end
+            self.bossEntityId = nil
+            self.bossType = nil
+            self:_advanceStage()
+        end
+
     elseif st == StageManager.STATE_NEXT_STAGE then
         self.state = StageManager.STATE_WAVE_INTRO
         self.waveTimer = 0
     end
+end
+
+-- Spawn boss entity for current stage
+function StageManager:_spawnBoss()
+    local bossType = BOSS_STAGES[self.stage]
+    if not bossType then return end
+
+    local px, py = self.getPlayerPos()
+    local spawnX = px or 0
+    local spawnY = (py or 0) + 4  -- spawn above player
+
+    local w = self.ecsManager.getWorld()
+    self.bossEntityId = EntityFactory.createBoss(w, spawnX, spawnY, bossType)
+    self.bossType = bossType
+
+    logInfo(string.format("[STAGE] Boss %s spawned at Stage %d", bossType, self.stage))
 end
 
 -- Pick a spawn direction based on stage config probability table
@@ -226,10 +313,52 @@ end
 
 -- Draw stage clear overlay (called from main draw, screen coords)
 function StageManager:draw()
-    if self.state ~= StageManager.STATE_STAGE_CLEAR then return end
+    if self.state ~= StageManager.STATE_STAGE_CLEAR
+       and self.state ~= StageManager.STATE_BOSS_INTRO
+       and self.state ~= StageManager.STATE_BOSS_CLEAR then
+        return
+    end
 
     local lg = love.graphics
     local w, h = lg.getDimensions()
+
+    if self.state == StageManager.STATE_BOSS_INTRO then
+        -- Boss intro overlay
+        local alpha = math.min(1, (self.bossEntityId and 1 or 0))
+        lg.setColor(0, 0, 0, 0.3 * alpha)
+        lg.rectangle("fill", 0, 0, w, h)
+
+        lg.setColor(1, 0.2, 0.2, alpha)
+        local text = string.format("BOSS: %s", self.bossType or "???")
+        local font = lg.getFont()
+        local tw = font:getWidth(text)
+        local scale = 2.5
+        lg.print(text, (w - tw * scale) / 2, h * 0.4 - font:getHeight(), 0, scale, scale)
+        lg.setColor(1, 1, 1, 1)
+        return
+    end
+
+    if self.state == StageManager.STATE_BOSS_CLEAR then
+        -- Boss clear overlay
+        local alpha = math.min(1, self.clearTimer / 0.3)
+        lg.setColor(0, 0, 0, 0.4)
+        lg.rectangle("fill", 0, 0, w, h)
+
+        lg.setColor(1, 0.85, 0.2, alpha)
+        local text = "BOSS CLEAR!"
+        local font = lg.getFont()
+        local tw = font:getWidth(text)
+        local scale = 2.5
+        lg.print(text, (w - tw * scale) / 2, h * 0.35 - font:getHeight(), 0, scale, scale)
+
+        lg.setColor(1, 1, 1, alpha * 0.8)
+        local sub = string.format("%s — PURIFIED", self.bossType or "")
+        local sw = font:getWidth(sub)
+        lg.print(sub, (w - sw) / 2, h * 0.5)
+
+        lg.setColor(1, 1, 1, 1)
+        return
+    end
 
     -- Dim overlay
     lg.setColor(0, 0, 0, 0.4)
@@ -263,11 +392,15 @@ function StageManager:getStats()
         state      = self.state,
         totalWaves = self.totalWaves,
         enemies    = self:_countEnemies(),
+        isBossStage = BOSS_STAGES[self.stage] ~= nil,
+        bossType    = self.bossType,
+        bossEntityId = self.bossEntityId,
     }
 end
 
 function StageManager:isClearing()
     return self.state == StageManager.STATE_STAGE_CLEAR
+        or self.state == StageManager.STATE_BOSS_CLEAR
 end
 
 return StageManager

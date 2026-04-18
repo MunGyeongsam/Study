@@ -11,7 +11,14 @@ local gameData = {
     score = 0,
     lives = 3,
     level = 1,
-    fps = 0
+    fps = 0,
+    -- Boss data
+    bossActive = false,
+    bossName = "",
+    bossHp = 0,
+    bossMaxHp = 1,
+    bossPhase = 1,
+    bossMaxPhase = 1,
 }
 
 -- UI 요소들
@@ -46,7 +53,6 @@ end
 function topHud.draw()
     local lg = love.graphics
     local layout = mobileLayout.getLayout()
-    local profile = mobileLayout.getDeviceProfile()
     
     -- 상태 저장
     local r, g, b, a = lg.getColor()
@@ -98,6 +104,11 @@ function topHud.draw()
     
     -- 설정 버튼 그리기
     topHud.drawSettingsButton()
+
+    -- 보스 HP바 그리기 (보스 활성 시)
+    if gameData.bossActive then
+        topHud.drawBossHpBar()
+    end
     
     -- 상태 복원
     lg.setColor(r, g, b, a)
@@ -136,6 +147,13 @@ function topHud.setGameData(data)
     if data.stage then gameData.stage = data.stage end
     if data.wave then gameData.wave = data.wave end
     if data.wavesPerStage then gameData.wavesPerStage = data.wavesPerStage end
+    -- Boss data
+    if data.bossActive ~= nil then gameData.bossActive = data.bossActive end
+    if data.bossName then gameData.bossName = data.bossName end
+    if data.bossHp then gameData.bossHp = data.bossHp end
+    if data.bossMaxHp then gameData.bossMaxHp = data.bossMaxHp end
+    if data.bossPhase then gameData.bossPhase = data.bossPhase end
+    if data.bossMaxPhase then gameData.bossMaxPhase = data.bossMaxPhase end
 end
 
 -- 터치 입력 처리
@@ -159,6 +177,49 @@ end
 function topHud.isPointInButton(x, y, button)
     return x >= button.x and x <= (button.x + button.width) and
            y >= button.y and y <= (button.y + button.height)
+end
+
+-- 보스 HP바 렌더링
+function topHud.drawBossHpBar()
+    local lg = love.graphics
+    local layout = mobileLayout.getLayout()
+    local w = layout.screenWidth
+
+    local barW = w * 0.6
+    local barH = 10
+    local barX = (w - barW) / 2
+    local barY = layout.topAreaHeight - barH - 4
+
+    -- Background
+    lg.setColor(0.2, 0.2, 0.2, 0.9)
+    lg.rectangle("fill", barX - 1, barY - 1, barW + 2, barH + 2)
+
+    -- HP fill
+    local ratio = math.max(0, gameData.bossHp / math.max(1, gameData.bossMaxHp))
+    -- Color: green→yellow→red
+    local r = ratio < 0.5 and 1 or (1 - (ratio - 0.5) * 2)
+    local g = ratio > 0.5 and 1 or (ratio * 2)
+    lg.setColor(r, g, 0.1, 1)
+    lg.rectangle("fill", barX, barY, barW * ratio, barH)
+
+    -- Phase markers
+    if gameData.bossMaxPhase > 1 then
+        lg.setColor(1, 1, 1, 0.5)
+        for i = 1, gameData.bossMaxPhase - 1 do
+            local markerRatio = i / gameData.bossMaxPhase
+            local mx = barX + barW * (1 - markerRatio)
+            lg.rectangle("fill", mx - 1, barY, 2, barH)
+        end
+    end
+
+    -- Boss name
+    lg.setColor(1, 0.3, 0.3, 1)
+    local name = gameData.bossName or "BOSS"
+    local font = lg.getFont()
+    local tw = font:getWidth(name)
+    lg.print(name, (w - tw) / 2, barY - font:getHeight() - 2)
+
+    lg.setColor(1, 1, 1, 1)
 end
 
 -- 설정 버튼 액션

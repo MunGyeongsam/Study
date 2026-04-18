@@ -18,6 +18,8 @@ local levelUp = require("03_game.states.levelUp")
 
 local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
 local restartGame       -- forward declaration (콜백에서 참조)
+local hitStopTimer = 0  -- hit-stop freeze (boss defeat)
+local godMode = false   -- debug: player invincibility (F7)
 
 function love.load()
     -- Initialize global utilities first
@@ -146,6 +148,10 @@ function love.load()
         return "XP : N/A"
     end);
 
+    debug.add("debug keys", function()
+        return string.format("%10s : GOD[F7]:%s", "debug", godMode and "ON" or "off")
+    end);
+
     debug.toggleConsole()   -- debug watch panel auto-show (dev)
     
     -- 🌍 카메라를 플레이어 시작 위치로 이동
@@ -210,6 +216,12 @@ restartGame = function()
 end
 
 function love.update(dt)
+    -- Hit-stop freeze (boss defeat moment)
+    if hitStopTimer > 0 then
+        hitStopTimer = hitStopTimer - dt
+        return
+    end
+
     -- 레벨업 선택 중이면 게임 로직 정지
     if levelUp.isActive() then
         return
@@ -217,6 +229,25 @@ function love.update(dt)
 
     -- 스테이지 클리어 중이면 스테이지 매니저만 업데이트 (연출 진행)
     if ecsManager.stageManager:isClearing() then
+        -- Detect boss defeat → apply rewards once
+        local stageState = ecsManager.stageManager.state
+        if stageState == "boss_clear" and ecsManager.stageManager.clearTimer < 0.05 then
+            -- Hit-stop
+            hitStopTimer = 0.2
+            -- Recover player: HP full, dash/focus reset
+            local w = ecsManager.getWorld()
+            local pEnts = w:queryEntities({"PlayerTag", "Health"})
+            if #pEnts > 0 then
+                local pHealth = w:getComponent(pEnts[1], "Health")
+                pHealth.hp = pHealth.maxHp
+                pHealth.iTimer = 0
+                local dash = w:getComponent(pEnts[1], "Dash")
+                if dash then dash.cooldownTimer = 0 end
+                local focus = w:getComponent(pEnts[1], "Focus")
+                if focus then focus.energy = focus.maxEnergy end
+            end
+            logInfo("[BOSS] Rewards applied: HP full, dash/focus reset")
+        end
         ecsManager.stageManager:update(dt)
         return
     end
@@ -230,6 +261,15 @@ function love.update(dt)
     -- ECS 시스템 업데이트 (포커스 슬로모 적용)
     local scaledDt = dt * gameState.getTimeScale()
     ecsManager.update(scaledDt)
+
+    -- God mode: keep player invincible
+    if godMode then
+        local playerId = player.getEntityId()
+        if playerId then
+            local health = ecsManager.getWorld():getComponent(playerId, "Health")
+            if health then health.iTimer = 9999 end
+        end
+    end
     
     -- 🏃‍♂️ 플레이어 업데이트 (입력 처리 및 이동, 기존 OOP)
     player.update(dt, {})  -- 나중에 터치 입력 시스템 연결
@@ -258,8 +298,30 @@ function love.update(dt)
         powerUps = #playerStats.powerUps,
         secrets = worldStats.secretsDiscovered,
         currentZone = playerStats.currentZone or "outside",
-        checkpoints = playerStats.checkpoints
+        checkpoints = playerStats.checkpoints,
+        -- Boss HUD data
+        bossActive = stageStats.bossEntityId ~= nil and (stageStats.state == "boss_intro" or stageStats.state == "boss_active"),
+        bossName = stageStats.bossType,
+        bossHp = 0,
+        bossMaxHp = 1,
+        bossPhase = 1,
+        bossMaxPhase = 1,
     })
+
+    -- Update boss HP bar from ECS if boss is active
+    if stageStats.bossEntityId then
+        local bw = ecsManager.getWorld()
+        local bossHealth = bw:getComponent(stageStats.bossEntityId, "Health")
+        local bossTag = bw:getComponent(stageStats.bossEntityId, "BossTag")
+        if bossHealth and bossTag then
+            uiManager.setGameData({
+                bossHp = bossHealth.hp,
+                bossMaxHp = bossHealth.maxHp,
+                bossPhase = bossTag.phase,
+                bossMaxPhase = bossTag.maxPhase,
+            })
+        end
+    end
 
     -- 게임 상태 업데이트 (HP 검사 → 게임오버 판정)
     local w = ecsManager.getWorld()
@@ -335,6 +397,9 @@ function love.keypressed(key)
         screenDebugDraw.toggle()    -- F4: 스크린 그리드 토글
     elseif key == "f5" then
         cameraManager.toggle()      -- F5: 게임/디버그 카메라 전환
+    elseif key == "f7" then
+        godMode = not godMode       -- F7: 무적 모드 토글
+        logInfo(string.format("[DEBUG] God mode: %s", godMode and "ON" or "OFF"))
     elseif key == "r" then
         if gameState.canRestart() then
             restartGame()

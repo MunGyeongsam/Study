@@ -17,6 +17,7 @@ local Dash          = require("03_game.components.dash")
 local Focus         = require("03_game.components.focus")
 local PlayerXP      = require("03_game.components.playerXP")
 local XpOrb         = require("03_game.components.xpOrb")
+local BossTag       = require("03_game.components.bossTag")
 
 local EntityFactory = {}
 
@@ -194,6 +195,145 @@ function EntityFactory.createXpOrb(world, x, y, value)
         value = value or 1,
     }))
 
+    return entityId
+end
+
+-- ===== Boss Type Presets =====
+local BOSS_TYPES = {
+    NULL = {
+        color    = {0.6, 0.6, 0.6, 1},
+        radius   = 0.8,
+        hp       = 50,
+        xpValue  = 50,
+        maxPhase = 2,
+        phaseThresholds = {0.5},
+        ai       = { behavior = "drift", driftVx = 0.4, driftVy = 0, speed = 0.4 },
+        patterns = {
+            -- Phase 1: learn
+            [1] = {
+                { pattern = "circle", emitRate = 0.4, bulletSpeed = 2.0, bulletCount = 8,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {0.7, 0.7, 0.7, 1},
+                  duration = 3.0 },
+                { pattern = "none", duration = 2.0 },
+                { pattern = "circle", emitRate = 0.5, bulletSpeed = 2.5, bulletCount = 12,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {0.7, 0.7, 0.7, 1},
+                  duration = 3.0 },
+                { pattern = "none", duration = 2.0 },
+            },
+            -- Phase 2: serious
+            [2] = {
+                { pattern = "circle", emitRate = 0.6, bulletSpeed = 2.5, bulletCount = 8,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {0.9, 0.5, 0.5, 1},
+                  duration = 3.0 },
+                { pattern = "none", duration = 1.5 },
+                { pattern = "spiral", emitRate = 1.0, bulletSpeed = 2.0, bulletCount = 4,
+                  bulletLifetime = 5, bulletRadius = 0.035, bulletColor = {0.9, 0.5, 0.5, 1},
+                  turnRate = 1.0, duration = 4.0 },
+                { pattern = "none", duration = 1.5 },
+            },
+        },
+    },
+    STACK = {
+        color    = {0.2, 0.8, 0.2, 1},
+        radius   = 1.0,
+        hp       = 100,
+        xpValue  = 120,
+        maxPhase = 3,
+        phaseThresholds = {0.66, 0.33},
+        ai       = { behavior = "drift", driftVx = 0.3, driftVy = 0, speed = 0.3 },
+        patterns = {
+            -- Phase 1: slow concentric rings
+            [1] = {
+                { pattern = "circle", emitRate = 0.4, bulletSpeed = 1.8, bulletCount = 10,
+                  bulletLifetime = 5, bulletRadius = 0.04, bulletColor = {0.2, 0.9, 0.2, 1},
+                  duration = 3.5 },
+                { pattern = "none", duration = 2.0 },
+                { pattern = "circle", emitRate = 0.5, bulletSpeed = 2.2, bulletCount = 14,
+                  bulletLifetime = 5, bulletRadius = 0.04, bulletColor = {0.2, 0.9, 0.2, 1},
+                  duration = 3.5 },
+                { pattern = "none", duration = 2.0 },
+            },
+            -- Phase 2: rings + aimed
+            [2] = {
+                { pattern = "circle", emitRate = 0.6, bulletSpeed = 2.2, bulletCount = 12,
+                  bulletLifetime = 5, bulletRadius = 0.04, bulletColor = {0.4, 1.0, 0.4, 1},
+                  duration = 3.0 },
+                { pattern = "aimed", emitRate = 1.0, bulletSpeed = 3.0, bulletCount = 3,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 1.0, 0.3, 1},
+                  duration = 2.0 },
+                { pattern = "none", duration = 1.5 },
+            },
+            -- Phase 3: dense rings + aimed burst
+            [3] = {
+                { pattern = "circle", emitRate = 0.8, bulletSpeed = 2.5, bulletCount = 16,
+                  bulletLifetime = 5, bulletRadius = 0.035, bulletColor = {0.6, 1.0, 0.6, 1},
+                  duration = 3.0 },
+                { pattern = "aimed", emitRate = 1.2, bulletSpeed = 3.5, bulletCount = 5,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 0.5, 0.3, 1},
+                  duration = 2.5 },
+                { pattern = "none", duration = 1.0 },
+            },
+        },
+    },
+}
+
+-- 보스 엔티티 생성
+function EntityFactory.createBoss(world, x, y, bossType)
+    local preset = BOSS_TYPES[bossType] or BOSS_TYPES.NULL
+    local entityId = world:createEntity()
+
+    world:addComponent(entityId, "Transform", Transform.new({
+        x = x or 0, y = y or 5,
+    }))
+
+    world:addComponent(entityId, "Velocity", Velocity.new({
+        vx = 0, vy = 0, speed = preset.ai.speed or 0.4, maxSpeed = 2, damping = 1.0,
+    }))
+
+    world:addComponent(entityId, "Collider", Collider.new({
+        radius = preset.radius, layer = "enemy",
+        mask = {"player", "playerBullet"},
+    }))
+
+    world:addComponent(entityId, "Renderable", Renderable.new({
+        type = "circle", radius = preset.radius,
+        color = preset.color,
+    }))
+
+    world:addComponent(entityId, "EnemyAI", EnemyAI.new({
+        behavior = preset.ai.behavior,
+        speed    = preset.ai.speed or 0.4,
+        driftVx  = preset.ai.driftVx or 0,
+        driftVy  = preset.ai.driftVy or 0,
+        xpValue  = preset.xpValue or 50,
+    }))
+
+    world:addComponent(entityId, "Health", Health.new({
+        hp = preset.hp, maxHp = preset.hp, iFrames = 0,
+    }))
+
+    -- Start with emitter inactive — BossSystem controls pattern switching
+    local firstPattern = preset.patterns[1] and preset.patterns[1][1] or {}
+    world:addComponent(entityId, "BulletEmitter", BulletEmitter.new({
+        pattern        = firstPattern.pattern or "circle",
+        emitRate       = firstPattern.emitRate or 0.5,
+        bulletSpeed    = firstPattern.bulletSpeed or 2.0,
+        bulletCount    = firstPattern.bulletCount or 8,
+        bulletLifetime = firstPattern.bulletLifetime or 4,
+        bulletRadius   = firstPattern.bulletRadius or 0.04,
+        bulletColor    = firstPattern.bulletColor or {0.7, 0.7, 0.7, 1},
+        turnRate       = firstPattern.turnRate or 1.5,
+        active         = false,  -- BossSystem activates after intro
+    }))
+
+    world:addComponent(entityId, "BossTag", BossTag.new({
+        bossType        = bossType or "NULL",
+        maxPhase        = preset.maxPhase,
+        phaseThresholds = preset.phaseThresholds,
+        patterns        = preset.patterns,
+    }))
+
+    logInfo(string.format("[ENTITY] Boss created: %d (%s) HP:%d", entityId, bossType or "NULL", preset.hp))
     return entityId
 end
 

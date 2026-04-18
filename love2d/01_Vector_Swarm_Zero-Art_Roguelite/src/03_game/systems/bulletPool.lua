@@ -122,6 +122,18 @@ function BulletPool:clear()
     end
 end
 
+--- Remove all bullets of a specific layer (e.g. "enemy_bullet" on boss phase transition).
+function BulletPool:clearLayer(layer)
+    local i = 1
+    while i <= self.activeCount do
+        if self.active[i].layer == layer then
+            self:_recycle(i)
+        else
+            i = i + 1
+        end
+    end
+end
+
 --- Get pool statistics.
 function BulletPool:getStats()
     return {
