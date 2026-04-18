@@ -49,7 +49,7 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                             local angle = emitter.angle + (i / count) * pi2
                             bulletPool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
                         end
-                        emitter.angle = emitter.angle + emitter.turnRate * interval
+                        emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
 
                     elseif pattern == "aimed" then
                         -- Aimed at player position
@@ -88,7 +88,7 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                             local vy = -speed
                             bulletPool:spawn(ox, oy, vx, vy, opts)
                         end
-                        emitter.angle = emitter.angle + emitter.turnRate * interval
+                        emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
                     end
                 end
 

@@ -23,7 +23,7 @@ function Renderable.new(data)
         radius  = d.radius  or Renderable.defaults.radius,
         width   = d.width   or Renderable.defaults.width,
         height  = d.height  or Renderable.defaults.height,
-        color   = d.color   or Renderable.defaults.color,
+        color   = d.color   or {0, 1, 1, 1},
         visible = vis,
     }
 end

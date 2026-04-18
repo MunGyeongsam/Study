@@ -17,7 +17,7 @@ function Collider.new(data)
         type   = data and data.type   or Collider.defaults.type,
         radius = data and data.radius or Collider.defaults.radius,
         layer  = data and data.layer  or Collider.defaults.layer,
-        mask   = data and data.mask   or Collider.defaults.mask,
+        mask   = data and data.mask   or {},
     }
 end
 

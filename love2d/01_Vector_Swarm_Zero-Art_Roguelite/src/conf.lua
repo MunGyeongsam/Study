@@ -41,8 +41,9 @@ function love.conf(t)
     t.window.display = 1                             -- Index of the monitor to show the window in
     
     -- Console settings
-    t.console = true                                 -- Attach a console (Windows only) - 콘솔창 표시
-    --t.console = false
+    -- lovec.exe 사용 시 t.console=false (stdout이 터미널로 직접 감)
+    -- love.exe 사용 시 t.console=true (별도 콘솔 창 띄움)
+    t.console = false
     
     -- Modules to enable
     t.modules.audio = true                           -- Enable the audio module

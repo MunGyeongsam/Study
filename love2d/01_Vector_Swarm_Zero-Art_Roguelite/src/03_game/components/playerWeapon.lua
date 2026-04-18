@@ -28,7 +28,7 @@ function PlayerWeapon.new(data)
         bulletDamage   = d.bulletDamage   or def.bulletDamage,
         bulletLifetime = d.bulletLifetime or def.bulletLifetime,
         bulletRadius   = d.bulletRadius   or def.bulletRadius,
-        bulletColor    = d.bulletColor    or def.bulletColor,
+        bulletColor    = d.bulletColor    or {0.2, 1, 0.5, 1},
         range          = d.range          or def.range,
         timer          = 0,
     }

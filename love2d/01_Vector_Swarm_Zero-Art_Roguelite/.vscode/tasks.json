@@ -4,7 +4,7 @@
         {
             "label": "🎮 Run LÖVE 2D Game (Windows)",
             "type": "shell",
-            "command": "${workspaceFolder}/love-11.5-win64/love.exe",
+            "command": "${workspaceFolder}/love-11.5-win64/lovec.exe",
             "args": ["${workspaceFolder}/src"],
             "group": {
                 "kind": "build",
@@ -26,7 +26,7 @@
                 "runOn": "default"
             },
             "windows": {
-                "command": "${workspaceFolder}/love-11.5-win64/love.exe"
+                "command": "${workspaceFolder}/love-11.5-win64/lovec.exe"
             }
         },
         {

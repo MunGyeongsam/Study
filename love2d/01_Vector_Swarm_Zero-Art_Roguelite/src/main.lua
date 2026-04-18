@@ -349,10 +349,7 @@ local function drawWorld()
     local cam = cameraManager.getActive()
     world.drawGrid(1, cam)  -- 1 유닛 간격 그리드, 카메라 정보 전달
     
-    -- 🏃‍♂️ 플레이어 렌더링
-    player.draw(cam)
-    
-    -- 🏗️ ECS 엔티티 렌더링
+    -- �️ ECS 엔티티 렌더링 (플레이어 포함)
     ecsManager.draw()
 end
 

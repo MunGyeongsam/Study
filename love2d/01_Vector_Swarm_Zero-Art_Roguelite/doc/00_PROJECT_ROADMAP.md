@@ -108,9 +108,9 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시
 | 3A.7 | 보스 등장/처치 연출 (MVP: 텍스트 + 플래시) | ✅ |
 | 3A.8 | NULL 보스 프리셋 (Stage 3, HP50, 2페이즈) | ✅ |
 | 3A.9 | STACK 보스 프리셋 (Stage 6, HP100, 3페이즈) | ✅ |
-| 3A.10 | HEAP 보스 프리셋 (Stage 9) | 🔲 |
-| 3A.11 | RECURSION 보스 + 미니언 소환 (Stage 12) | 🔲 |
-| 3A.12 | OVERFLOW 보스 + 전패턴 통합 (Stage 15) | 🔲 |
+| 3A.10 | HEAP 보스 프리셋 (Stage 9) | ✅ |
+| 3A.11 | RECURSION 보스 + 미니언 소환 (Stage 12) | ✅ |
+| 3A.12 | OVERFLOW 보스 + 전패턴 통합 (Stage 15) | ✅ |
 | 3A.13 | 보스 설계 문서 (doc/08) | ✅ |
 
 ### 3B. 적 다양성
@@ -156,12 +156,13 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시
 ## 기술 부채 & 메모
 
 - [ ] world.lua 존 텍스트 한글 인코딩 깨짐 (로그에서 문자열 깨짐)
-- [ ] gameState.lua의 폰트를 매 프레임 `newFont()` 호출 → 캐시 필요
-- [ ] bulletEmitterSystem: timer 오버플로 방지 (장기 실행 시)
+- [x] ~~gameState.lua 폰트 캐싱~~ (이미 lazy init 적용됨, 메모만 outdated)
+- [x] ~~bulletEmitterSystem angle 오버플로~~ (modulo 2π 감싸기 적용)
+- [x] ~~컴포넌트 테이블 공유 참조 버그~~ (collider/renderable/bulletEmitter/playerWeapon)
 - [ ] 적 처치 파편 파티클 효과 (2A.3) 미구현
 - [ ] 구역 전환 연출 (배경색 변화, 텍스트) — Phase 3으로 이동
 - [ ] 보스 처치 연출 풀 버전: 탄막→XP 변환, 회복 애니메이션, 글리치 텍스트 — Phase 3C
-- [ ] HEAP/RECURSION/OVERFLOW 보스 프리셋 구현 (3A.10~12)
+- [x] ~~HEAP/RECURSION/OVERFLOW 보스 프리셋 구현 (3A.10~12)~~
 - [x] ~~main.lua의 `ecsEnemyId` 미사용 변수~~ (d7460e0에서 제거)
 - [x] ~~onReset 콜백 미연동~~ (refactor에서 정리)
 - [x] ~~적 스폰 top-only 문제~~ (59f923e — 4방향 스폰)

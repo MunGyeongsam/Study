@@ -31,7 +31,7 @@ function BulletEmitter.new(data)
         bulletCount    = d.bulletCount    or def.bulletCount,
         bulletLifetime = d.bulletLifetime or def.bulletLifetime,
         bulletRadius   = d.bulletRadius   or def.bulletRadius,
-        bulletColor    = d.bulletColor    or def.bulletColor,
+        bulletColor    = d.bulletColor    or {0.4, 0.8, 1, 1},
         active         = d.active ~= nil and d.active or def.active,
         timer          = 0,
         angle          = 0,
