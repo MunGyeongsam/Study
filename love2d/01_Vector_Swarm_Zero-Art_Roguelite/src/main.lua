@@ -231,7 +231,8 @@ function love.update(dt)
     if ecsManager.stageManager:isClearing() then
         -- Detect boss defeat → apply rewards once
         local stageState = ecsManager.stageManager.state
-        if stageState == "boss_clear" and ecsManager.stageManager.clearTimer < 0.05 then
+        if stageState == "boss_clear" and not ecsManager.stageManager.bossRewardsApplied then
+            ecsManager.stageManager.bossRewardsApplied = true
             -- Hit-stop
             hitStopTimer = 0.2
             -- Recover player: HP full, dash/focus reset
@@ -400,6 +401,10 @@ function love.keypressed(key)
     elseif key == "f7" then
         godMode = not godMode       -- F7: 무적 모드 토글
         logInfo(string.format("[DEBUG] God mode: %s", godMode and "ON" or "OFF"))
+    elseif key == "f8" then
+        -- F8: 스테이지 스킵 (디버그용)
+        local sm = ecsManager.getStageManager and ecsManager.getStageManager()
+        if sm then sm:debugSkipStage() end
     elseif key == "r" then
         if gameState.canRestart() then
             restartGame()

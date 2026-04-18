@@ -18,6 +18,13 @@ BossTag.defaults = {
     patternTimer = 0,        -- time elapsed in current pattern step
     patterns = {},           -- per-phase pattern sequences (set by factory)
 
+    -- Teleport (HEAP)
+    teleportTimer    = 0,    -- counts up toward teleportInterval
+    teleportInterval = 0,    -- seconds between teleports (0 = disabled)
+    teleportWarning  = 1.0,  -- blink duration before teleport
+    teleportCooldown = 0.3,  -- post-teleport invulnerability
+    teleporting      = false,-- true during warning blink phase
+
     -- Intro/defeat
     introTimer = 0,          -- intro sequence timer
     introDuration = 1.5,     -- intro duration before active
@@ -37,6 +44,11 @@ function BossTag.new(data)
         patternIndex    = 1,
         patternTimer    = 0,
         patterns        = d.patterns        or {},
+        teleportTimer    = 0,
+        teleportInterval = d.teleportInterval or def.teleportInterval,
+        teleportWarning  = d.teleportWarning  or def.teleportWarning,
+        teleportCooldown = d.teleportCooldown or def.teleportCooldown,
+        teleporting      = false,
         introTimer      = 0,
         introDuration   = d.introDuration   or def.introDuration,
         introComplete   = false,

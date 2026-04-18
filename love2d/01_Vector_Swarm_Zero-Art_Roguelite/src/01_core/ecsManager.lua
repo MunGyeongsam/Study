@@ -192,6 +192,11 @@ function ECSManager.getBulletPool()
     return ECSManager.bulletPool
 end
 
+-- Stage manager 참조 반환
+function ECSManager.getStageManager()
+    return ECSManager.stageManager
+end
+
 -- 게임 리스타트: 월드 초기화, 불릿 클리어, 스포너 리셋
 function ECSManager.restart()
     -- 모든 불릿 제거

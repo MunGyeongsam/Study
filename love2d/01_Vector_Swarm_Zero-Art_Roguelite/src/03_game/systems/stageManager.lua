@@ -210,6 +210,7 @@ function StageManager:_spawnBoss()
     local w = self.ecsManager.getWorld()
     self.bossEntityId = EntityFactory.createBoss(w, spawnX, spawnY, bossType)
     self.bossType = bossType
+    self.bossRewardsApplied = false
 
     logInfo(string.format("[STAGE] Boss %s spawned at Stage %d", bossType, self.stage))
 end
@@ -309,6 +310,32 @@ function StageManager:_countEnemies()
     if not world then return 0 end
     local enemies = world:queryEntities({"EnemyAI"})
     return #enemies
+end
+
+-- Debug: skip current stage instantly (F8)
+function StageManager:debugSkipStage()
+    local w = self.ecsManager.getWorld()
+    if not w then return end
+
+    -- Destroy all enemies
+    local enemies = w:queryEntities({"EnemyAI"})
+    for _, eid in ipairs(enemies) do
+        w:destroyEntity(eid)
+    end
+
+    -- Clear all enemy bullets
+    local bp = self.ecsManager.getBulletPool and self.ecsManager.getBulletPool()
+    if bp then bp:clear() end
+
+    -- Destroy boss entity if active
+    if self.bossEntityId then
+        -- Entity may already be destroyed above (it has EnemyAI)
+        self.bossEntityId = nil
+    end
+
+    -- Force advance
+    self:_advanceStage()
+    logInfo(string.format("[DEBUG] Stage skipped → now Stage %d", self.stage))
 end
 
 -- Draw stage clear overlay (called from main draw, screen coords)

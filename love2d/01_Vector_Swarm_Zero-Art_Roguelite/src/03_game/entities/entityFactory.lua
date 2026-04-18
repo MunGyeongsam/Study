@@ -275,9 +275,53 @@ local BOSS_TYPES = {
             },
         },
     },
+    HEAP = {
+        color    = {0.9, 0.3, 0.1, 1},
+        radius   = 0.9,
+        hp       = 160,
+        xpValue  = 200,
+        maxPhase = 3,
+        phaseThresholds = {0.66, 0.33},
+        ai       = { behavior = "drift", driftVx = 0.3, driftVy = 0, speed = 0.3 },
+        -- Teleport params (consumed by bossSystem)
+        teleportInterval = 5.0,
+        teleportWarning  = 1.0,
+        teleportCooldown = 0.3,
+        patterns = {
+            -- Phase 1: random-feel burst (fast circle, short pause, repeat)
+            [1] = {
+                { pattern = "circle", emitRate = 0.8, bulletSpeed = 2.5, bulletCount = 10,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {0.9, 0.4, 0.2, 1},
+                  duration = 2.0 },
+                { pattern = "none", duration = 1.0 },
+                { pattern = "circle", emitRate = 1.0, bulletSpeed = 3.0, bulletCount = 6,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 0.5, 0.2, 1},
+                  duration = 1.5 },
+                { pattern = "none", duration = 1.5 },
+            },
+            -- Phase 2: burst + wave (chaotic mix)
+            [2] = {
+                { pattern = "circle", emitRate = 0.9, bulletSpeed = 2.8, bulletCount = 12,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 0.4, 0.1, 1},
+                  duration = 2.5 },
+                { pattern = "wave", emitRate = 0.6, bulletSpeed = 2.5, bulletCount = 5,
+                  bulletLifetime = 5, bulletRadius = 0.035, bulletColor = {1.0, 0.6, 0.2, 1},
+                  turnRate = 2.0, duration = 3.0 },
+                { pattern = "none", duration = 1.0 },
+            },
+            -- Phase 3: dense spread + aimed (full chaos)
+            [3] = {
+                { pattern = "circle", emitRate = 1.2, bulletSpeed = 3.0, bulletCount = 18,
+                  bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {1.0, 0.3, 0.1, 1},
+                  duration = 2.5 },
+                { pattern = "aimed", emitRate = 1.5, bulletSpeed = 3.5, bulletCount = 4,
+                  bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1.0, 0.8, 0.2, 1},
+                  duration = 2.0 },
+                { pattern = "none", duration = 0.8 },
+            },
+        },
+    },
 }
-
--- 보스 엔티티 생성
 function EntityFactory.createBoss(world, x, y, bossType)
     local preset = BOSS_TYPES[bossType] or BOSS_TYPES.NULL
     local entityId = world:createEntity()
@@ -327,10 +371,13 @@ function EntityFactory.createBoss(world, x, y, bossType)
     }))
 
     world:addComponent(entityId, "BossTag", BossTag.new({
-        bossType        = bossType or "NULL",
-        maxPhase        = preset.maxPhase,
-        phaseThresholds = preset.phaseThresholds,
-        patterns        = preset.patterns,
+        bossType         = bossType or "NULL",
+        maxPhase         = preset.maxPhase,
+        phaseThresholds  = preset.phaseThresholds,
+        patterns         = preset.patterns,
+        teleportInterval = preset.teleportInterval or 0,
+        teleportWarning  = preset.teleportWarning or 1.0,
+        teleportCooldown = preset.teleportCooldown or 0.3,
     }))
 
     logInfo(string.format("[ENTITY] Boss created: %d (%s) HP:%d", entityId, bossType or "NULL", preset.hp))
