@@ -21,46 +21,67 @@ local BossTag       = require("03_game.components.bossTag")
 
 local EntityFactory = {}
 
--- Enemy type presets
+-- Enemy type presets (세계관 기반 6종 — Worm 제외 5종 구현)
 local ENEMY_TYPES = {
-    basic = {
-        color       = {1, 0.2, 0.2, 1},
+    -- Bit: 접촉형 무리. 탄막 없이 몸통으로 돌진
+    bit = {
+        color       = {1.0, 1.0, 1.0, 1},
+        radius      = 0.08,
+        hp          = 1,
+        xpValue     = 1,
+        shape       = "circle",
+        ai          = { behavior = "swarm", swarmSpeed = 0.8 },
+        emitter     = nil,  -- 탄막 없음
+    },
+    -- Node: 정지 포탑. 제자리에서 방사형 탄막
+    node = {
+        color       = {1.0, 0.3, 0.2, 1},
         radius      = 0.15,
-        hp          = 3,
-        xpValue     = 2,
-        ai          = { behavior = "drift", driftVx = 0, driftVy = -0.3 },
-        emitter     = { pattern = "circle", emitRate = 0.8, bulletSpeed = 1.2, bulletCount = 6,
+        hp          = 4,
+        xpValue     = 3,
+        shape       = "diamond",
+        ai          = { behavior = "stationary", spinSpeed = 1.0 },
+        emitter     = { pattern = "circle", emitRate = 1.0, bulletSpeed = 1.0, bulletCount = 8,
                         bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1, 0.4, 0.4, 1} },
     },
-    spiral = {
-        color       = {0.8, 0.2, 1, 1},
+    -- Vector: 경고 후 고속 직선 돌진. 탄막 없음
+    vector = {
+        color       = {1.0, 0.9, 0.1, 1},
+        radius      = 0.12,
+        hp          = 2,
+        xpValue     = 4,
+        shape       = "arrow",
+        ai          = { behavior = "charge", chargeSpeed = 4.0, chargeWarnTime = 0.8 },
+        emitter     = nil,  -- 몸통 돌진이 위협
+    },
+    -- Loop: 원형 궤도 + 나선 탄막
+    loop = {
+        color       = {0.8, 0.3, 1.0, 1},
         radius      = 0.18,
         hp          = 5,
         xpValue     = 5,
+        shape       = "spiral_ring",
         ai          = { behavior = "orbit", orbitRadius = 1.5, orbitSpeed = 0.8, speed = 1.2 },
         emitter     = { pattern = "spiral", emitRate = 1.5, bulletSpeed = 1.0, bulletCount = 4,
                         bulletLifetime = 5, bulletRadius = 0.03, bulletColor = {0.8, 0.4, 1, 1},
                         turnRate = 2.0 },
     },
-    aimed = {
-        color       = {1, 0.8, 0.1, 1},
-        radius      = 0.12,
-        hp          = 2,
-        xpValue     = 3,
-        ai          = { behavior = "chase", chaseSpeed = 0.4 },
-        emitter     = { pattern = "aimed", emitRate = 1.2, bulletSpeed = 2.0, bulletCount = 3,
-                        bulletLifetime = 3, bulletRadius = 0.035, bulletColor = {1, 0.9, 0.3, 1} },
+    -- Matrix: 격자형 탄막. 느리게 하강
+    matrix = {
+        color       = {0.2, 1.0, 0.8, 1},
+        radius      = 0.16,
+        hp          = 6,
+        xpValue     = 6,
+        shape       = "hexagon",
+        ai          = { behavior = "drift", driftVx = 0, driftVy = -0.15 },
+        emitter     = { pattern = "grid", emitRate = 0.7, bulletSpeed = 1.2, bulletCount = 8,
+                        bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {0.3, 1, 0.9, 1} },
     },
-    wave = {
-        color       = {0.2, 1, 0.4, 1},
-        radius      = 0.14,
-        hp          = 4,
-        xpValue     = 3,
-        ai          = { behavior = "drift", driftVx = 0.3, driftVy = -0.2 },
-        emitter     = { pattern = "wave", emitRate = 1.0, bulletSpeed = 1.5, bulletCount = 5,
-                        bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {0.4, 1, 0.6, 1},
-                        turnRate = 1.8 },
-    },
+    -- === Legacy aliases (보스/스테이지 호환) ===
+    basic   = nil,  -- → node로 대체
+    spiral  = nil,  -- → loop로 대체
+    aimed   = nil,  -- → vector로 대체
+    wave    = nil,  -- → matrix로 대체
 }
 
 -- 플레이어 엔티티 생성
@@ -103,9 +124,15 @@ function EntityFactory.createPlayer(world, x, y)
     return entityId
 end
 
+-- Scale a value by multiplier if it exists, otherwise nil
+local function scaled(value, mult)
+    if value then return value * mult end
+    return nil
+end
+
 -- 적 엔티티 생성 (difficulty: optional scaling from stageManager)
 function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
-    local preset = ENEMY_TYPES[enemyType] or ENEMY_TYPES.basic
+    local preset = ENEMY_TYPES[enemyType] or ENEMY_TYPES.node
     local diff = difficulty or {}
     local hpMult = diff.enemyHpMult or 1.0
     local spdMult = diff.enemySpeedMult or 1.0
@@ -115,58 +142,63 @@ function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
     world:addComponent(entityId, "Transform", Transform.new({
         x = x or 0, y = y or 5,
     }))
-
     world:addComponent(entityId, "Velocity", Velocity.new({
         vx = 0, vy = 0, speed = (preset.ai.speed or 1) * spdMult, maxSpeed = 3 * spdMult, damping = 1.0,
     }))
-
     world:addComponent(entityId, "Collider", Collider.new({
         radius = preset.radius, layer = "enemy",
         mask = {"player", "playerBullet"},
     }))
-
     world:addComponent(entityId, "Renderable", Renderable.new({
-        type = "circle", radius = preset.radius,
+        type = preset.shape or "circle", radius = preset.radius,
         color = preset.color,
     }))
-
     world:addComponent(entityId, "LifeSpan", LifeSpan.new({
         time = 15, destroyOffScreen = true,
     }))
 
     local scaledHp = math.floor(preset.hp * hpMult + 0.5)
+    local ai = preset.ai
     world:addComponent(entityId, "EnemyAI", EnemyAI.new({
-        behavior     = preset.ai.behavior,
-        speed        = (preset.ai.speed or 1) * spdMult,
-        orbitRadius  = preset.ai.orbitRadius,
-        orbitSpeed   = preset.ai.orbitSpeed and (preset.ai.orbitSpeed * spdMult),
-        chaseSpeed   = preset.ai.chaseSpeed and (preset.ai.chaseSpeed * spdMult),
-        driftVx      = preset.ai.driftVx and (preset.ai.driftVx * spdMult),
-        driftVy      = preset.ai.driftVy and (preset.ai.driftVy * spdMult),
-        xpValue      = preset.xpValue or 1,
+        behavior       = ai.behavior,
+        speed          = (ai.speed or 1) * spdMult,
+        orbitRadius    = ai.orbitRadius,
+        orbitSpeed     = scaled(ai.orbitSpeed, spdMult),
+        chaseSpeed     = scaled(ai.chaseSpeed, spdMult),
+        driftVx        = scaled(ai.driftVx, spdMult),
+        driftVy        = scaled(ai.driftVy, spdMult),
+        swarmSpeed     = scaled(ai.swarmSpeed, spdMult),
+        chargeSpeed    = scaled(ai.chargeSpeed, spdMult),
+        chargeWarnTime = ai.chargeWarnTime,
+        spinSpeed      = ai.spinSpeed,
+        xpValue        = preset.xpValue or 1,
     }))
-    world:addComponent(entityId, "BulletEmitter", BulletEmitter.new({
-        pattern        = preset.emitter.pattern,
-        emitRate       = preset.emitter.emitRate,
-        bulletSpeed    = preset.emitter.bulletSpeed * bspdMult,
-        bulletCount    = preset.emitter.bulletCount,
-        bulletLifetime = preset.emitter.bulletLifetime,
-        bulletRadius   = preset.emitter.bulletRadius,
-        bulletColor    = preset.emitter.bulletColor,
-        turnRate       = preset.emitter.turnRate,
-    }))
+
+    if preset.emitter then
+        local em = preset.emitter
+        world:addComponent(entityId, "BulletEmitter", BulletEmitter.new({
+            pattern        = em.pattern,
+            emitRate       = em.emitRate,
+            bulletSpeed    = em.bulletSpeed * bspdMult,
+            bulletCount    = em.bulletCount,
+            bulletLifetime = em.bulletLifetime,
+            bulletRadius   = em.bulletRadius,
+            bulletColor    = em.bulletColor,
+            turnRate       = em.turnRate,
+        }))
+    end
+
     world:addComponent(entityId, "Health", Health.new({
         hp = scaledHp, maxHp = scaledHp, iFrames = 0,
     }))
 
-    -- Set orbit center to spawn position
-    if preset.ai.behavior == "orbit" then
-        local ai = world:getComponent(entityId, "EnemyAI")
-        ai.orbitCenterX = x or 0
-        ai.orbitCenterY = y or 5
+    if ai.behavior == "orbit" then
+        local aiComp = world:getComponent(entityId, "EnemyAI")
+        aiComp.orbitCenterX = x or 0
+        aiComp.orbitCenterY = y or 5
     end
 
-    logInfo(string.format("[ENTITY] Enemy created: %d (%s)", entityId, enemyType or "basic"))
+    logInfo(string.format("[ENTITY] Enemy created: %d (%s)", entityId, enemyType or "node"))
     return entityId
 end
 

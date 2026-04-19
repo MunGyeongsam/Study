@@ -1,13 +1,13 @@
 -- EnemyAI Component
 -- Controls enemy movement behavior.
--- AI behaviors: drift (straight down), orbit (circle around point), chase (follow player)
+-- AI behaviors: drift, orbit, chase, stationary, swarm, charge
 
 local EnemyAI = {}
 
 EnemyAI.name = "EnemyAI"
 
 EnemyAI.defaults = {
-    behavior  = "drift",   -- "drift", "orbit", "chase"
+    behavior  = "drift",   -- "drift", "orbit", "chase", "stationary", "swarm", "charge"
     speed     = 0.8,       -- movement speed
     -- orbit params
     orbitRadius = 2.0,
@@ -20,6 +20,17 @@ EnemyAI.defaults = {
     -- drift params
     driftVx = 0,
     driftVy = -0.5,        -- default: slow downward
+    -- swarm params (Bit: dash toward player, no stop)
+    swarmSpeed = 0.8,
+    -- charge params (Vector: warn → dash in fixed direction)
+    chargeSpeed   = 4.0,
+    chargeWarnTime = 0.8,   -- seconds of warning before dash
+    chargeTimer   = 0,      -- internal timer
+    chargePhase   = "warn", -- "warn" or "dash"
+    chargeDirX    = 0,      -- locked direction
+    chargeDirY    = 0,
+    -- visual rotation speed (stationary Node)
+    spinSpeed = 1.0,
     -- reward
     xpValue = 1,           -- XP dropped on death
 }
@@ -38,6 +49,14 @@ function EnemyAI.new(data)
         chaseSpeed   = d.chaseSpeed   or def.chaseSpeed,
         driftVx      = d.driftVx      or def.driftVx,
         driftVy      = d.driftVy      or def.driftVy,
+        swarmSpeed   = d.swarmSpeed   or def.swarmSpeed,
+        chargeSpeed  = d.chargeSpeed  or def.chargeSpeed,
+        chargeWarnTime = d.chargeWarnTime or def.chargeWarnTime,
+        chargeTimer  = 0,
+        chargePhase  = "warn",
+        chargeDirX   = 0,
+        chargeDirY   = 0,
+        spinSpeed    = d.spinSpeed    or def.spinSpeed,
         xpValue      = d.xpValue     or def.xpValue,
     }
 end

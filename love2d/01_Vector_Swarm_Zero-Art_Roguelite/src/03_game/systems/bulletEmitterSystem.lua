@@ -89,6 +89,14 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                             bulletPool:spawn(ox, oy, vx, vy, opts)
                         end
                         emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
+
+                    elseif pattern == "grid" then
+                        -- Grid: 8-direction cross (cardinal + diagonal)
+                        local count = emitter.bulletCount  -- typically 8
+                        for i = 0, count - 1 do
+                            local angle = (i / count) * pi2
+                            bulletPool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
+                        end
                     end
                 end
 

@@ -12,6 +12,7 @@ Renderable.defaults = {
     height = 0.2,
     color = {0, 1, 1, 1},
     visible = true,
+    rotation = 0,
 }
 
 function Renderable.new(data)
@@ -19,12 +20,13 @@ function Renderable.new(data)
     local vis = d.visible
     if vis == nil then vis = Renderable.defaults.visible end
     return {
-        type    = d.type    or Renderable.defaults.type,
-        radius  = d.radius  or Renderable.defaults.radius,
-        width   = d.width   or Renderable.defaults.width,
-        height  = d.height  or Renderable.defaults.height,
-        color   = d.color   or {0, 1, 1, 1},
-        visible = vis,
+        type     = d.type     or Renderable.defaults.type,
+        radius   = d.radius   or Renderable.defaults.radius,
+        width    = d.width    or Renderable.defaults.width,
+        height   = d.height   or Renderable.defaults.height,
+        color    = d.color    or {0, 1, 1, 1},
+        visible  = vis,
+        rotation = d.rotation or 0,
     }
 end
 

@@ -72,7 +72,7 @@ function bloom.init()
     -- Set initial uniform
     thresholdShader:send("threshold", threshold)
 
-    logInfo("[BLOOM] Initialized (%dx%d scene, %dx%d blur)", w, h, halfW, halfH)
+    logInfo(string.format("[BLOOM] Initialized (%dx%d scene, %dx%d blur)", w, h, halfW, halfH))
 end
 
 --- Call before rendering the scene
@@ -139,7 +139,7 @@ end
 
 function bloom.toggle()
     enabled = not enabled
-    logInfo("[BLOOM] %s", enabled and "ON" or "OFF")
+    logInfo(string.format("[BLOOM] %s", enabled and "ON" or "OFF"))
 end
 
 function bloom.isEnabled()
@@ -172,7 +172,7 @@ function bloom.resize(w, h)
     brightCanvas = lg.newCanvas(halfW, halfH)
     blurCanvasH  = lg.newCanvas(halfW, halfH)
     blurCanvasV  = lg.newCanvas(halfW, halfH)
-    logInfo("[BLOOM] Resized (%dx%d scene, %dx%d blur)", w, h, halfW, halfH)
+    logInfo(string.format("[BLOOM] Resized (%dx%d scene, %dx%d blur)", w, h, halfW, halfH))
 end
 
 return bloom

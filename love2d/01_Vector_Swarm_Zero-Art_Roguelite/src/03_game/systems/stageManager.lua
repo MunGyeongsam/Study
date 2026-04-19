@@ -32,18 +32,18 @@ local BOSS_STAGES = {
 -- Stages beyond this table are auto-generated via _generateStageConfig().
 local STAGE_DEFS = {
     [1] = { waves = 3, spawnDirs = {top=1.0},
-            types = {"basic"} },
+            types = {"bit", "node"} },
     [2] = { waves = 4, spawnDirs = {top=0.8, left=0.1, right=0.1},
-            types = {"basic", "aimed"} },
+            types = {"bit", "node", "vector"} },
     [3] = { waves = 5, spawnDirs = {top=0.6, left=0.15, right=0.15, bottom=0.1},
-            types = {"basic", "spiral", "aimed"} },
+            types = {"bit", "node", "vector"} },
     [4] = { waves = 5, spawnDirs = {top=0.5, left=0.2, right=0.2, bottom=0.1},
-            types = {"basic", "spiral", "aimed", "wave"} },
+            types = {"bit", "node", "vector", "loop"} },
     [5] = { waves = 6, spawnDirs = {top=0.4, left=0.2, right=0.2, bottom=0.2},
-            types = {"basic", "spiral", "aimed", "wave"} },
+            types = {"node", "vector", "loop", "matrix"} },
 }
 
-local ALL_ENEMY_TYPES = {"basic", "spiral", "aimed", "wave"}
+local ALL_ENEMY_TYPES = {"bit", "node", "vector", "loop", "matrix"}
 
 function StageManager.new(ecsManager, getPlayerPos)
     local mgr = setmetatable({
@@ -258,11 +258,11 @@ end
 -- Pick enemy type from stage's type pool
 function StageManager:_pickEnemyType(config, direction)
     local types = config.types
-    -- Bottom spawns: avoid drift AI (would drift off-screen)
+    -- Bottom spawns: avoid drift-based AI (node=stationary, matrix=drift → skip)
     if direction == "bottom" then
         local safe = {}
         for _, t in ipairs(types) do
-            if t ~= "basic" and t ~= "wave" then  -- basic/wave use drift → skip
+            if t ~= "node" and t ~= "matrix" then
                 safe[#safe + 1] = t
             end
         end
@@ -289,7 +289,17 @@ function StageManager:_spawnWave(config)
         local spawnX, spawnY = self:_getSpawnPosition(direction, px, py)
         local enemyType = self:_pickEnemyType(config, direction)
 
-        self.ecsManager.createEnemy(spawnX, spawnY, enemyType, diff)
+        if enemyType == "bit" then
+            -- Bit: swarm spawn (3~5 clustered around position)
+            local swarmCount = math.random(3, 5)
+            for _ = 1, swarmCount do
+                local ox = spawnX + (math.random() - 0.5) * 0.6
+                local oy = spawnY + (math.random() - 0.5) * 0.6
+                self.ecsManager.createEnemy(ox, oy, "bit", diff)
+            end
+        else
+            self.ecsManager.createEnemy(spawnX, spawnY, enemyType, diff)
+        end
     end
 
     logInfo(string.format("[STAGE] Stage %d Wave %d/%d: %d enemies (HP:x%.2f Spd:x%.2f)",
@@ -338,6 +348,29 @@ function StageManager:debugSkipStage()
     logInfo(string.format("[DEBUG] Stage skipped → now Stage %d", self.stage))
 end
 
+-- Helper: draw centered overlay text with optional subtitle
+local function drawOverlay(title, titleColor, alpha, subtitle, bgAlpha, yPos)
+    local lg = love.graphics
+    local w, h = lg.getDimensions()
+
+    lg.setColor(0, 0, 0, bgAlpha or 0.4)
+    lg.rectangle("fill", 0, 0, w, h)
+
+    lg.setColor(titleColor[1], titleColor[2], titleColor[3], alpha)
+    local font = lg.getFont()
+    local tw = font:getWidth(title)
+    local scale = 2.5
+    lg.print(title, (w - tw * scale) / 2, (yPos or 0.4) * h - font:getHeight(), 0, scale, scale)
+
+    if subtitle then
+        lg.setColor(1, 1, 1, alpha * 0.8)
+        local sw = font:getWidth(subtitle)
+        lg.print(subtitle, (w - sw) / 2, h * 0.5)
+    end
+
+    lg.setColor(1, 1, 1, 1)
+end
+
 -- Draw stage clear overlay (called from main draw, screen coords)
 function StageManager:draw()
     if self.state ~= StageManager.STATE_STAGE_CLEAR
@@ -346,68 +379,25 @@ function StageManager:draw()
         return
     end
 
-    local lg = love.graphics
-    local w, h = lg.getDimensions()
-
     if self.state == StageManager.STATE_BOSS_INTRO then
-        -- Boss intro overlay
-        local alpha = math.min(1, (self.bossEntityId and 1 or 0))
-        lg.setColor(0, 0, 0, 0.3 * alpha)
-        lg.rectangle("fill", 0, 0, w, h)
-
-        lg.setColor(1, 0.2, 0.2, alpha)
-        local text = string.format("BOSS: %s", self.bossType or "???")
-        local font = lg.getFont()
-        local tw = font:getWidth(text)
-        local scale = 2.5
-        lg.print(text, (w - tw * scale) / 2, h * 0.4 - font:getHeight(), 0, scale, scale)
-        lg.setColor(1, 1, 1, 1)
+        local alpha = self.bossEntityId and 1 or 0
+        local title = string.format("BOSS: %s", self.bossType or "???")
+        drawOverlay(title, {1, 0.2, 0.2}, alpha, nil, 0.3 * alpha, 0.4)
         return
     end
 
     if self.state == StageManager.STATE_BOSS_CLEAR then
-        -- Boss clear overlay
         local alpha = math.min(1, self.clearTimer / 0.3)
-        lg.setColor(0, 0, 0, 0.4)
-        lg.rectangle("fill", 0, 0, w, h)
-
-        lg.setColor(1, 0.85, 0.2, alpha)
-        local text = "BOSS CLEAR!"
-        local font = lg.getFont()
-        local tw = font:getWidth(text)
-        local scale = 2.5
-        lg.print(text, (w - tw * scale) / 2, h * 0.35 - font:getHeight(), 0, scale, scale)
-
-        lg.setColor(1, 1, 1, alpha * 0.8)
         local sub = string.format("%s — PURIFIED", self.bossType or "")
-        local sw = font:getWidth(sub)
-        lg.print(sub, (w - sw) / 2, h * 0.5)
-
-        lg.setColor(1, 1, 1, 1)
+        drawOverlay("BOSS CLEAR!", {1, 0.85, 0.2}, alpha, sub, 0.4, 0.35)
         return
     end
 
-    -- Dim overlay
-    lg.setColor(0, 0, 0, 0.4)
-    lg.rectangle("fill", 0, 0, w, h)
-
-    -- "STAGE N CLEAR!" text
-    local alpha = math.min(1, self.clearTimer / 0.3)  -- fade in
-    lg.setColor(0.2, 1, 0.4, alpha)
-    local text = string.format("STAGE %d CLEAR!", self.stage)
-    local font = lg.getFont()
-    local tw = font:getWidth(text)
-    local th = font:getHeight()
-    -- Draw larger via scale
-    local scale = 2.5
-    lg.print(text, (w - tw * scale) / 2, h * 0.4 - th, 0, scale, scale)
-
-    lg.setColor(1, 1, 1, alpha * 0.8)
+    -- Stage clear
+    local alpha = math.min(1, self.clearTimer / 0.3)
+    local title = string.format("STAGE %d CLEAR!", self.stage)
     local sub = string.format("Waves: %d  Stage: %d", self.totalWaves, self.stage)
-    local sw = font:getWidth(sub)
-    lg.print(sub, (w - sw) / 2, h * 0.5)
-
-    lg.setColor(1, 1, 1, 1)
+    drawOverlay(title, {0.2, 1, 0.4}, alpha, sub, 0.4, 0.4)
 end
 
 function StageManager:getStats()
