@@ -48,29 +48,29 @@ function player.update(dt, inputState)
     local collectedPowerUp = world.collectPowerUp(transform.x, transform.y, radius)
     if collectedPowerUp then
         table.insert(tag.powerUps, collectedPowerUp)
-        logInfo("[PLAYER] Collected: " .. collectedPowerUp)
+        logInfo(string.format("[PLAYER] Collected: %s", collectedPowerUp))
     end
 
     local activatedCheckpoint = world.activateCheckpoint(transform.x, transform.y, radius * 2)
     if activatedCheckpoint then
         table.insert(tag.checkpointsSaved, activatedCheckpoint)
-        logInfo("[PLAYER] Checkpoint " .. activatedCheckpoint .. " activated!")
+        logInfo(string.format("[PLAYER] Checkpoint %s activated!", activatedCheckpoint))
     end
 
     local discoveredSecret = world.discoverSecretPath(transform.x, transform.y, radius * 1.5)
     if discoveredSecret then
-        logInfo("[PLAYER] Secret path " .. discoveredSecret .. " discovered!")
+        logInfo(string.format("[PLAYER] Secret path %s discovered!", discoveredSecret))
     end
 
     -- 구역 변경 감지
     local zoneName, zoneData = world.getZoneAtPosition(transform.x, transform.y)
     if zoneName ~= tag.currentZone then
         if tag.currentZone then
-            logInfo("[ZONE] Left: " .. tag.currentZone)
+            logInfo(string.format("[ZONE] Left: %s", tag.currentZone))
         end
         tag.currentZone = zoneName
         if zoneName then
-            logInfo("[ZONE] Entered: " .. zoneName .. " (" .. zoneData.description .. ")")
+            logInfo(string.format("[ZONE] Entered: %s (%s)", zoneName, zoneData.description))
             table.insert(tag.zoneHistory, zoneName)
         end
     end

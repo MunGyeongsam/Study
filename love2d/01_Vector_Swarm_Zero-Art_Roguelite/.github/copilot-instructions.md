@@ -38,12 +38,10 @@ src/
 ├── main.lua          # LÖVE callbacks (load / update / draw / input)
 ├── conf.lua          # LÖVE window config (432×960 portrait, 9:20)
 ├── 00_common/        # Utilities — loaded first, no game dependencies
-│   ├── global.lua    # Injects globals: log, clamp, lerp, setColor, …
+│   ├── global.lua    # Injects globals: log, setColor, resetColor
 │   ├── logger.lua    # 4-level logging + in-game console (` key)
 │   ├── debug.lua     # In-game debug overlay (key-value watch panel)
-│   ├── gridDebugDraw.lua  # Screen-space grid overlay (F4)
-│   ├── kutil.lua     # Misc utilities
-│   └── math/         # Vector / matrix helpers
+│   └── gridDebugDraw.lua  # Screen-space grid overlay (F4)
 ├── 01_core/          # Engine layer
 │   ├── world.lua     # World boundaries, zones, fun elements
 │   ├── ecs.lua       # ECS core (entity/component management, componentIndex cache)
@@ -83,7 +81,7 @@ src/
 
 ### Key cross-layer rules
 - Higher-numbered layers may `require` lower-numbered layers; never the reverse.
-- `00_common/global.lua` must be loaded **first** in `love.load()`; it defines globals used everywhere (`log`, `clamp`, `lerp`, `setColor`, etc.).
+- `00_common/global.lua` must be loaded **first** in `love.load()`; it defines globals used everywhere (`log`, `setColor`, etc.).
 - `logger.init()` is called immediately after `global.init()`.
 
 ### ECS architecture (`01_core/`)
@@ -145,10 +143,6 @@ logWarn("…")
 logError("…")
 setColor(r, g, b, a)    -- accepts 0-255; wraps love.graphics.setColor
 resetColor()
-clamp(v, min, max)
-lerp(a, b, t)
-distance(x1,y1, x2,y2)
-normalize(x, y)         -- returns nx, ny
 ```
 
 ### Logger module API
