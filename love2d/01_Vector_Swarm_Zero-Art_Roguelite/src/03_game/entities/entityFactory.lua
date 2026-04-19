@@ -33,7 +33,7 @@ local ENEMY_TYPES = {
         ai          = { behavior = "swarm", swarmSpeed = 0.8 },
         emitter     = nil,  -- 탄막 없음
     },
-    -- Node: 정지 포탑. 제자리에서 방사형 탄막
+    -- Node: 정지 포탑. 맥동하는 원형 탄막 (타이밍 퍼즐)
     node = {
         color       = {1.0, 0.3, 0.2, 1},
         radius      = 0.15,
@@ -41,8 +41,9 @@ local ENEMY_TYPES = {
         xpValue     = 3,
         shape       = "diamond",
         ai          = { behavior = "stationary", spinSpeed = 1.0 },
-        emitter     = { pattern = "circle", emitRate = 1.0, bulletSpeed = 1.0, bulletCount = 8,
-                        bulletLifetime = 4, bulletRadius = 0.04, bulletColor = {1, 0.4, 0.4, 1} },
+        emitter     = { pattern = "ring_pulse", emitRate = 1.2, bulletSpeed = 1.2, bulletCount = 8,
+                        bulletLifetime = 3.5, bulletRadius = 0.04, bulletColor = {1, 0.4, 0.4, 1},
+                        turnRate = 1.5 },
     },
     -- Vector: 경고 후 고속 직선 돌진. 탄막 없음
     vector = {
@@ -66,7 +67,7 @@ local ENEMY_TYPES = {
                         bulletLifetime = 5, bulletRadius = 0.03, bulletColor = {0.8, 0.4, 1, 1},
                         turnRate = 2.0 },
     },
-    -- Matrix: 격자형 탄막. 느리게 하강
+    -- Matrix: 십자/대각 교대 탄막. 틈새 읽기
     matrix = {
         color       = {0.2, 1.0, 0.8, 1},
         radius      = 0.16,
@@ -74,7 +75,7 @@ local ENEMY_TYPES = {
         xpValue     = 6,
         shape       = "hexagon",
         ai          = { behavior = "drift", driftVx = 0, driftVy = -0.15 },
-        emitter     = { pattern = "grid", emitRate = 0.7, bulletSpeed = 1.2, bulletCount = 8,
+        emitter     = { pattern = "cross", emitRate = 0.8, bulletSpeed = 1.3, bulletCount = 4,
                         bulletLifetime = 4, bulletRadius = 0.035, bulletColor = {0.3, 1, 0.9, 1} },
     },
     -- === Legacy aliases (보스/스테이지 호환) ===

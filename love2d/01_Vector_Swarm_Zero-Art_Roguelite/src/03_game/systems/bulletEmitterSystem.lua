@@ -97,6 +97,27 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                             local angle = (i / count) * pi2
                             bulletPool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
                         end
+
+                    elseif pattern == "ring_pulse" then
+                        -- Ring Pulse: 원형 발사 + 속도 변조로 맥동 레이어 생성
+                        -- 매 발사마다 회전 + 속도가 다른 층이 겹쳐 펄스 느낌
+                        local count = emitter.bulletCount
+                        local pulse = 0.4 + 0.6 * (0.5 + 0.5 * sin(emitter.angle * 3))
+                        for i = 0, count - 1 do
+                            local angle = emitter.angle + (i / count) * pi2
+                            local s = speed * pulse
+                            bulletPool:spawn(ox, oy, cos(angle) * s, sin(angle) * s, opts)
+                        end
+                        emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
+
+                    elseif pattern == "cross" then
+                        -- Cross: 십자(+) ↔ 대각(×) 교대 발사. 틈새 읽기 재미
+                        for i = 0, 3 do
+                            local angle = emitter.angle + i * (pi2 / 4)
+                            bulletPool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
+                        end
+                        -- 다음 발사 시 45° 회전 (+ ↔ × 교대)
+                        emitter.angle = (emitter.angle + math.pi / 4) % pi2
                     end
                 end
 
