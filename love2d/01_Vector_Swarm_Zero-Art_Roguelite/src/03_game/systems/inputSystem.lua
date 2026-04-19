@@ -4,6 +4,9 @@
 
 local System = require("01_core.system")
 
+local sqrt = math.sqrt
+local abs  = math.abs
+
 local InputSystem = System.new("Input", {"Input", "Velocity"},
     function(ecs, dt, entities)
         for _, entityId in ipairs(entities) do
@@ -34,7 +37,7 @@ local InputSystem = System.new("Input", {"Input", "Velocity"},
                     local dash = ecs:getComponent(entityId, "Dash")
                     if input.dash then
                         -- 이동 방향으로 대쉬 (입력 없으면 위쪽)
-                        if math.abs(input.moveX) > 0.01 or math.abs(input.moveY) > 0.01 then
+                        if abs(input.moveX) > 0.01 or abs(input.moveY) > 0.01 then
                             dash.dirX = input.moveX
                             dash.dirY = input.moveY
                         else
@@ -55,7 +58,7 @@ local InputSystem = System.new("Input", {"Input", "Velocity"},
 
             -- 입력 → Velocity 반영 (대각선 보정)
             local mx, my = input.moveX, input.moveY
-            local magnitude = math.sqrt(mx * mx + my * my)
+            local magnitude = sqrt(mx * mx + my * my)
             if magnitude > 0 then
                 velocity.vx = (mx / magnitude) * velocity.speed
                 velocity.vy = (my / magnitude) * velocity.speed

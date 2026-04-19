@@ -4,6 +4,8 @@
 
 local System = require("01_core.system")
 
+local floor = math.floor
+
 local BLINK_THRESHOLD = 2.0   -- seconds before death to start blinking
 local BLINK_INTERVAL  = 0.15  -- blink toggle interval
 
@@ -19,7 +21,7 @@ local LifeSpanSystem = System.new("LifeSpan", {"LifeSpan"},
                 local renderable = ecs:getComponent(entityId, "Renderable")
                 if renderable and ecs:getComponent(entityId, "EnemyAI") then
                     -- Toggle visible at BLINK_INTERVAL
-                    local phase = math.floor(lifespan.time / BLINK_INTERVAL)
+                    local phase = floor(lifespan.time / BLINK_INTERVAL)
                     renderable.visible = (phase % 2 == 0)
                 end
             end

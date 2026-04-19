@@ -4,6 +4,9 @@
 local System = require("01_core.system")
 local world  = require("01_core.world")
 
+local max = math.max
+local min = math.min
+
 local BoundarySystem = System.new("Boundary", {"Transform", "WorldBound"},
     function(ecs, dt, entities)
         local worldLeft, worldBottom, worldRight, worldTop = world.getBounds()
@@ -13,17 +16,16 @@ local BoundarySystem = System.new("Boundary", {"Transform", "WorldBound"},
             local worldBound = ecs:getComponent(entityId, "WorldBound")
 
             if worldBound.enabled then
-                -- Collider 반지름 고려 (있으면)
                 local radius = 0
                 local collider = ecs:getComponent(entityId, "Collider")
                 if collider then
                     radius = collider.radius or 0
                 end
 
-                transform.x = math.max(worldLeft   + radius,
-                              math.min(worldRight  - radius, transform.x))
-                transform.y = math.max(worldBottom + radius,
-                              math.min(worldTop    - radius, transform.y))
+                transform.x = max(worldLeft   + radius,
+                              min(worldRight  - radius, transform.x))
+                transform.y = max(worldBottom + radius,
+                              min(worldTop    - radius, transform.y))
             end
         end
     end

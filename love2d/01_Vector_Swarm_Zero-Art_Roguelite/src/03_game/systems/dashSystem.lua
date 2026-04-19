@@ -4,6 +4,8 @@
 
 local System = require("01_core.system")
 
+local sqrt = math.sqrt
+
 local GHOST_COUNT    = 4
 local GHOST_DURATION = 0.4
 
@@ -42,7 +44,7 @@ local DashSystem = System.new("Dash", {"Dash", "Transform", "Health"},
                 end
 
                 local dirX, dirY = dash.dirX, dash.dirY
-                local mag = math.sqrt(dirX * dirX + dirY * dirY)
+                local mag = sqrt(dirX * dirX + dirY * dirY)
                 if mag < 0.01 then
                     goto nextEntity
                 end

@@ -98,9 +98,12 @@ local function overlaps(cx, cy, r)
 end
 
 -- Place a single circle (returns true if placed)
+local sqrt = math.sqrt
+local pi   = math.pi
+
 local function placeCircle(i)
     local area = A0 * i ^ (-currentC)
-    local r = math.sqrt(area / math.pi)
+    local r = sqrt(area / pi)
     if r < MIN_RADIUS then return false end
 
     for _ = 1, MAX_ATTEMPTS do

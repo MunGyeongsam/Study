@@ -6,9 +6,20 @@
 
 local System = require("01_core.system")
 
-local sin = math.sin
-local cos = math.cos
-local pi2 = math.pi * 2
+local sin   = math.sin
+local cos   = math.cos
+local sqrt  = math.sqrt
+local atan2 = math.atan2
+local pi    = math.pi
+local pi2   = pi * 2
+
+-- 원형 배치 공통 헬퍼: count발을 baseAngle부터 등간격 발사
+local function spawnRing(pool, ox, oy, count, speed, baseAngle, opts)
+    for i = 0, count - 1 do
+        local angle = baseAngle + (i / count) * pi2
+        pool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
+    end
+end
 
 local function createBulletEmitterSystem(bulletPool, getPlayerPos)
 
@@ -29,6 +40,7 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                     local pattern = emitter.pattern
                     local ox, oy  = transform.x, transform.y
                     local speed   = emitter.bulletSpeed
+                    local count   = emitter.bulletCount
                     local opts    = {
                         maxLifetime = emitter.bulletLifetime,
                         radius      = emitter.bulletRadius,
@@ -37,39 +49,28 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                     }
 
                     if pattern == "circle" then
-                        local count = emitter.bulletCount
-                        for i = 0, count - 1 do
-                            local angle = (i / count) * pi2
-                            bulletPool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
-                        end
+                        spawnRing(bulletPool, ox, oy, count, speed, 0, opts)
 
                     elseif pattern == "spiral" then
-                        local count = emitter.bulletCount
-                        for i = 0, count - 1 do
-                            local angle = emitter.angle + (i / count) * pi2
-                            bulletPool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
-                        end
+                        spawnRing(bulletPool, ox, oy, count, speed, emitter.angle, opts)
                         emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
 
                     elseif pattern == "aimed" then
-                        -- Aimed at player position
                         local tx, ty = getPlayerPos()
                         if tx and ty then
                             local dx = tx - ox
                             local dy = ty - oy
-                            local dist = math.sqrt(dx * dx + dy * dy)
+                            local dist = sqrt(dx * dx + dy * dy)
                             if dist > 0 then
                                 dx, dy = dx / dist, dy / dist
                             else
                                 dx, dy = 0, -1
                             end
-                            -- Spread: emit bulletCount aimed bullets with slight angle offset
-                            local count = emitter.bulletCount
                             if count <= 1 then
                                 bulletPool:spawn(ox, oy, dx * speed, dy * speed, opts)
                             else
-                                local spread = 0.3  -- total spread in radians
-                                local baseAngle = math.atan2(dy, dx)
+                                local spread = 0.3
+                                local baseAngle = atan2(dy, dx)
                                 for i = 0, count - 1 do
                                     local offset = -spread / 2 + (i / (count - 1)) * spread
                                     local a = baseAngle + offset
@@ -79,59 +80,33 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                         end
 
                     elseif pattern == "wave" then
-                        -- Sinusoidal wave: bullets travel downward with sine offset
-                        local count = emitter.bulletCount
-                        local baseAngle = emitter.angle
                         for i = 0, count - 1 do
-                            local a = baseAngle + (i / count) * pi2
-                            local vx = sin(a) * speed * 0.3
-                            local vy = -speed
-                            bulletPool:spawn(ox, oy, vx, vy, opts)
+                            local a = emitter.angle + (i / count) * pi2
+                            bulletPool:spawn(ox, oy, sin(a) * speed * 0.3, -speed, opts)
                         end
                         emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
 
                     elseif pattern == "grid" then
-                        -- Grid: 8-direction cross (cardinal + diagonal)
-                        local count = emitter.bulletCount  -- typically 8
-                        for i = 0, count - 1 do
-                            local angle = (i / count) * pi2
-                            bulletPool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
-                        end
+                        spawnRing(bulletPool, ox, oy, count, speed, 0, opts)
 
                     elseif pattern == "ring_pulse" then
-                        -- Ring Pulse: 원형 발사 + 속도 변조로 맥동 레이어 생성
-                        -- 매 발사마다 회전 + 속도가 다른 층이 겹쳐 펄스 느낌
-                        local count = emitter.bulletCount
                         local pulse = 0.4 + 0.6 * (0.5 + 0.5 * sin(emitter.angle * 3))
-                        for i = 0, count - 1 do
-                            local angle = emitter.angle + (i / count) * pi2
-                            local s = speed * pulse
-                            bulletPool:spawn(ox, oy, cos(angle) * s, sin(angle) * s, opts)
-                        end
+                        spawnRing(bulletPool, ox, oy, count, speed * pulse, emitter.angle, opts)
                         emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
 
                     elseif pattern == "cross" then
-                        -- Cross: 십자(+) ↔ 대각(×) 교대 발사. 틈새 읽기 재미
-                        for i = 0, 3 do
-                            local angle = emitter.angle + i * (pi2 / 4)
-                            bulletPool:spawn(ox, oy, cos(angle) * speed, sin(angle) * speed, opts)
-                        end
-                        -- 다음 발사 시 45° 회전 (+ ↔ × 교대)
-                        emitter.angle = (emitter.angle + math.pi / 4) % pi2
+                        spawnRing(bulletPool, ox, oy, 4, speed, emitter.angle, opts)
+                        emitter.angle = (emitter.angle + pi / 4) % pi2
 
                     elseif pattern == "orbit_shot" then
-                        -- Orbit Shot: 발사 지점 주위를 공전 → 일정 시간 후 접선 사출
-                        local count = emitter.bulletCount
-                        local orbitR = emitter.orbitRadius or 0.8
+                        local orbitR   = emitter.orbitRadius or 0.8
                         local orbitSpd = emitter.orbitSpeed or 4.0
-                        local orbitT = emitter.orbitTime or 1.2
+                        local orbitT   = emitter.orbitTime or 1.2
                         for i = 0, count - 1 do
                             local angle = emitter.angle + (i / count) * pi2
-                            -- 공전 시작 위치에 spawn, 초기 속도는 접선 (사출 시 사용)
-                            local startX = ox + cos(angle) * orbitR
-                            local startY = oy + sin(angle) * orbitR
                             local tangent = orbitSpd * orbitR
-                            bulletPool:spawn(startX, startY,
+                            bulletPool:spawn(
+                                ox + cos(angle) * orbitR, oy + sin(angle) * orbitR,
                                 -sin(angle) * tangent, cos(angle) * tangent,
                                 { maxLifetime = opts.maxLifetime, radius = opts.radius,
                                   color = opts.color, layer = "enemy_bullet",
@@ -142,8 +117,6 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                         emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
 
                     elseif pattern == "return_shot" then
-                        -- Return Shot: 발사 → 감속 → 반전 가속. 부메랑 효과
-                        local count = emitter.bulletCount
                         local retTime = emitter.returnTime or 0.8
                         for i = 0, count - 1 do
                             local angle = emitter.angle + (i / count) * pi2

@@ -58,10 +58,7 @@ local FocusSystem = System.new("Focus", {"Focus", "Collider", "Velocity"},
                 end
             end
 
-            -- 디버그에 포커스 정보 등록 (한 번만)
-            if not focus._debugRegistered then
-                focus._debugRegistered = true
-            end
+
         end
     end
 )

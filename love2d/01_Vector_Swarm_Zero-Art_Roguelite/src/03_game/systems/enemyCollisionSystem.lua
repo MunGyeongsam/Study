@@ -5,10 +5,12 @@
 
 local System = require("01_core.system")
 
-local cos = math.cos
-local sin = math.sin
-local pi2 = math.pi * 2
+local cos    = math.cos
+local sin    = math.sin
+local floor  = math.floor
+local max    = math.max
 local random = math.random
+local pi2    = math.pi * 2
 
 -- 적 사망 시 파편 파티클 스폰
 local function spawnDeathDebris(bulletPool, x, y, color, radius)
@@ -30,14 +32,26 @@ local function spawnDeathDebris(bulletPool, x, y, color, radius)
     end
 end
 
+-- 보스 사망 시 XP 오브 버스트 스폰
+local function spawnBossXpBurst(ecs, entityId, ex, ey, onEnemyDeath)
+    local bossTag = ecs:getComponent(entityId, "BossTag")
+    local orbCount = 25
+    local enemyAI = ecs:getComponent(entityId, "EnemyAI")
+    local xpPerOrb = max(1, floor(((enemyAI and enemyAI.xpValue) or 50) / orbCount + 0.5))
+    for o = 1, orbCount do
+        local angle = (o / orbCount) * pi2
+        local dist = 0.3 + random() * 0.5
+        onEnemyDeath(ecs, ex + cos(angle) * dist, ey + sin(angle) * dist, xpPerOrb)
+    end
+    bossTag.defeated = true
+end
+
 local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
 
     local EnemyCollisionSystem = System.new("EnemyCollision", {"EnemyAI", "Transform", "Collider", "Health"},
         function(ecs, dt, entities)
             if bulletPool.activeCount == 0 then return end
 
-            -- Collect player bullet indices for this frame
-            -- (avoid checking enemy bullets against enemies)
             for _, entityId in ipairs(entities) do
                 local health = ecs:getComponent(entityId, "Health")
                 if not health.alive then goto nextEnemy end
@@ -51,7 +65,6 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
                 while i <= bulletPool.activeCount do
                     local b = bulletPool.active[i]
 
-                    -- Only check player bullets
                     if b.layer ~= "player_bullet" then
                         i = i + 1
                         goto nextBullet
@@ -71,29 +84,18 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
 
                         if health.hp <= 0 then
                             health.alive = false
-                            -- Boss: drop multiple XP orbs in burst pattern
-                            local bossTag = ecs:getComponent(entityId, "BossTag")
-                            if bossTag and onEnemyDeath then
-                                local orbCount = 25
-                                local xpPerOrb = math.floor((bossTag and ecs:getComponent(entityId, "EnemyAI").xpValue or 50) / orbCount + 0.5)
-                                xpPerOrb = math.max(1, xpPerOrb)
-                                for o = 1, orbCount do
-                                    local angle = (o / orbCount) * math.pi * 2
-                                    local dist = 0.3 + math.random() * 0.5
-                                    onEnemyDeath(ecs, ex + math.cos(angle) * dist, ey + math.sin(angle) * dist, xpPerOrb)
-                                end
-                                -- Mark defeated (BossSystem reads this)
-                                bossTag.defeated = true
-                                -- 보스 사망 debris (큰 파편)
-                                local rend = ecs:getComponent(entityId, "Renderable")
+                            local rend = ecs:getComponent(entityId, "Renderable")
+
+                            -- Boss death
+                            if ecs:getComponent(entityId, "BossTag") and onEnemyDeath then
+                                spawnBossXpBurst(ecs, entityId, ex, ey, onEnemyDeath)
                                 if rend then
                                     spawnDeathDebris(bulletPool, ex, ey, rend.color, eRadius)
                                 end
-                                -- Don't destroyEntity — let StageManager handle cleanup
                                 goto nextEnemy
                             end
-                            -- Normal enemy: debris + XP drop + destroy
-                            local rend = ecs:getComponent(entityId, "Renderable")
+
+                            -- Normal enemy death: debris + XP + destroy
                             if rend then
                                 spawnDeathDebris(bulletPool, ex, ey, rend.color, eRadius)
                             end
