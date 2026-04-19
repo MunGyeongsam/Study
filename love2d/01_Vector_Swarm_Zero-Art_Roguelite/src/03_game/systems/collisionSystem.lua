@@ -60,8 +60,10 @@ local function createCollisionSystem(bulletPool)
 
                         if health.hp <= 0 then
                             health.alive = false
+                            screenShake(0.25, 0.4)
                             logInfo("[COLLISION] Player destroyed!")
                         else
+                            screenShake(0.08, 0.15)
                             logInfo(string.format("[COLLISION] Player hit! HP: %d/%d", health.hp, health.maxHp))
                         end
 

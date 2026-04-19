@@ -43,6 +43,9 @@ function love.load()
     local orthographicSize = 5
     cameraManager.init(orthographicSize)
 
+    -- Screen shake 글로벌 등록
+    screenShake = cameraManager.shake
+
     -- Bloom 포스트프로세싱 초기화
     bloom.init()
     
@@ -254,8 +257,9 @@ function love.update(dt)
         local stageState = ecsManager.stageManager.state
         if stageState == "boss_clear" and not ecsManager.stageManager.bossRewardsApplied then
             ecsManager.stageManager.bossRewardsApplied = true
-            -- Hit-stop
+            -- Hit-stop + screen shake
             hitStopTimer = 0.2
+            screenShake(0.35, 0.5)
             -- Recover player: HP full, dash/focus reset
             local w = ecsManager.getWorld()
             local pEnts = w:queryEntities({"PlayerTag", "Health"})

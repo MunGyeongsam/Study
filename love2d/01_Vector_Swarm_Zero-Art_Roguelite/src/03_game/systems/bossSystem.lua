@@ -35,6 +35,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
         emitter.active = false
         if boss.introTimer >= boss.introDuration then
             boss.introComplete = true
+            screenShake(0.12, 0.25)
             local phasePatterns = boss.patterns[boss.phase]
             applyPattern(emitter, phasePatterns and phasePatterns[1])
             logInfo(string.format("[BOSS] %s intro complete, phase %d active", boss.bossType, boss.phase))
@@ -53,6 +54,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
             boss.patternIndex = 1
             boss.patternTimer = 0
             boss.minionTimer = 0
+            screenShake(0.18, 0.3)
 
             if bulletPool then
                 bulletPool:clearLayer("enemy_bullet")
