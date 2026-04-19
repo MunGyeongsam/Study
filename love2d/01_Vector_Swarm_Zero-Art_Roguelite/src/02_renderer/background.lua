@@ -51,10 +51,6 @@ end
 -- ─── Spatial hash helpers ────────────────────────────────────────
 local floor = math.floor
 
-local function cellKey(x, y)
-    return floor(x / CELL_SIZE) .. "," .. floor(y / CELL_SIZE)
-end
-
 -- Register a circle index into all cells it overlaps
 local function gridInsert(idx, cx, cy, r)
     local gx0 = floor((cx - r) / CELL_SIZE)
