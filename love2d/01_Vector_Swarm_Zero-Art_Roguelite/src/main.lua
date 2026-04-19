@@ -10,6 +10,7 @@ local debug = require("00_common.debug")
 local screenDebugDraw = require("00_common.gridDebugDraw")
 local world = require("01_core.world")
 local cameraManager = require("02_renderer.cameraManager")
+local bloom = require("02_renderer.bloom")
 local uiManager = require("04_ui.uiManager")  -- UI 시스템 추가
 local player = require("03_game.entities.player")  -- 플레이어 엔티티
 local ecsManager = require("01_core.ecsManager")  -- ECS 시스템
@@ -40,6 +41,9 @@ function love.load()
     -- 카메라 매니저 초기화
     local orthographicSize = 5
     cameraManager.init(orthographicSize)
+
+    -- Bloom 포스트프로세싱 초기화
+    bloom.init()
     
     -- Initialize core systems
     world.init()
@@ -149,7 +153,9 @@ function love.load()
     end);
 
     debug.add("debug keys", function()
-        return string.format("%10s : GOD[F7]:%s", "debug", godMode and "ON" or "off")
+        return string.format("%10s : GOD[F7]:%s BLOOM[F6]:%s", "debug",
+            godMode and "ON" or "off",
+            bloom.isEnabled() and "ON" or "off")
     end);
 
     debug.toggleConsole()   -- debug watch panel auto-show (dev)
@@ -355,9 +361,16 @@ local function drawWorld()
 end
 
 function love.draw()
+    -- Bloom: 씬 캡처 시작
+    bloom.beginCapture()
+
     -- 월드 렌더링 (활성 카메라 적용)
     cameraManager.draw(drawWorld)
     
+    -- Bloom: 씬 캡처 종료 + 합성 출력
+    bloom.endCapture()
+    bloom.draw()
+
     -- UI 렌더링 (스크린 좌표계) 
     uiManager.draw()
     
@@ -396,6 +409,8 @@ function love.keypressed(key)
         screenDebugDraw.toggle()    -- F4: 스크린 그리드 토글
     elseif key == "f5" then
         cameraManager.toggle()      -- F5: 게임/디버그 카메라 전환
+    elseif key == "f6" then
+        bloom.toggle()              -- F6: Bloom 토글
     elseif key == "f7" then
         godMode = not godMode       -- F7: 무적 모드 토글
         logInfo(string.format("[DEBUG] God mode: %s", godMode and "ON" or "OFF"))
@@ -519,5 +534,6 @@ end
 function love.resize(w, h)
     logger.info(string.format("Screen resized to %dx%d", w, h))
     uiManager.updateLayout()
+    bloom.resize(w, h)
     log(string.format("New pixels per unit: %.1f", cameraManager.getActive():getPixelsPerUnit()))
 end
