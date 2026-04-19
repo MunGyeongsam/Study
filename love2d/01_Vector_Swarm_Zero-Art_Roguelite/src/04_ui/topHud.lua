@@ -4,6 +4,8 @@
 local logger = require("00_common.logger")
 local mobileLayout = require("04_ui.mobileLayout")
 
+local _max = math.max
+
 local topHud = {}
 
 -- 게임 데이터
@@ -195,7 +197,7 @@ function topHud.drawBossHpBar()
     lg.rectangle("fill", barX - 1, barY - 1, barW + 2, barH + 2)
 
     -- HP fill
-    local ratio = math.max(0, gameData.bossHp / math.max(1, gameData.bossMaxHp))
+    local ratio = _max(0, gameData.bossHp / _max(1, gameData.bossMaxHp))
     -- Color: green→yellow→red
     local r = ratio < 0.5 and 1 or (1 - (ratio - 0.5) * 2)
     local g = ratio > 0.5 and 1 or (ratio * 2)

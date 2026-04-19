@@ -10,6 +10,9 @@
 
 local logger = {}
 
+local _floor = math.floor
+local _max   = math.max
+
 -- Private variables
 local originalPrint = print
 local logFile = nil
@@ -130,8 +133,8 @@ function logger.drawConsole(font)
 
     -- messages
     local y = 10
-    local maxLines = math.floor((consoleHeight - 20) / lineHeight)
-    local startIdx = math.max(1, #consoleMessages - maxLines + 1)
+    local maxLines = _floor((consoleHeight - 20) / lineHeight)
+    local startIdx = _max(1, #consoleMessages - maxLines + 1)
 
     for i = startIdx, #consoleMessages do
         if y + lineHeight > consoleHeight then break end

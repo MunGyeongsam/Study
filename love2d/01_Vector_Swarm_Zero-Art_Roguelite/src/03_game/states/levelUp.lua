@@ -4,6 +4,12 @@
 
 local gameState = require("03_game.states.gameState")
 
+local _max    = math.max
+local _min    = math.min
+local _floor  = math.floor
+local _random = math.random
+local _sin    = math.sin
+
 local LevelUp = {}
 
 -- ===== 업그레이드 옵션 풀 =====
@@ -40,7 +46,7 @@ local UPGRADE_POOL = {
         apply = function(ecs, playerId, factor)
             local w = ecs:getComponent(playerId, "PlayerWeapon")
             if w then
-                local bonus = math.max(1, math.floor(1 * factor + 0.5))
+                local bonus = _max(1, _floor(1 * factor + 0.5))
                 w.bulletDamage = w.bulletDamage + bonus
             end
         end,
@@ -164,11 +170,11 @@ local function pickRandomOptions(count)
     end
     -- Fisher-Yates shuffle
     for i = #pool, 2, -1 do
-        local j = math.random(1, i)
+        local j = _random(1, i)
         pool[i], pool[j] = pool[j], pool[i]
     end
     local result = {}
-    for i = 1, math.min(count, #pool) do
+    for i = 1, _min(count, #pool) do
         result[i] = pool[i]
     end
     return result
@@ -189,10 +195,10 @@ function LevelUp.show(ecs, playerId)
         if opt.id == "bullet_count" or opt.id == "max_hp" then
             opt.displayName = opt.name .. " +1"
         elseif opt.id == "bullet_damage" then
-            local bonus = math.max(1, math.floor(1 * factor + 0.5))
+            local bonus = _max(1, _floor(1 * factor + 0.5))
             opt.displayName = opt.name .. string.format(" +%d", bonus)
         else
-            local pct = math.floor(opt.baseValue * factor * 100 + 0.5)
+            local pct = _floor(opt.baseValue * factor * 100 + 0.5)
             if opt.id == "dash_cooldown" then
                 opt.displayName = opt.name .. string.format(" -%d%%", pct)
             else
@@ -313,7 +319,7 @@ function LevelUp.draw()
 
     -- 안내 텍스트
     lg.setFont(descFont)
-    lg.setColor(1, 1, 1, 0.6 + 0.4 * math.sin(love.timer.getTime() * 3))
+    lg.setColor(1, 1, 1, 0.6 + 0.4 * _sin(love.timer.getTime() * 3))
     local hint = "Press 1, 2, or 3 to choose"
     local hw = descFont:getWidth(hint)
     lg.print(hint, (w - hw) / 2, h * 0.75)

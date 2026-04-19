@@ -50,6 +50,8 @@ end
 
 -- ─── Spatial hash helpers ────────────────────────────────────────
 local floor = math.floor
+local _min  = math.min
+local _max  = math.max
 
 -- Register a circle index into all cells it overlaps
 local function gridInsert(idx, cx, cy, r)
@@ -153,7 +155,7 @@ function M.init(stageNum)
     A0 = totalArea / zeta
 
     -- Phase 1: Place big circles immediately
-    for i = 1, math.min(BIG_THRESHOLD, MAX_CIRCLES) do
+    for i = 1, _min(BIG_THRESHOLD, MAX_CIRCLES) do
         placeCircle(i)
         nextIndex = i + 1
     end
@@ -219,7 +221,7 @@ function M.draw(camera)
                         drawn[idx] = true
                         local c = circles[idx]
                         -- Alpha scales with radius (bigger = more subtle, smaller = brighter)
-                        local alpha = BASE_ALPHA + (1 - math.min(c.r / 2, 1)) * 0.08
+                        local alpha = BASE_ALPHA + (1 - _min(c.r / 2, 1)) * 0.08
                         lg.setColor(0.15, 0.35, 0.4, alpha)
 
                         if drawStyle == "filled" then
@@ -263,10 +265,10 @@ function M.cycleStyle()
 end
 
 function M.adjustC(delta)
-    currentC = math.max(1.05, math.min(2.0, currentC + delta))
+    currentC = _max(1.05, _min(2.0, currentC + delta))
     logger.info(string.format("[BG] c = %.2f (regenerating...)", currentC))
     -- Regenerate with new c but same seed base
-    local stageNum = math.floor((seed - 67890) / 12345)
+    local stageNum = floor((seed - 67890) / 12345)
     M.init(stageNum)
 end
 

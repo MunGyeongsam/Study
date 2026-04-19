@@ -3,6 +3,13 @@
 
 local logger = require("00_common.logger")
 
+local _sqrt  = math.sqrt
+local _max   = math.max
+local _min   = math.min
+local _pi    = math.pi
+local _pi2   = math.pi * 2
+local _atan2 = math.atan2
+
 -- ===== 로깅 래퍼 (직접 할당) =====
 log = logger.info
 logInfo = logger.info
@@ -16,12 +23,12 @@ logError = logger.error
 function distance(x1, y1, x2, y2)
     local dx = x2 - x1
     local dy = y2 - y1
-    return math.sqrt(dx * dx + dy * dy)
+    return _sqrt(dx * dx + dy * dy)
 end
 
 -- 값 클램핑
 function clamp(value, min, max)
-    return math.max(min, math.min(max, value))
+    return _max(min, _min(max, value))
 end
 
 -- 선형 보간
@@ -31,19 +38,19 @@ end
 
 -- 각도 정규화 (0 ~ 2π)
 function normalizeAngle(angle)
-    while angle < 0 do angle = angle + 2 * math.pi end
-    while angle >= 2 * math.pi do angle = angle - 2 * math.pi end
-    return angle
+    local a = angle % _pi2
+    if a < 0 then a = a + _pi2 end
+    return a
 end
 
 -- 호도법을 도로 변환
 function toDegrees(radians)
-    return radians * 180 / math.pi
+    return radians * 180 / _pi
 end
 
 -- 도를 호도법으로 변환  
 function toRadians(degrees)
-    return degrees * math.pi / 180
+    return degrees * _pi / 180
 end
 
 -- ===== 색상 유틸리티 =====
@@ -66,7 +73,7 @@ end
 
 -- 벡터 정규화
 function normalize(x, y)
-    local length = math.sqrt(x * x + y * y)
+    local length = _sqrt(x * x + y * y)
     if length == 0 then return 0, 0 end
     return x / length, y / length
 end
@@ -78,7 +85,7 @@ end
 
 -- 두 점 사이의 각도
 function angleBetween(x1, y1, x2, y2)
-    return math.atan2(y2 - y1, x2 - x1)
+    return _atan2(y2 - y1, x2 - x1)
 end
 
 -- ===== 화면 유틸리티 =====

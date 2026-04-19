@@ -72,6 +72,9 @@ local x3, y3 = m2:transformPoint(1, 2) -- x3=96, y3=52
 -- Matrix.new(), clone(), mul(), transformPoint(), translate(), scale(), rotate(), shear()
 ]]--
 
+local _cos = math.cos
+local _sin = math.sin
+
 local Matrix = {}
 Matrix.__index = Matrix
 
@@ -158,7 +161,7 @@ end
 -- 회전(rotation) 변환 적용
 -- angle: 회전 각도(라디안, +는 반시계 방향)
 function Matrix:rotate(angle)
-    local c, s = math.cos(angle), math.sin(angle)
+    local c, s = _cos(angle), _sin(angle)
     local r = Matrix.new({
         c, -s, 0,
         s,  c, 0,

@@ -3,6 +3,8 @@
 
 local lg = love.graphics
 
+local _floor = math.floor
+
 local bloom = {}
 
 -- State
@@ -55,7 +57,7 @@ vec4 effect(vec4 color, Image tex, vec2 uv, vec2 px) {
 
 function bloom.init()
     local w, h = lg.getDimensions()
-    local halfW, halfH = math.floor(w / 2), math.floor(h / 2)
+    local halfW, halfH = _floor(w / 2), _floor(h / 2)
 
     -- Full-res scene capture
     sceneCanvas = lg.newCanvas(w, h)
@@ -167,7 +169,7 @@ end
 
 --- Handle window resize
 function bloom.resize(w, h)
-    local halfW, halfH = math.floor(w / 2), math.floor(h / 2)
+    local halfW, halfH = _floor(w / 2), _floor(h / 2)
     sceneCanvas  = lg.newCanvas(w, h)
     brightCanvas = lg.newCanvas(halfW, halfH)
     blurCanvasH  = lg.newCanvas(halfW, halfH)

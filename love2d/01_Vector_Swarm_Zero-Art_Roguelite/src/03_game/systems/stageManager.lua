@@ -6,6 +6,11 @@
 local world = require("01_core.world")
 local EntityFactory = require("03_game.entities.entityFactory")
 
+local _min    = math.min
+local _max    = math.max
+local _floor  = math.floor
+local _random = math.random
+
 local StageManager = {}
 StageManager.__index = StageManager
 
@@ -80,7 +85,7 @@ function StageManager:_getStageConfig()
     -- Auto-generate for infinite stages
     local s = self.stage
     return {
-        waves     = math.min(5 + math.floor((s - 5) / 2), 8),
+        waves     = _min(5 + _floor((s - 5) / 2), 8),
         spawnDirs = {top = 0.4, left = 0.2, right = 0.2, bottom = 0.2},
         types     = ALL_ENEMY_TYPES,
     }
@@ -90,11 +95,11 @@ end
 function StageManager:getDifficulty()
     local s = self.stage
     return {
-        enemyCount      = math.min(3 + (s - 1) * 2, 15),
+        enemyCount      = _min(3 + (s - 1) * 2, 15),
         enemyHpMult     = 1.0 + (s - 1) * 0.15,
-        enemySpeedMult  = math.min(1.0 + (s - 1) * 0.1, 2.0),
-        bulletSpeedMult = math.min(1.0 + (s - 1) * 0.05, 1.5),
-        spawnDelay      = math.max(1.5, 3.0 - (s - 1) * 0.3),
+        enemySpeedMult  = _min(1.0 + (s - 1) * 0.1, 2.0),
+        bulletSpeedMult = _min(1.0 + (s - 1) * 0.05, 1.5),
+        spawnDelay      = _max(1.5, 3.0 - (s - 1) * 0.3),
     }
 end
 
@@ -218,7 +223,7 @@ end
 -- Pick a spawn direction based on stage config probability table
 function StageManager:_pickSpawnDirection(config)
     local dirs = config.spawnDirs
-    local r = math.random()
+    local r = _random()
     local cumulative = 0
     for dir, weight in pairs(dirs) do
         cumulative = cumulative + weight
@@ -235,22 +240,22 @@ function StageManager:_getSpawnPosition(direction, px, py)
     local spawnX, spawnY
 
     if direction == "top" then
-        spawnX = px + (math.random() - 0.5) * 8
-        spawnY = py + 6 + math.random() * 2
+        spawnX = px + (_random() - 0.5) * 8
+        spawnY = py + 6 + _random() * 2
     elseif direction == "bottom" then
-        spawnX = px + (math.random() - 0.5) * 8
-        spawnY = py - 6 - math.random() * 2
+        spawnX = px + (_random() - 0.5) * 8
+        spawnY = py - 6 - _random() * 2
     elseif direction == "left" then
-        spawnX = px - 3.5 - math.random() * 1.5
-        spawnY = py + (math.random() - 0.5) * 8
+        spawnX = px - 3.5 - _random() * 1.5
+        spawnY = py + (_random() - 0.5) * 8
     elseif direction == "right" then
-        spawnX = px + 3.5 + math.random() * 1.5
-        spawnY = py + (math.random() - 0.5) * 8
+        spawnX = px + 3.5 + _random() * 1.5
+        spawnY = py + (_random() - 0.5) * 8
     end
 
     -- Clamp to world bounds (with small margin)
-    spawnX = math.max(left + 0.5, math.min(right - 0.5, spawnX))
-    spawnY = math.max(bottom + 0.5, math.min(top - 0.5, spawnY))
+    spawnX = _max(left + 0.5, _min(right - 0.5, spawnX))
+    spawnY = _max(bottom + 0.5, _min(top - 0.5, spawnY))
 
     return spawnX, spawnY
 end
@@ -268,7 +273,7 @@ function StageManager:_pickEnemyType(config, direction)
         end
         if #safe > 0 then types = safe end
     end
-    return types[math.random(#types)]
+    return types[_random(#types)]
 end
 
 function StageManager:_spawnWave(config)
@@ -282,7 +287,7 @@ function StageManager:_spawnWave(config)
     local count = diff.enemyCount
     -- Ramp within stage: early waves fewer, last wave full count
     local waveRatio = self.wave / config.waves
-    count = math.max(2, math.floor(count * (0.5 + 0.5 * waveRatio)))
+    count = _max(2, _floor(count * (0.5 + 0.5 * waveRatio)))
 
     for i = 1, count do
         local direction = self:_pickSpawnDirection(config)
@@ -291,10 +296,10 @@ function StageManager:_spawnWave(config)
 
         if enemyType == "bit" then
             -- Bit: swarm spawn (3~5 clustered around position)
-            local swarmCount = math.random(3, 5)
+            local swarmCount = _random(3, 5)
             for _ = 1, swarmCount do
-                local ox = spawnX + (math.random() - 0.5) * 0.6
-                local oy = spawnY + (math.random() - 0.5) * 0.6
+                local ox = spawnX + (_random() - 0.5) * 0.6
+                local oy = spawnY + (_random() - 0.5) * 0.6
                 self.ecsManager.createEnemy(ox, oy, "bit", diff)
             end
         else
@@ -387,14 +392,14 @@ function StageManager:draw()
     end
 
     if self.state == StageManager.STATE_BOSS_CLEAR then
-        local alpha = math.min(1, self.clearTimer / 0.3)
+        local alpha = _min(1, self.clearTimer / 0.3)
         local sub = string.format("%s — PURIFIED", self.bossType or "")
         drawOverlay("BOSS CLEAR!", {1, 0.85, 0.2}, alpha, sub, 0.4, 0.35)
         return
     end
 
     -- Stage clear
-    local alpha = math.min(1, self.clearTimer / 0.3)
+    local alpha = _min(1, self.clearTimer / 0.3)
     local title = string.format("STAGE %d CLEAR!", self.stage)
     local sub = string.format("Waves: %d  Stage: %d", self.totalWaves, self.stage)
     drawOverlay(title, {0.2, 1, 0.4}, alpha, sub, 0.4, 0.4)

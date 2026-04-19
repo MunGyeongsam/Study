@@ -19,6 +19,8 @@ local PlayerXP      = require("03_game.components.playerXP")
 local XpOrb         = require("03_game.components.xpOrb")
 local BossTag       = require("03_game.components.bossTag")
 
+local _floor = math.floor
+
 local EntityFactory = {}
 
 -- Enemy type presets (세계관 기반 6종 — Worm 제외 5종 구현)
@@ -158,7 +160,7 @@ function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
         time = 15, destroyOffScreen = true,
     }))
 
-    local scaledHp = math.floor(preset.hp * hpMult + 0.5)
+    local scaledHp = _floor(preset.hp * hpMult + 0.5)
     local ai = preset.ai
     world:addComponent(entityId, "EnemyAI", EnemyAI.new({
         behavior       = ai.behavior,

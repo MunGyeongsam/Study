@@ -8,11 +8,12 @@ local lg = love.graphics
 local cos = math.cos
 local sin = math.sin
 local pi2 = math.pi * 2
+local halfPi = math.pi / 2
 
 -- Pre-built hexagon vertices (unit radius)
 local hexVerts = {}
 for i = 0, 5 do
-    local a = (i / 6) * pi2 - math.pi / 2  -- start from top
+    local a = (i / 6) * pi2 - halfPi  -- start from top
     hexVerts[i * 2 + 1] = cos(a)
     hexVerts[i * 2 + 2] = sin(a)
 end

@@ -7,6 +7,15 @@ local System = require("01_core.system")
 local worldMod = require("01_core.world")
 local EntityFactory = require("03_game.entities.entityFactory")
 
+local _pi     = math.pi
+local _cos    = math.cos
+local _sin    = math.sin
+local _floor  = math.floor
+local _random = math.random
+local _min    = math.min
+local _max    = math.max
+local _abs    = math.abs
+
 -- Helper: apply a pattern step to the BulletEmitter component
 local function applyPattern(emitter, step)
     if not step then return end
@@ -143,9 +152,9 @@ local function createBossSystem(bulletPool, getPlayerPos)
         local toSpawn = config.max - minionCount
         local world = ecs
         for i = 1, toSpawn do
-            local angle = (i / toSpawn) * math.pi * 2
-            local spawnX = transform.x + math.cos(angle) * 2.0
-            local spawnY = transform.y + math.sin(angle) * 2.0
+            local angle = (i / toSpawn) * _pi * 2
+            local spawnX = transform.x + _cos(angle) * 2.0
+            local spawnY = transform.y + _sin(angle) * 2.0
             EntityFactory.createEnemy(world, spawnX, spawnY, config.type or "basic",
                 { enemyHpMult = config.hpMult or 0.5 })
         end
@@ -171,15 +180,15 @@ local function createBossSystem(bulletPool, getPlayerPos)
             end
 
             if boss.teleporting and renderable then
-                renderable.visible = (math.floor(boss.teleportTimer * 10) % 2 == 0)
+                renderable.visible = (_floor(boss.teleportTimer * 10) % 2 == 0)
             end
 
             if boss.teleportTimer >= boss.teleportInterval then
                 local _, bottom, _, top = worldMod.getBounds()
-                local newX = left + margin + math.random() * (right - left - margin * 2)
-                local newY = (py or 0) + 2.0 + math.random() * 3.0
-                newY = math.min(newY, top - margin)
-                newY = math.max(newY, bottom + margin)
+                local newX = left + margin + _random() * (right - left - margin * 2)
+                local newY = (py or 0) + 2.0 + _random() * 3.0
+                newY = _min(newY, top - margin)
+                newY = _max(newY, bottom + margin)
 
                 transform.x = newX
                 transform.y = newY
@@ -197,9 +206,9 @@ local function createBossSystem(bulletPool, getPlayerPos)
         else
             -- Drift ping-pong (NULL, STACK, OVERFLOW P1-P2)
             if transform.x >= right - margin then
-                ai.driftVx = -math.abs(ai.driftVx or 0.4)
+                ai.driftVx = -_abs(ai.driftVx or 0.4)
             elseif transform.x <= left + margin then
-                ai.driftVx = math.abs(ai.driftVx or 0.4)
+                ai.driftVx = _abs(ai.driftVx or 0.4)
             end
 
             local targetOffset = (boss.bossType == "STACK") and 3.0 or 3.5

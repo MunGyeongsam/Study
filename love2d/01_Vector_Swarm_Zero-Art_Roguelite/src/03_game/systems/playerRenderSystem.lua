@@ -8,6 +8,7 @@ local lg = love.graphics
 local sqrt = math.sqrt
 local sin = math.sin
 local pi = math.pi
+local floor = math.floor
 
 -- ─── 헬퍼: 대쉬 고스트 트레일 ─────────────────────────────────
 local function drawGhosts(ghosts)
@@ -79,7 +80,7 @@ local PlayerRenderSystem = System.new("PlayerRender", {"PlayerTag", "Transform",
                 -- skip body rendering
             else
                 local health = ecs:getComponent(entityId, "Health")
-                local isBlinking = health and health.iTimer > 0 and math.floor(time * 10) % 2 == 0
+                local isBlinking = health and health.iTimer > 0 and floor(time * 10) % 2 == 0
 
                 if not isBlinking then
                     local x, y = transform.x, transform.y

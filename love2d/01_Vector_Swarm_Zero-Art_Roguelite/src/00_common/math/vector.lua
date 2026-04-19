@@ -30,6 +30,10 @@ print(Vector.cross(v, u)) -- 4
 v:makeUnit() -- v가 (0.6, 0.8)로 변경
 ]]--
 
+local _sqrt  = math.sqrt
+local _abs   = math.abs
+local _atan2 = math.atan2
+
 local Vector = {}
 Vector.__index = Vector
 
@@ -78,7 +82,7 @@ end
 Vector.sqlength = Vector.lengthSquared
 
 function Vector:length()
-    return math.sqrt(self:lengthSquared())
+    return _sqrt(self:lengthSquared())
 end
 
 function Vector:normalize(epsilon)
@@ -87,8 +91,8 @@ function Vector:normalize(epsilon)
     if lenSq < epsilon then
         return Vector.new(0, 0)
     end
-    local len = math.sqrt(lenSq)
-    if math.abs(len - 1) < epsilon then
+    local len = _sqrt(lenSq)
+    if _abs(len - 1) < epsilon then
         return self:clone()
     end
     return self / len
@@ -136,7 +140,7 @@ end
 --   (-1, 0) → π (180°)       → 왼쪽
 --   (0, -1) → -π/2 (-90°)    → 위
 function Vector:angle()
-    return math.atan2(self.y, self.x)
+    return _atan2(self.y, self.x)
 end
 
 -- In-place normalization: 자기 자신을 단위 벡터로 변환
@@ -147,8 +151,8 @@ function Vector:makeUnit(epsilon)
         self.x, self.y = 0, 0
         return self
     end
-    local len = math.sqrt(lenSq)
-    if math.abs(len - 1) < epsilon then
+    local len = _sqrt(lenSq)
+    if _abs(len - 1) < epsilon then
         return self
     end
     self.x = self.x / len

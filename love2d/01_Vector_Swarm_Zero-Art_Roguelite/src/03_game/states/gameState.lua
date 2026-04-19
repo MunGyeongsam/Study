@@ -4,6 +4,8 @@
 
 local GameState = {}
 
+local _sin = math.sin
+
 -- States
 GameState.PLAYING   = "playing"
 GameState.GAME_OVER = "game_over"
@@ -96,7 +98,7 @@ function GameState.draw()
 
     -- Restart prompt (after delay)
     if state.gameOverTimer >= state.restartDelay then
-        local alpha = 0.5 + 0.5 * math.sin(love.timer.getTime() * 3)
+        local alpha = 0.5 + 0.5 * _sin(love.timer.getTime() * 3)
         lg.setColor(1, 1, 1, alpha)
         local restartText = "Tap or press R to restart"
         local rw = scoreFont:getWidth(restartText)

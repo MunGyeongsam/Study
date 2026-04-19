@@ -3,6 +3,14 @@
 
 local ECS = require("01_core.ecs")
 
+local _random = math.random
+local _pi     = math.pi
+local _cos    = math.cos
+local _sin    = math.sin
+local _min    = math.min
+local _max    = math.max
+local _floor  = math.floor
+
 -- Systems (03_game/systems/)
 local InputSystem        = require("03_game.systems.inputSystem")
 local MovementSystem     = require("03_game.systems.movementSystem")
@@ -246,10 +254,10 @@ function ECSManager._registerBasicSystems()
     local onGraze = function(entityId, bx, by)
         -- 이펙트: 스침 파티클 2개 (짧은 선 느낌)
         for _ = 1, 2 do
-            local angle = math.random() * math.pi * 2
-            local speed = 1.5 + math.random() * 1.5
+            local angle = _random() * _pi * 2
+            local speed = 1.5 + _random() * 1.5
             ECSManager.bulletPool:spawn(bx, by,
-                math.cos(angle) * speed, math.sin(angle) * speed,
+                _cos(angle) * speed, _sin(angle) * speed,
                 { radius = 0.02, maxLifetime = 0.15,
                   color = {1, 1, 1, 0.8}, layer = "debris",
                   damping = 0.05, fadeAlpha = true })
@@ -257,7 +265,7 @@ function ECSManager._registerBasicSystems()
         -- 보상: 포커스 에너지 소량 회복
         local focus = ECSManager.world:getComponent(entityId, "Focus")
         if focus then
-            focus.energy = math.min(focus.energy + 0.3, focus.maxEnergy)
+            focus.energy = _min(focus.energy + 0.3, focus.maxEnergy)
         end
     end
     ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool, { onGraze = onGraze }))
@@ -266,7 +274,7 @@ function ECSManager._registerBasicSystems()
         -- XP 스케일링: 스테이지가 올라갈수록 XP 보상 증가
         local stage = gameState.getStageInfo()
         local xpMult = 1.0 + (stage - 1) * 0.15
-        local scaledXP = math.max(1, math.floor(xpValue * xpMult + 0.5))
+        local scaledXP = _max(1, _floor(xpValue * xpMult + 0.5))
         EntityFactory.createXpOrb(ecs, x, y, scaledXP)
     end
     ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath))
