@@ -5,6 +5,7 @@ description: |
   코드의 품질, 일관성, 보안 취약점, 성능 이슈 등을 자동으로 점검합니다.
   리뷰 결과를 구체적으로 피드백하며, 개선 방안도 제안합니다.
 tools: ["Read", "Grep", "Glob"]
+applySkill: [clean-code-guide, architecture-rules]
 model: opus
 ---
 

@@ -4,6 +4,7 @@ role: "불필요/중복 코드 자동 정리"
 description: |
   사용하지 않는 코드, 중복 코드, 불필요한 함수 등을 자동 탐지 및 제거합니다.
 tools: ["Read", "Write", "Grep"]
+applySkill: [clean-code-guide, architecture-rules]
 model: sonnet
 ---
 
