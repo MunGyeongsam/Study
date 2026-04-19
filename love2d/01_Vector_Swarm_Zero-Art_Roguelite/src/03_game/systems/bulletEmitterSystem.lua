@@ -118,6 +118,43 @@ local function createBulletEmitterSystem(bulletPool, getPlayerPos)
                         end
                         -- 다음 발사 시 45° 회전 (+ ↔ × 교대)
                         emitter.angle = (emitter.angle + math.pi / 4) % pi2
+
+                    elseif pattern == "orbit_shot" then
+                        -- Orbit Shot: 발사 지점 주위를 공전 → 일정 시간 후 접선 사출
+                        local count = emitter.bulletCount
+                        local orbitR = emitter.orbitRadius or 0.8
+                        local orbitSpd = emitter.orbitSpeed or 4.0
+                        local orbitT = emitter.orbitTime or 1.2
+                        for i = 0, count - 1 do
+                            local angle = emitter.angle + (i / count) * pi2
+                            -- 공전 시작 위치에 spawn, 초기 속도는 접선 (사출 시 사용)
+                            local startX = ox + cos(angle) * orbitR
+                            local startY = oy + sin(angle) * orbitR
+                            local tangent = orbitSpd * orbitR
+                            bulletPool:spawn(startX, startY,
+                                -sin(angle) * tangent, cos(angle) * tangent,
+                                { maxLifetime = opts.maxLifetime, radius = opts.radius,
+                                  color = opts.color, layer = "enemy_bullet",
+                                  behavior = "orbit", originX = ox, originY = oy,
+                                  orbitRadius = orbitR, orbitSpeed = orbitSpd,
+                                  orbitAngle = angle, orbitTime = orbitT })
+                        end
+                        emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
+
+                    elseif pattern == "return_shot" then
+                        -- Return Shot: 발사 → 감속 → 반전 가속. 부메랑 효과
+                        local count = emitter.bulletCount
+                        local retTime = emitter.returnTime or 0.8
+                        for i = 0, count - 1 do
+                            local angle = emitter.angle + (i / count) * pi2
+                            bulletPool:spawn(ox, oy,
+                                cos(angle) * speed, sin(angle) * speed,
+                                { maxLifetime = opts.maxLifetime, radius = opts.radius,
+                                  color = opts.color, layer = "enemy_bullet",
+                                  behavior = "return", returnTime = retTime,
+                                  damping = 0.15 })
+                        end
+                        emitter.angle = (emitter.angle + emitter.turnRate * interval) % pi2
                     end
                 end
 

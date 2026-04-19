@@ -21,6 +21,11 @@ local function applyPattern(emitter, step)
         emitter.bulletRadius   = step.bulletRadius or emitter.bulletRadius
         emitter.bulletColor    = step.bulletColor or emitter.bulletColor
         emitter.turnRate       = step.turnRate or emitter.turnRate
+        -- Advanced behavior fields
+        emitter.orbitRadius    = step.orbitRadius
+        emitter.orbitSpeed     = step.orbitSpeed
+        emitter.orbitTime      = step.orbitTime
+        emitter.returnTime     = step.returnTime
         emitter.active = true
     end
 end

@@ -2,6 +2,8 @@
 -- Pre-allocated object pool for zero-GC bullet management.
 -- Bullets live outside ECS for performance (no per-entity component overhead).
 --
+-- Behaviors: nil (default linear), "orbit" (circular then release), "return" (decel+reverse)
+--
 -- Usage:
 --   local pool = BulletPool.new(2000)
 --   pool:spawn(x, y, vx, vy, { maxLifetime = 5, radius = 0.04 })
@@ -11,6 +13,8 @@
 
 local BulletPool = {}
 BulletPool.__index = BulletPool
+
+local cos, sin = math.cos, math.sin
 
 --- Create a new bullet pool with pre-allocated slots.
 ---@param maxBullets number  Maximum simultaneous bullets (default 2000)
@@ -62,6 +66,19 @@ function BulletPool:spawn(x, y, vx, vy, opts)
     bullet.fadeAlpha   = opts.fadeAlpha or false
     bullet.grazed      = false
 
+    -- Behavior (advanced bullet motion)
+    bullet.behavior    = opts.behavior or nil
+    -- orbit fields
+    bullet.originX     = opts.originX or x
+    bullet.originY     = opts.originY or y
+    bullet.orbitRadius = opts.orbitRadius or 0
+    bullet.orbitSpeed  = opts.orbitSpeed or 0
+    bullet.orbitAngle  = opts.orbitAngle or 0
+    bullet.orbitTime   = opts.orbitTime or 0
+    -- return fields
+    bullet.returnTime  = opts.returnTime or 0
+    bullet.returned    = false
+
     -- Push to active
     self.activeCount = self.activeCount + 1
     self.active[self.activeCount] = bullet
@@ -82,10 +99,32 @@ function BulletPool:update(dt, bounds)
     local i = 1
     while i <= self.activeCount do
         local b = self.active[i]
+        local beh = b.behavior
 
-        -- Move
-        b.x = b.x + b.vx * dt
-        b.y = b.y + b.vy * dt
+        -- Move (behavior-specific or default linear)
+        if beh == "orbit" and b.lifetime < b.orbitTime then
+            -- Orbit: position on circle, update tangent velocity for release
+            local t = b.lifetime + dt
+            local angle = b.orbitAngle + b.orbitSpeed * t
+            b.x = b.originX + cos(angle) * b.orbitRadius
+            b.y = b.originY + sin(angle) * b.orbitRadius
+            local tangent = b.orbitSpeed * b.orbitRadius
+            b.vx = -sin(angle) * tangent
+            b.vy =  cos(angle) * tangent
+        else
+            -- Default linear move (also orbit after release)
+            b.x = b.x + b.vx * dt
+            b.y = b.y + b.vy * dt
+        end
+
+        -- Return: reverse direction at returnTime
+        if beh == "return" and not b.returned and b.lifetime >= b.returnTime then
+            b.returned = true
+            b.vx = -b.vx * 1.3
+            b.vy = -b.vy * 1.3
+            b.damping = 1  -- stop any damping after reverse
+        end
+
         b.lifetime = b.lifetime + dt
 
         -- Damping (감속)
@@ -177,6 +216,11 @@ function BulletPool:_createBullet()
         damping = 1,         -- 속도 감쇠 (1=없음, <1=매 프레임 감속)
         fadeAlpha = false,   -- true면 수명에 따라 알파 페이드
         grazed = false,      -- graze 이미 처리됨 플래그
+        -- behavior fields (pre-allocated for zero-GC)
+        behavior = nil,      -- nil | "orbit" | "return" | future: "homing"
+        originX = 0, originY = 0,
+        orbitRadius = 0, orbitSpeed = 0, orbitAngle = 0, orbitTime = 0,
+        returnTime = 0, returned = false,
     }
 end
 

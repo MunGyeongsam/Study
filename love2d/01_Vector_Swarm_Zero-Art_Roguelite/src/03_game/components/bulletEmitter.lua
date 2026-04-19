@@ -7,7 +7,9 @@ local BulletEmitter = {}
 BulletEmitter.name = "BulletEmitter"
 
 BulletEmitter.defaults = {
-    pattern    = "circle",   -- "circle", "spiral", "aimed", "wave"
+    pattern    = "circle",   -- "circle", "spiral", "aimed", "wave", "grid",
+                             -- "ring_pulse", "cross", "orbit_shot", "return_shot"
+                             -- (planned: "homing")
     emitRate   = 2,          -- shots per second
     bulletSpeed = 2.0,       -- bullet travel speed (world units/s)
     bulletCount = 8,         -- bullets per burst (circle pattern)
