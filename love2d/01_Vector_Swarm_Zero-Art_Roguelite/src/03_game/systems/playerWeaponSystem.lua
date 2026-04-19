@@ -78,6 +78,8 @@ local function createPlayerWeaponSystem(bulletPool)
                     end
                 end
 
+                if playSound then playSound("player_shoot") end
+
                 ::nextPlayer::
             end
         end

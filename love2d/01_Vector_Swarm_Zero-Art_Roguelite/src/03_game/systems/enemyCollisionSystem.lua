@@ -92,6 +92,7 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
                                 if rend then
                                     spawnDeathDebris(bulletPool, ex, ey, rend.color, eRadius)
                                 end
+                                if playSound then playSound("enemy_kill") end
                                 goto nextEnemy
                             end
 
@@ -103,8 +104,11 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
                                 local enemyAI = ecs:getComponent(entityId, "EnemyAI")
                                 onEnemyDeath(ecs, ex, ey, enemyAI and enemyAI.xpValue or 1)
                             end
+                            if playSound then playSound("enemy_kill") end
                             ecs:destroyEntity(entityId)
                             goto nextEnemy
+                        else
+                            if playSound then playSound("enemy_hit") end
                         end
                     else
                         i = i + 1

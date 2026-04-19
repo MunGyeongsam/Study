@@ -17,6 +17,7 @@ local player = require("03_game.entities.player")  -- 플레이어 엔티티
 local ecsManager = require("01_core.ecsManager")  -- ECS 시스템
 local gameState = require("03_game.states.gameState")
 local levelUp = require("03_game.states.levelUp")
+local soundManager = require("05_sound.soundManager")
 
 local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
 local restartGame       -- forward declaration (콜백에서 참조)
@@ -46,8 +47,14 @@ function love.load()
     -- Screen shake 글로벌 등록
     screenShake = cameraManager.shake
 
+    -- 사운드 재생 글로벌 등록 (시스템들에서 직접 호출용)
+    playSound = function(name) soundManager.play(name) end
+
     -- Bloom 포스트프로세싱 초기화
     bloom.init()
+
+    -- 사운드 매니저 초기화 (SFX 사전 생성)
+    soundManager.init()
     
     -- Initialize core systems
     world.init()

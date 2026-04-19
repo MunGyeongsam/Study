@@ -223,6 +223,8 @@ function LevelUp.select(index)
     -- 선택 횟수 기록
     pickCounts[option.id] = count + 1
 
+    if playSound then playSound("level_up") end
+
     logInfo(string.format("[LEVELUP] Selected: %s (pick #%d, factor: %.0f%%)",
         option.displayName or option.name, count + 1, factor * 100))
 

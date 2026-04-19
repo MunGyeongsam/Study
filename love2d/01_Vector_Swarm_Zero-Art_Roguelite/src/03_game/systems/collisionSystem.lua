@@ -73,6 +73,8 @@ local function createCollisionSystem(bulletPool, callbacks)
                             logInfo(string.format("[COLLISION] Player hit! HP: %d/%d", health.hp, health.maxHp))
                         end
 
+                        if playSound then playSound("player_hit") end
+
                         -- Only one hit per frame (iFrames start immediately)
                         break
                     else

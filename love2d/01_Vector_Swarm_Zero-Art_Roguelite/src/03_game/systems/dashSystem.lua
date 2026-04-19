@@ -83,7 +83,7 @@ local DashSystem = System.new("Dash", {"Dash", "Transform", "Health"},
 
                 -- 쿨타임 시작
                 dash.cooldownTimer = dash.cooldown
-
+                if playSound then playSound("dash") end
                 logInfo(string.format("[DASH] Entity %d dashed (%.1f, %.1f) CD: %.1fs",
                     entityId, dirX, dirY, dash.cooldown))
             end
