@@ -11,6 +11,7 @@ local screenDebugDraw = require("00_common.gridDebugDraw")
 local world = require("01_core.world")
 local cameraManager = require("02_renderer.cameraManager")
 local bloom = require("02_renderer.bloom")
+local background = require("02_renderer.background")
 local uiManager = require("04_ui.uiManager")  -- UI 시스템 추가
 local player = require("03_game.entities.player")  -- 플레이어 엔티티
 local ecsManager = require("01_core.ecsManager")  -- ECS 시스템
@@ -153,9 +154,16 @@ function love.load()
     end);
 
     debug.add("debug keys", function()
-        return string.format("%10s : GOD[F7]:%s BLOOM[F6]:%s", "debug",
+        return string.format("%10s : GOD[F7]:%s BLOOM[F6]:%s BG[F9]:%s", "debug",
             godMode and "ON" or "off",
-            bloom.isEnabled() and "ON" or "off")
+            bloom.isEnabled() and "ON" or "off",
+            background.isEnabled() and "ON" or "off")
+    end);
+
+    debug.add("background", function()
+        return string.format("%10s : c=%.2f %s %d circles [%s]",
+            "BG", background.getC(), background.getStyle(), background.getCount(),
+            background.isGenerating() and "generating..." or "done")
     end);
 
     debug.toggleConsole()   -- debug watch panel auto-show (dev)
@@ -195,6 +203,9 @@ function love.load()
          orthographicSize, orthographicSize * 2))
     log(string.format("Pixels per unit: %.1f", cameraManager.getActive():getPixelsPerUnit()))
     
+    -- 배경 초기화 (스테이지 1)
+    background.init(1)
+
     -- 게임 상태 초기화
     gameState.init()
     
@@ -214,6 +225,9 @@ restartGame = function()
     local px, py = player.getPosition()
     cameraManager.getGameCamera():lookAt(px, py)
     cameraManager.getGameCamera():setOrthographicSize(5)
+
+    -- 배경 재생성
+    background.init(1)
 
     -- 게임 상태 리셋
     gameState.init()
@@ -286,6 +300,9 @@ function love.update(dt)
     local playerX, playerY = player.getCameraTarget()
     cameraManager.update(dt, playerX, playerY)
     
+    -- 배경 점진 생성
+    background.update(dt)
+
     -- UI 업데이트
     uiManager.update(dt)
     
@@ -351,12 +368,19 @@ function love.update(dt)
     end
 end
 
+local showWorldGrid = false  -- 월드 그리드 표시 (F4 토글)
+
 local function drawWorld()
-    -- 월드 좌표계 그리드 (중심 0,0)
+    -- 배경 렌더링 (카메라 기반 컬링)
     local cam = cameraManager.getActive()
-    world.drawGrid(1, cam)  -- 1 유닛 간격 그리드, 카메라 정보 전달
+    background.draw(cam)
+
+    -- 월드 좌표계 그리드 (디버그, F4 토글)
+    if showWorldGrid then
+        world.drawGrid(1, cam)
+    end
     
-    -- �️ ECS 엔티티 렌더링 (플레이어 포함)
+    -- ECS 엔티티 렌더링 (플레이어 포함)
     ecsManager.draw()
 end
 
@@ -406,11 +430,20 @@ function love.keypressed(key)
     elseif key == "f3" then
         uiManager.toggleDebugMode()  -- F3키로 UI 디버그 모드 토글
     elseif key == "f4" then
-        screenDebugDraw.toggle()    -- F4: 스크린 그리드 토글
+        showWorldGrid = not showWorldGrid
+        screenDebugDraw.toggle()    -- F4: 그리드 토글 (월드+스크린)
     elseif key == "f5" then
         cameraManager.toggle()      -- F5: 게임/디버그 카메라 전환
     elseif key == "f6" then
         bloom.toggle()              -- F6: Bloom 토글
+    elseif key == "f9" then
+        background.toggle()         -- F9: 배경 토글
+    elseif key == "f10" then
+        background.cycleStyle()     -- F10: 배경 스타일 순환
+    elseif key == "f11" then
+        background.adjustC(-0.05)   -- F11: c값 감소
+    elseif key == "f12" then
+        background.adjustC(0.05)    -- F12: c값 증가
     elseif key == "f7" then
         godMode = not godMode       -- F7: 무적 모드 토글
         logInfo(string.format("[DEBUG] God mode: %s", godMode and "ON" or "OFF"))
