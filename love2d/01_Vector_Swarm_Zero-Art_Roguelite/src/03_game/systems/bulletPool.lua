@@ -60,6 +60,7 @@ function BulletPool:spawn(x, y, vx, vy, opts)
     bullet.damage      = opts.damage or 1
     bullet.damping     = opts.damping or 1
     bullet.fadeAlpha   = opts.fadeAlpha or false
+    bullet.grazed      = false
 
     -- Push to active
     self.activeCount = self.activeCount + 1
@@ -175,6 +176,7 @@ function BulletPool:_createBullet()
         damage = 1,
         damping = 1,         -- 속도 감쇠 (1=없음, <1=매 프레임 감속)
         fadeAlpha = false,   -- true면 수명에 따라 알파 페이드
+        grazed = false,      -- graze 이미 처리됨 플래그
     }
 end
 

@@ -242,8 +242,25 @@ function ECSManager._registerBasicSystems()
     ECSManager.addSystem(createBulletEmitterSystem(ECSManager.bulletPool, getPlayerPos))
     -- 9. PlayerWeapon: 자동 조준 + 발사
     ECSManager.addSystem(createPlayerWeaponSystem(ECSManager.bulletPool))
-    -- 10. Collision: 플레이어 ↔ 적 불릿 충돌
-    ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool))
+    -- 10. Collision: 플레이어 ↔ 적 불릿 충돌 + graze
+    local onGraze = function(entityId, bx, by)
+        -- 이펙트: 스침 파티클 2개 (짧은 선 느낌)
+        for _ = 1, 2 do
+            local angle = math.random() * math.pi * 2
+            local speed = 1.5 + math.random() * 1.5
+            ECSManager.bulletPool:spawn(bx, by,
+                math.cos(angle) * speed, math.sin(angle) * speed,
+                { radius = 0.02, maxLifetime = 0.15,
+                  color = {1, 1, 1, 0.8}, layer = "debris",
+                  damping = 0.05, fadeAlpha = true })
+        end
+        -- 보상: 포커스 에너지 소량 회복
+        local focus = ECSManager.world:getComponent(entityId, "Focus")
+        if focus then
+            focus.energy = math.min(focus.energy + 0.3, focus.maxEnergy)
+        end
+    end
+    ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool, { onGraze = onGraze }))
     -- 11. EnemyCollision: 플레이어 불릿 ↔ 적 충돌 + XP 드롭
     local onEnemyDeath = function(ecs, x, y, xpValue)
         -- XP 스케일링: 스테이지가 올라갈수록 XP 보상 증가

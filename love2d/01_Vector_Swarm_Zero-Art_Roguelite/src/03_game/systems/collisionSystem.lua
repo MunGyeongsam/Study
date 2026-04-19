@@ -4,10 +4,15 @@
 --
 -- Circle-circle distance check: dist² < (playerRadius + bulletRadius)²
 -- On hit: recycle bullet, apply damage, start iFrames.
+-- Near-miss (graze): onGraze callback for reward/effect (Strategy pattern).
 
 local System = require("01_core.system")
 
-local function createCollisionSystem(bulletPool)
+local GRAZE_MULT = 3.0  -- graze radius = collider radius × GRAZE_MULT
+
+local function createCollisionSystem(bulletPool, callbacks)
+    callbacks = callbacks or {}
+    local onGraze = callbacks.onGraze  -- function(entityId, bulletX, bulletY) or nil
 
     local CollisionSystem = System.new("Collision", {"PlayerTag", "Transform", "Collider", "Health"},
         function(ecs, dt, entities)
@@ -31,6 +36,7 @@ local function createCollisionSystem(bulletPool)
                 local collider  = ecs:getComponent(entityId, "Collider")
                 local px, py    = transform.x, transform.y
                 local pRadius   = collider.radius
+                local grazeR2   = (pRadius * GRAZE_MULT) ^ 2
 
                 -- Check all active enemy bullets
                 local i = 1
@@ -70,6 +76,11 @@ local function createCollisionSystem(bulletPool)
                         -- Only one hit per frame (iFrames start immediately)
                         break
                     else
+                        -- Graze check: near-miss, not yet grazed
+                        if onGraze and not b.grazed and dist2 < grazeR2 then
+                            b.grazed = true
+                            onGraze(entityId, b.x, b.y)
+                        end
                         i = i + 1
                     end
 
