@@ -1,5 +1,16 @@
 # Copilot Instructions — Vector Swarm
 
+## Core Values (판단 기준)
+
+모든 설계·구현 결정에서 이 순서를 따른다:
+1. **재미 (Fun)** — 플레이어가 즐거운가? No면 만들지 않는다
+2. **쾌감 (Juice)** — 시각·촉각 피드백이 기분 좋은가? 밋밋하면 미완성
+3. **제약의 미학 (Constraint Beauty)** — 코드만으로 아름다움을 만드는가? Zero-Art의 존재 이유
+
+성능(60fps)은 가치가 아니라 필수 조건.
+
+---
+
 ## Running the Game
 
 **macOS:**
