@@ -14,7 +14,7 @@
             "verbose": true
         },
         {
-            "name": "🎮 Run LÖVE 2D (No Debug)",
+            "name": "🎮 Run LÖVE 2D (Windows)",
             "type": "lua-local",
             "request": "launch",
             "program": {
@@ -22,18 +22,19 @@
             },
             "args": ["${workspaceFolder}/src"],
             "cwd": "${workspaceFolder}",
-            "stopOnEntry": false,
-            // "noDebug": true
+            "stopOnEntry": false
         },
         {
-            "name": "🎮 Run LÖVE 2D (macOS) Task",
-            "type": "node",
+            "name": "🎮 Run LÖVE 2D (macOS)",
+            "type": "lua-local",
             "request": "launch",
-            "runtimeExecutable": "sh",
-            "runtimeArgs": ["-c", "open -a '${workspaceFolder}/love-11.5-macos/love.app' '${workspaceFolder}/src'"],
+            "program": {
+                "command": "${workspaceFolder}/love-11.5-macos/love.app/Contents/MacOS/love"
+            },
+            "args": ["${workspaceFolder}/src"],
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole",
-            // "noDebug": true
+            "stopOnEntry": false,
+            "scriptFiles": ["${workspaceFolder}/src/**/*.lua"]
         }
     ]
 }

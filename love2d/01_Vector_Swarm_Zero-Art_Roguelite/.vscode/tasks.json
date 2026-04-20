@@ -32,8 +32,8 @@
         {
             "label": "🎮 Run LÖVE 2D Game (macOS)",
             "type": "shell",
-            "command": "open",
-            "args": ["-a", "${workspaceFolder}/love-11.5-macos/love.app", "${workspaceFolder}/src"],
+            "command": "${workspaceFolder}/love-11.5-macos/love.app/Contents/MacOS/love",
+            "args": ["${workspaceFolder}/src"],
             "group": {
                 "kind": "build"
             },
@@ -48,11 +48,7 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "problemMatcher": [],
-            "osx": {
-                "command": "open",
-                "args": ["-a", "${workspaceFolder}/love-11.5-macos/love.app", "${workspaceFolder}/src"]
-            }
+            "problemMatcher": []
         },
         {
             "label": "🏃‍♂️ Quick Run (Windows)",
