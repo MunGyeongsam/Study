@@ -341,8 +341,6 @@ function love.update(dt)
     -- 타이틀 화면: 타이틀 메뉴만 업데이트
     if gameState.isTitle() then
         titleMenu.update(dt)
-        -- 업그레이드 트리 열려있으면 그것도 업데이트
-        if upgradeTree.isActive() then return end
         return
     end
 
@@ -555,18 +553,18 @@ function love.draw()
     -- 레벨업 선택 UI (최상위)
     levelUp.draw()
 
-    -- 업그레이드 트리 UI (최상위)
-    upgradeTree.draw()
-
-    -- 타이틀 메뉴 (최상위)
+    -- 타이틀 메뉴
     if gameState.isTitle() then
         titleMenu.draw()
     end
 
-    -- 일시정지 오버레이 (최상위)
+    -- 일시정지 오버레이
     if gameState.isPaused() then
         pauseMenu.draw()
     end
+
+    -- 업그레이드 트리 UI (모든 오버레이 위 — 최상위)
+    upgradeTree.draw()
 end
 
 -- Debug console functions are now handled automatically by Logger

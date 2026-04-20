@@ -122,7 +122,7 @@ function pauseMenu.keypressed(key)
         state.selectedIndex = state.selectedIndex + 1
         if state.selectedIndex > #MENU_ITEMS then state.selectedIndex = 1 end
         return true
-    elseif key == "return" or key == "kpenter" then
+    elseif key == "return" or key == "kpenter" or key == "space" then
         executeSelection()
         return true
     elseif key == "escape" then
