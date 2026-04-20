@@ -1,5 +1,5 @@
 -- Vector Swarm - Zero Art Roguelite
--- Main game file
+-- Main game file — Scene Stack 기반 게임 루프
 
 -- Global utilities first (전역 함수 최우선 초기화)
 local global = require("00_common.global")
@@ -11,26 +11,20 @@ local logger = require("00_common.logger")
 local debug = require("00_common.debug")
 local screenDebugDraw = require("00_common.gridDebugDraw")
 local world = require("01_core.world")
+local SceneStack = require("01_core.sceneStack")
 local cameraManager = require("02_renderer.cameraManager")
 local bloom = require("02_renderer.bloom")
 local background = require("02_renderer.background")
-local uiManager = require("04_ui.uiManager")  -- UI 시스템 추가
-local player = require("03_game.entities.player")  -- 플레이어 엔티티
-local ecsManager = require("03_game.ecsManager")  -- ECS 오케스트레이터
+local uiManager = require("04_ui.uiManager")
+local player = require("03_game.entities.player")
+local ecsManager = require("03_game.ecsManager")
 local gameState = require("03_game.states.gameState")
-local levelUp = require("03_game.states.levelUp")
-local upgradeTree = require("03_game.states.upgradeTree")
-local titleMenu = require("03_game.states.titleMenu")
-local pauseMenu = require("03_game.states.pauseMenu")
 local soundManager = require("05_sound.soundManager")
 local saveData = require("00_common.saveData")
 
-local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
-local startGame         -- forward declaration
-local restartGame       -- forward declaration (콜백에서 참조)
-local returnToTitle     -- forward declaration
-local hitStopTimer = 0  -- hit-stop freeze (boss defeat)
-local godMode = false   -- debug: player invincibility (F7)
+local fonts = nil
+local sceneStack = nil   -- 글로벌 씬 스택
+local showWorldGrid = false
 
 function love.load()
     -- Initialize global utilities first
@@ -41,12 +35,12 @@ function love.load()
 
     -- Set up multiple font sizes
     fonts = {
-        small = love.graphics.newFont(12),    -- 작은 폰트 (디버그용)
-        medium = love.graphics.newFont(16),   -- 중간 폰트 (기본)
-        large = love.graphics.newFont(20),    -- 큰 폰트 (제목용)
-        xlarge = love.graphics.newFont(24)    -- 매우 큰 폰트 (특별용)
+        small = love.graphics.newFont(12),
+        medium = love.graphics.newFont(16),
+        large = love.graphics.newFont(20),
+        xlarge = love.graphics.newFont(24)
     }
-    love.graphics.setFont(fonts.medium)  -- 기본 폰트를 중간 크기로 설정
+    love.graphics.setFont(fonts.medium)
 
     -- 카메라 매니저 초기화
     local orthographicSize = 5
@@ -55,7 +49,7 @@ function love.load()
     -- Screen shake 글로벌 등록
     screenShake = cameraManager.shake
 
-    -- 사운드 재생 글로벌 등록 (시스템들에서 직접 호출용)
+    -- 사운드 재생 글로벌 등록
     playSound = function(name) soundManager.play(name) end
     playBGM   = function(name) soundManager.playBGM(name) end
     stopBGM   = function() soundManager.stopBGM() end
@@ -63,46 +57,37 @@ function love.load()
     -- Bloom 포스트프로세싱 초기화
     bloom.init()
 
-    -- 사운드 매니저 초기화 (SFX 사전 생성)
+    -- 사운드 매니저 초기화
     soundManager.init()
     
     -- Initialize core systems
     world.init()
 
-    -- Save data 로드 (영구 저장)
+    -- Save data 로드
     saveData.load()
     
-    -- ECS 시스템 초기화 (플레이어 위치 조회 콜백 전달)
+    -- ECS 시스템 초기화
     ecsManager.init(function() return player.getPosition() end)
     
-    -- 플레이어 ECS 엔티티 생성 + 파사드 바인딩 (하단 시작)
+    -- 초기 플레이어 (debug watcher용)
     local playerId = ecsManager.createPlayer(0, -12)
     player.bind(ecsManager.getWorld(), playerId)
     player.init(0, -12)
-    upgradeTree.applyToPlayer(ecsManager.getWorld(), playerId)
-    
-    local startX, startY = player.getPosition()
 
-    debug.add("world info", 
-    function()
+    -- Debug watchers
+    debug.add("world info", function()
         local size = world.size
         return string.format("%10s : %d x %d", "World Size", size.width, size.height) 
-    end);
-
-    debug.add("player info", 
-    function()
+    end)
+    debug.add("player info", function()
         local x, y = player.getPosition()
         return string.format("%10s : (%.1f, %.1f)", "Player Pos", x, y) 
-    end);
-    
-    debug.add("ECS stats", 
-    function()
+    end)
+    debug.add("ECS stats", function()
         local stats = ecsManager.getStats()
         return string.format("%10s : %d entities", "ECS Total", stats.world.activeEntities) 
-    end);
-    
-    debug.add("ECS components", 
-    function()
+    end)
+    debug.add("ECS components", function()
         local stats = ecsManager.getStats()
         local componentCounts = stats.world.componentTypes or {}
         local text = "Components: "
@@ -110,26 +95,20 @@ function love.load()
             text = text .. string.format("%s(%d) ", name, count)
         end
         return text
-    end);
-    
-    debug.add("camera mode",
-    function()
+    end)
+    debug.add("camera mode", function()
         local cam = cameraManager.getActive()
         local cx, cy = cam:pos()
         return string.format("%10s : %s (%.1f, %.1f) zoom=%.1f",
             "Camera", cameraManager.getMode(), cx, cy, cam:getOrthographicSize())
-    end);
-
-    debug.add("bullets",
-    function()
+    end)
+    debug.add("bullets", function()
         local stats = ecsManager.getStats()
         local b = stats.bullets
         return string.format("%10s : %d active / %d peak / %d spawned",
             "Bullets", b.active, b.peakActive, b.spawned)
-    end);
-
-    debug.add("player HP",
-    function()
+    end)
+    debug.add("player HP", function()
         local w = ecsManager.getWorld()
         local entities = w:queryEntities({"PlayerTag", "Health"})
         if #entities > 0 then
@@ -140,18 +119,14 @@ function love.load()
                 "Player HP", h.hp, h.maxHp, status, inv, h.hitCount)
         end
         return "Player HP : N/A"
-    end);
-
-    debug.add("waves",
-    function()
+    end)
+    debug.add("waves", function()
         local stats = ecsManager.getStats()
         local s = stats.stage
         return string.format("%10s : Stage %d Wave %d/%d [%s] (%d enemies)",
             "Stage", s.stage, s.wave, s.wavesPerStage, s.state, s.enemies)
-    end);
-
-    debug.add("dash/focus",
-    function()
+    end)
+    debug.add("dash/focus", function()
         local w = ecsManager.getWorld()
         local entities = w:queryEntities({"PlayerTag", "Dash", "Focus"})
         if #entities > 0 then
@@ -163,10 +138,8 @@ function love.load()
                 "Dash/Focus", dcd, fActive, focus.energy, gameState.getTimeScale())
         end
         return "Dash/Focus : N/A"
-    end);
-
-    debug.add("xp/level",
-    function()
+    end)
+    debug.add("xp/level", function()
         local w = ecsManager.getWorld()
         local entities = w:queryEntities({"PlayerTag", "PlayerXP"})
         if #entities > 0 then
@@ -175,47 +148,42 @@ function love.load()
                 "XP", xp.level, xp.xp, xp.xpToNext, xp.magnetRange)
         end
         return "XP : N/A"
-    end);
-
+    end)
     debug.add("debug keys", function()
+        local PlayScene = require("03_game.scenes.playScene")
         return string.format("%10s : GOD[F7]:%s BLOOM[F6]:%s BG[F9]:%s", "debug",
-            godMode and "ON" or "off",
+            PlayScene.getGodMode() and "ON" or "off",
             bloom.isEnabled() and "ON" or "off",
             background.isEnabled() and "ON" or "off")
-    end);
-
+    end)
     debug.add("background", function()
         return string.format("%10s : c=%.2f %s %d circles [%s]",
             "BG", background.getC(), background.getStyle(), background.getCount(),
             background.isGenerating() and "generating..." or "done")
-    end);
+    end)
+    debug.add("scene stack", function()
+        local top = sceneStack:top()
+        return string.format("%10s : depth=%d top=%s", "Scenes", sceneStack:size(), top and top.name or "none")
+    end)
 
-    debug.toggleConsole()   -- debug watch panel auto-show (dev)
-    
-    -- 🌍 카메라를 플레이어 시작 위치로 이동
-    cameraManager.getGameCamera():lookAt(startX, startY)
-    logger.info(string.format("[CAM] Positioned at player start: (%.1f, %.1f)", startX, startY))
+    debug.toggleConsole()
+
+    cameraManager.getGameCamera():lookAt(0, -12)
+    logger.info("[CAM] Positioned at player start: (0.0, -12.0)")
     
     -- Initialize UI system
     uiManager.init()
-    
-    -- UI 버튼 콜백 설정
     uiManager.setButtonCallbacks({
         onZoomIn = function()
             local cam = cameraManager.getActive()
-            local newSize = cam:getOrthographicSize() * 0.8
-            cam:setOrthographicSize(newSize)
-            log(string.format("Zoom In - Orthographic Size: %.2f", newSize))
+            cam:setOrthographicSize(cam:getOrthographicSize() * 0.8)
         end,
         onZoomOut = function()
             local cam = cameraManager.getActive()
-            local newSize = cam:getOrthographicSize() * 1.25
-            cam:setOrthographicSize(newSize)
-            log(string.format("Zoom Out - Orthographic Size: %.2f", newSize))
+            cam:setOrthographicSize(cam:getOrthographicSize() * 1.25)
         end,
         onReset = function()
             cameraManager.getActive():setOrthographicSize(orthographicSize)
-            log(string.format("Zoom Reset - Orthographic Size: %.2f", orthographicSize))
         end,
         onDebugToggle = function()
             uiManager.toggleDebugMode()
@@ -227,516 +195,67 @@ function love.load()
          orthographicSize, orthographicSize * 2))
     log(string.format("Pixels per unit: %.1f", cameraManager.getActive():getPixelsPerUnit()))
     
-    -- 배경 초기화 (스테이지 1)
     background.init(1)
 
-    -- 타이틀 메뉴에서 시작 (게임은 아직 시작하지 않음)
-    gameState.toTitle()
-
-    -- 타이틀 메뉴 콜백 설정
-    titleMenu.setCallbacks({
-        onPlay = function() startGame() end,
-        onUpgrades = function() upgradeTree.show() end,
-        onCredits = function()
-            logInfo("[MENU] Credits (not yet implemented)")
-        end,
-    })
-
-    -- 일시정지 메뉴 콜백 설정
-    pauseMenu.setCallbacks({
-        onContinue = function() gameState.resume() end,
-        onRestart = function()
-            restartGame()  -- startPlaying()이 상태를 PLAYING으로 직접 전환
-        end,
-        onMenu = function()
-            returnToTitle()  -- toTitle()이 상태를 TITLE로 직접 전환
-        end,
-    })
-    
-end
-
--- 게임 시작 (타이틀 → 플레이)
-startGame = function()
-    -- ECS 월드 초기화
-    ecsManager.restart()
-
-    -- 플레이어 재생성 + 바인딩 (하단 시작)
-    local playerId = ecsManager.createPlayer(0, -12)
-    player.bind(ecsManager.getWorld(), playerId)
-    player.init(0, -12)
-    upgradeTree.applyToPlayer(ecsManager.getWorld(), playerId)
-
-    -- 카메라 리셋
-    local px, py = player.getPosition()
-    cameraManager.getGameCamera():lookAt(px, py)
-    cameraManager.getGameCamera():setOrthographicSize(5)
-
-    -- 배경 재생성
-    background.init(1)
-
-    -- 게임 상태 시작
-    gameState.startPlaying()
-    levelUp.reset()
-    hitStopTimer = 0
-
-    logInfo("[GAME] Game started from title")
-end
-
--- 타이틀로 복귀
-returnToTitle = function()
-    -- Fragment 저장
-    local runFragments = gameState.getFragments()
-    if runFragments > 0 then
-        saveData.addFragments(runFragments)
-    end
-    local score = gameState.getScore()
-    local stageInfo = gameState.getStageInfo()
-    saveData.recordRun(score, stageInfo)
-    saveData.save()
-
-    gameState.toTitle()
-    titleMenu.reset()
-    levelUp.reset()
-    hitStopTimer = 0
-end
-
--- 게임 리스타트
-restartGame = function()
-    -- Fragment 저장 (사망 시 영구 보존)
-    local runFragments = gameState.getFragments()
-    if runFragments > 0 then
-        saveData.addFragments(runFragments)
-    end
-    local score = gameState.getScore()
-    local stageInfo = gameState.getStageInfo()
-    saveData.recordRun(score, stageInfo)
-    saveData.save()
-
-    -- ECS 월드 초기화 (엔티티 + 불릿 + 스포너)
-    ecsManager.restart()
-
-    -- 플레이어 재생성 + 바인딩 (하단 시작)
-    local playerId = ecsManager.createPlayer(0, -12)
-    player.bind(ecsManager.getWorld(), playerId)
-    player.init(0, -12)
-    upgradeTree.applyToPlayer(ecsManager.getWorld(), playerId)
-
-    -- 카메라 리셋
-    local px, py = player.getPosition()
-    cameraManager.getGameCamera():lookAt(px, py)
-    cameraManager.getGameCamera():setOrthographicSize(5)
-
-    -- 배경 재생성
-    background.init(1)
-
-    -- 게임 상태 리셋
-    gameState.startPlaying()
-    levelUp.reset()  -- 감쇠 스택 초기화
-    hitStopTimer = 0
-
-    logInfo("[GAME] Restarted!")
+    -- Scene Stack 초기화 → TitleScene에서 시작
+    sceneStack = SceneStack.new()
+    local TitleScene = require("03_game.scenes.titleScene")
+    sceneStack:push(TitleScene.new(sceneStack))
 end
 
 function love.update(dt)
-    -- 타이틀 화면: 타이틀 메뉴만 업데이트
-    if gameState.isTitle() then
-        titleMenu.update(dt)
-        return
-    end
-
-    -- 일시정지: 게임 로직 정지
-    if gameState.isPaused() then
-        return
-    end
-
-    -- Hit-stop freeze (boss defeat moment)
-    if hitStopTimer > 0 then
-        hitStopTimer = hitStopTimer - dt
-        return
-    end
-
-    -- 레벨업 선택 중이면 게임 로직 정지
-    if levelUp.isActive() then
-        return
-    end
-
-    -- 업그레이드 트리 열려있으면 게임 로직 정지
-    if upgradeTree.isActive() then
-        return
-    end
-
-    -- 스테이지 클리어 중이면 제한된 시스템만 업데이트
-    if ecsManager.stageManager:isClearing() then
-        -- Detect boss defeat → apply rewards once
-        local stageState = ecsManager.stageManager.state
-        if stageState == "boss_clear" and not ecsManager.stageManager.bossRewardsApplied then
-            ecsManager.stageManager.bossRewardsApplied = true
-            -- Hit-stop + screen shake
-            hitStopTimer = 0.2
-            screenShake(0.35, 0.5)
-            -- Recover player: HP full, dash/focus reset
-            local w = ecsManager.getWorld()
-            local pEnts = w:queryEntities({"PlayerTag", "Health"})
-            if #pEnts > 0 then
-                local pHealth = w:getComponent(pEnts[1], "Health")
-                pHealth.hp = pHealth.maxHp
-                pHealth.iTimer = 0
-                local dash = w:getComponent(pEnts[1], "Dash")
-                if dash then dash.cooldownTimer = 0 end
-                local focus = w:getComponent(pEnts[1], "Focus")
-                if focus then focus.energy = focus.maxEnergy end
-            end
-            logInfo("[BOSS] Rewards applied: HP full, dash/focus reset")
-        end
-
-        -- Collecting phase: XP orbs need movement + collection systems
-        if stageState == "collecting" then
-            -- Run movement + XP collection so orbs fly to player
-            local moveSys = ecsManager.systems["Movement"]
-            if moveSys then moveSys:update(ecsManager.getWorld(), dt) end
-            local xpSys = ecsManager.systems["XpCollection"]
-            if xpSys then xpSys:update(ecsManager.getWorld(), dt) end
-
-            -- Check for pending level-ups during collection
-            local w = ecsManager.getWorld()
-            local xpEntities = w:queryEntities({"PlayerTag", "PlayerXP"})
-            if #xpEntities > 0 then
-                local playerXP = w:getComponent(xpEntities[1], "PlayerXP")
-                if playerXP.pendingLevelUp then
-                    playerXP.pendingLevelUp = false
-                    levelUp.show(w, xpEntities[1])
-                end
-            end
-        end
-
-        ecsManager.stageManager:update(dt)
-        return
-    end
-
-    -- 게임 오버 상태로 게임 로직 정지
-    if gameState.isGameOver() then
-        gameState.update(dt, nil)
-        return
-    end
-
-    -- ECS 시스템 업데이트 (포커스 슬로모 적용)
-    local scaledDt = dt * gameState.getTimeScale()
-    ecsManager.update(scaledDt)
-
-    -- God mode: keep player invincible
-    if godMode then
-        local playerId = player.getEntityId()
-        if playerId then
-            local health = ecsManager.getWorld():getComponent(playerId, "Health")
-            if health then health.iTimer = 9999 end
-        end
-    end
-    
-    -- 🏃‍♂️ 플레이어 업데이트 (입력 처리 및 이동, 기존 OOP)
-    player.update(dt, {})  -- 나중에 터치 입력 시스템 연결
-    
-    -- 📹 카메라 업데이트 (게임 모드면 플레이어 추적, 디버그 모드면 자유)
-    local playerX, playerY = player.getCameraTarget()
-    cameraManager.update(dt, playerX, playerY)
-    
-    -- 배경 점진 생성
-    background.update(dt)
-
-    -- UI 업데이트
-    uiManager.update(dt)
-    
-    -- 플레이어와 월드 데이터를 UI에 전달
-    local worldStats = world.getWorldStats()
-    local playerStats = player.getStats()
-    local stageStats = ecsManager.getStats().stage
-    
-    uiManager.setGameData({
-        score = _floor(gameState.getScore()),
-        lives = 3,
-        level = playerStats.zonesVisited + 1,
-        fps = love.timer.getFPS(),
-        stage = stageStats.stage,
-        wave = stageStats.wave,
-        wavesPerStage = stageStats.wavesPerStage,
-        progress = playerStats.progress,
-        powerUps = #playerStats.powerUps,
-        secrets = worldStats.secretsDiscovered,
-        currentZone = playerStats.currentZone or "outside",
-        checkpoints = playerStats.checkpoints,
-        -- Boss HUD data
-        bossActive = stageStats.bossEntityId ~= nil and (stageStats.state == "boss_intro" or stageStats.state == "boss_active"),
-        bossName = stageStats.bossType,
-        bossHp = 0,
-        bossMaxHp = 1,
-        bossPhase = 1,
-        bossMaxPhase = 1,
-    })
-
-    -- Update boss HP bar from ECS if boss is active
-    if stageStats.bossEntityId then
-        local bw = ecsManager.getWorld()
-        local bossHealth = bw:getComponent(stageStats.bossEntityId, "Health")
-        local bossTag = bw:getComponent(stageStats.bossEntityId, "BossTag")
-        if bossHealth and bossTag then
-            uiManager.setGameData({
-                bossHp = bossHealth.hp,
-                bossMaxHp = bossHealth.maxHp,
-                bossPhase = bossTag.phase,
-                bossMaxPhase = bossTag.maxPhase,
-            })
-        end
-    end
-
-    -- 게임 상태 업데이트 (HP 검사 → 게임오버 판정)
-    local w = ecsManager.getWorld()
-    local playerEntities = w:queryEntities({"PlayerTag", "Health"})
-    local playerHealth = #playerEntities > 0 and w:getComponent(playerEntities[1], "Health") or nil
-    -- 스테이지 정보를 gameState에 전달
-    gameState.setStageInfo(stageStats.stage, stageStats.wave, stageStats.wavesPerStage)
-    gameState.setWaveReached(stageStats.totalWaves)
-    gameState.update(dt, playerHealth)
-
-    -- 레벨업 체크
-    local xpEntities = w:queryEntities({"PlayerTag", "PlayerXP"})
-    if #xpEntities > 0 then
-        local playerXP = w:getComponent(xpEntities[1], "PlayerXP")
-        if playerXP.pendingLevelUp then
-            playerXP.pendingLevelUp = false
-            levelUp.show(w, xpEntities[1])
-        end
-    end
-end
-
-local showWorldGrid = false  -- 월드 그리드 표시 (F4 토글)
-
-local function drawWorld()
-    -- 배경 렌더링 (카메라 기반 컬링)
-    local cam = cameraManager.getActive()
-    background.draw(cam)
-
-    -- 월드 좌표계 그리드 (디버그, F4 토글)
-    if showWorldGrid then
-        world.drawGrid(1, cam)
-    end
-    
-    -- ECS 엔티티 렌더링 (플레이어 포함)
-    ecsManager.draw()
+    sceneStack:update(dt)
 end
 
 function love.draw()
-    -- Bloom: 씬 캡처 시작
-    bloom.beginCapture()
+    -- 씬 스택 렌더링 (아래 → 위)
+    sceneStack:draw()
 
-    -- 월드 렌더링 (활성 카메라 적용)
-    cameraManager.draw(drawWorld)
-    
-    -- Bloom: 씬 캡처 종료 + 합성 출력
-    bloom.endCapture()
-    bloom.draw()
-
-    -- UI 렌더링 (스크린 좌표계) 
-    uiManager.draw()
-    
-    -- 디버그 정보 그리기 (기존 시스템)
+    -- 디버그 UI (씬 외부, 항상 최상위)
     debug.draw(10, 50, fonts.small)
-    logger.drawConsole(fonts.small)  -- 인게임 디버그 콘솔
-
-    -- 스크린 좌표계 그리드 (F4 토글)
+    logger.drawConsole(fonts.small)
     screenDebugDraw.draw(50)
-
-    -- 게임 오버 오버레이 (스크린 좌표계, 최상위)
-    gameState.draw()
-
-    -- 스테이지 클리어 오버레이
-    ecsManager.stageManager:draw()
-
-    -- 레벨업 선택 UI (최상위)
-    levelUp.draw()
-
-    -- 타이틀 메뉴
-    if gameState.isTitle() then
-        titleMenu.draw()
-    end
-
-    -- 일시정지 오버레이
-    if gameState.isPaused() then
-        pauseMenu.draw()
-    end
-
-    -- 업그레이드 트리 UI (모든 오버레이 위 — 최상위)
-    upgradeTree.draw()
 end
-
--- Debug console functions are now handled automatically by Logger
 
 function love.keypressed(key)
     -- 디버그 키는 모든 상태에서 작동
-    local debugHandled = true
     if key == "f1" then
         debug.toggleConsole()
+        return
     elseif key == "`" then
         logger.toggleConsole()
+        return
     elseif key == "f2" then
         uiManager.toggleVisibility()
+        return
     elseif key == "f3" then
         uiManager.toggleDebugMode()
+        return
     elseif key == "f4" then
         showWorldGrid = not showWorldGrid
+        local PlayScene = require("03_game.scenes.playScene")
+        PlayScene.setShowWorldGrid(showWorldGrid)
         screenDebugDraw.toggle()
-    else
-        debugHandled = false
-    end
-    if debugHandled then return end
-
-    -- 타이틀 화면 키 입력
-    if gameState.isTitle() then
-        -- 업그레이드 트리가 열려있으면 먼저 처리
-        if upgradeTree.keypressed(key) then return end
-        if key == "escape" then love.event.quit(); return end
-        titleMenu.keypressed(key)
         return
     end
 
-    -- 일시정지 화면 키 입력
-    if gameState.isPaused() then
-        pauseMenu.keypressed(key)
-        return
-    end
-
-    -- 레벨업 선택 우선 처리
-    if levelUp.keypressed(key) then return end
-
-    -- 업그레이드 트리 키 입력 처리
-    if upgradeTree.keypressed(key) then return end
-
-    if key == "f5" then
-        cameraManager.toggle()      -- F5: 게임/디버그 카메라 전환
-    elseif key == "f6" then
-        bloom.toggle()              -- F6: Bloom 토글
-    elseif key == "f9" then
-        background.toggle()         -- F9: 배경 토글
-    elseif key == "f10" then
-        background.cycleStyle()     -- F10: 배경 스타일 순환
-    elseif key == "f11" then
-        background.adjustC(-0.05)   -- F11: c값 감소
-    elseif key == "f12" then
-        background.adjustC(0.05)    -- F12: c값 증가
-    elseif key == "f7" then
-        godMode = not godMode       -- F7: 무적 모드 토글
-        logInfo(string.format("[DEBUG] God mode: %s", godMode and "ON" or "OFF"))
-    elseif key == "f8" then
-        -- F8: 스테이지 스킵 (디버그용)
-        local sm = ecsManager.getStageManager and ecsManager.getStageManager()
-        if sm then sm:debugSkipStage() end
-    elseif key == "r" then
-        if gameState.canRestart() then
-            restartGame()
-        end
-    elseif key == "u" then
-        -- 게임오버 시 업그레이드 메뉴 토글
-        if gameState.isGameOver() and gameState.canRestart() then
-            if upgradeTree.isActive() then
-                upgradeTree.hide()
-            else
-                upgradeTree.show()
-            end
-        end
-    elseif key == "lshift" or key == "rshift" then
-        -- 대쉬 요청 → Input 컴포넌트로 전달
-        if gameState.isPlaying() then
-            local playerId = player.getEntityId()
-            if playerId then
-                local inp = ecsManager.getWorld():getComponent(playerId, "Input")
-                if inp then
-                    inp.dash = true
-                end
-            end
-        end
-    end
-    if key == 'escape' then
-        if gameState.isPlaying() then
-            gameState.pause()
-            pauseMenu.reset()
-        else
-            love.event.quit()  -- 게임오버 등에서 ESC = 종료
-        end
-    end
-    
-    -- 디버그 카메라 모드: +/- 키로 줌 조절
-    if cameraManager.isDebug() then
-        if key == "=" or key == "+" then
-            local cam = cameraManager.getActive()
-            local newSize = cam:getOrthographicSize() * 0.8
-            cam:setOrthographicSize(newSize)
-        elseif key == "-" then
-            local cam = cameraManager.getActive()
-            local newSize = cam:getOrthographicSize() * 1.25
-            cam:setOrthographicSize(newSize)
-        elseif key == "space" then
-            -- 플레이어 위치로 복귀
-            local px, py = player.getPosition()
-            cameraManager.getActive():lookAt(px, py)
-        end
-    end
+    -- 나머지는 스택 최상위 씬에 위임
+    sceneStack:keypressed(key)
 end
 
--- 모바일 터치 입력 처리
 function love.touchpressed(id, x, y, dx, dy, pressure)
-    -- 타이틀 화면 터치 처리
-    if gameState.isTitle() then
-        if upgradeTree.touchpressed(x, y) then return end
-        titleMenu.touchpressed(x, y)
-        return
-    end
-
-    -- 일시정지 화면 터치 처리
-    if gameState.isPaused() then
-        pauseMenu.touchpressed(x, y)
-        return
-    end
-
-    -- 레벨업 선택 우선 처리
-    if levelUp.touchpressed(x, y) then return end
-
-    -- 업그레이드 트리 터치 처리
-    if upgradeTree.touchpressed(x, y) then return end
-
-    -- 게임 오버 시 터치로 리스타트
-    if gameState.canRestart() then
-        restartGame()
-        return
-    end
-
-    -- UI 터치 처리
-    if uiManager.touchpressed(id, x, y, dx, dy, pressure) then
-        return
-    end
-    
-    -- 게임 플레이 영역 터치 처리
-    local mobileLayout = require("04_ui.mobileLayout")
-    if mobileLayout.isTouchInArea(x, y, "play") then
-        local worldX, worldY = cameraManager.worldCoords(x, y)
-        log(string.format("Touch at world: (%.1f, %.1f)", worldX, worldY))
-    end
+    sceneStack:touchpressed(id, x, y, dx, dy, pressure)
 end
 
 function love.touchmoved(id, x, y, dx, dy, pressure)
-    -- UI 터치 이동 처리
-    if uiManager.touchmoved(id, x, y, dx, dy, pressure) then
-        return
-    end
-    
-    -- 디버그 모드: 터치 드래그로 카메라 이동
-    if cameraManager.isDebug() then
-        cameraManager.debugMove(dx, dy)
-    end
+    sceneStack:touchmoved(id, x, y, dx, dy, pressure)
 end
 
 function love.touchreleased(id, x, y, dx, dy, pressure)
-    uiManager.touchreleased(id, x, y, dx, dy, pressure)
+    sceneStack:touchreleased(id, x, y, dx, dy, pressure)
 end
 
--- PC: 마우스 입력
+-- PC: 마우스 → 터치 브릿지
 function love.mousepressed(x, y, button, istouch, presses)
     if not istouch then
         love.touchpressed("mouse", x, y, 0, 0, 1)
@@ -745,12 +264,7 @@ end
 
 function love.mousemoved(x, y, dx, dy, istouch)
     if not istouch and love.mouse.isDown(1) then
-        -- 디버그 모드: 마우스 드래그로 카메라 자유 이동
-        if cameraManager.isDebug() then
-            cameraManager.debugMove(dx, dy)
-        else
-            love.touchmoved("mouse", x, y, dx, dy, 1)
-        end
+        love.touchmoved("mouse", x, y, dx, dy, 1)
     end
 end
 

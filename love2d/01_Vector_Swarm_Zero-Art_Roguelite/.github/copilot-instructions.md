@@ -45,7 +45,8 @@ src/
 ├── 01_core/          # Engine layer (pure engine, no game deps)
 │   ├── world.lua     # World boundaries, zones, fun elements
 │   ├── ecs.lua       # ECS core (entity/component management, componentIndex cache)
-│   └── system.lua    # System base class (performance monitoring)
+│   ├── system.lua    # System base class (performance monitoring)
+│   └── sceneStack.lua # Scene Stack engine (push/pop/replace/clear, transparent/drawBelow)
 ├── 02_renderer/      # Camera & rendering & post-processing
 │   ├── camera.lua    # Unity-style orthographic camera
 │   ├── cameraManager.lua  # Game/debug camera modes (F5 toggle)
@@ -70,6 +71,13 @@ src/
 │   ├── entities/     # Entity factories & façades
 │   │   ├── entityFactory.lua  # createPlayer(), createEnemy(), createBoss(), createXpOrb()
 │   │   └── player.lua         # ECS façade (bind, update, getPosition)
+│   ├── scenes/       # Scene wrappers (Scene Stack pattern)
+│   │   ├── playScene.lua      # Game loop scene (ECS + rendering + camera)
+│   │   ├── titleScene.lua     # Title menu scene
+│   │   ├── pauseScene.lua     # Pause overlay scene (drawBelow)
+│   │   ├── levelUpScene.lua   # Level-up overlay (auto-pop)
+│   │   ├── upgradeScene.lua   # Upgrade tree overlay (auto-pop)
+│   │   └── gameOverScene.lua  # Game over result scene
 │   ├── patterns/     # Bullet patterns (planned)
 │   └── states/       # Game states
 │       ├── gameState.lua      # Game state machine (playing/game_over/level_up)
