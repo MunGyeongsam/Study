@@ -6,6 +6,7 @@
 local world = require("01_core.world")
 local EntityFactory = require("03_game.entities.entityFactory")
 local gameState = require("03_game.states.gameState")
+local background = require("02_renderer.background")
 
 local _min    = math.min
 local _max    = math.max
@@ -348,6 +349,9 @@ function StageManager:_advanceStage()
 
     -- Player reset to bottom (0, -12)
     self:_resetPlayerToBottom()
+
+    -- Background color transition
+    background.setStage(self.stage)
 
     logInfo(string.format("[STAGE] Advancing to Stage %d", self.stage))
 end

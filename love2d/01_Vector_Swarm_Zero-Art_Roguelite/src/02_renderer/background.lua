@@ -20,6 +20,17 @@ local CELL_SIZE         = 2       -- spatial hash grid cell size (world units)
 local MIN_RADIUS        = 0.01    -- skip circles smaller than this
 local BASE_ALPHA        = 0.12    -- base opacity for circles
 
+-- ─── Stage Color Themes ──────────────────────────────────────────
+-- {r, g, b} base tint for circles per stage range
+local STAGE_THEMES = {
+    { maxStage = 2, color = {0.15, 0.35, 0.4 } },  -- cyan: cold data
+    { maxStage = 5, color = {0.25, 0.15, 0.4 } },  -- purple: rising danger
+    { maxStage = 8, color = {0.4,  0.15, 0.2 } },  -- red: high tension
+    {                color = {0.35, 0.35, 0.35} },  -- white/grey: endgame
+}
+
+local LERP_DURATION = 0.8  -- seconds for color transition
+
 -- ─── State ───────────────────────────────────────────────────────
 local circles   = {}      -- {x, y, radius} flat array
 local grid      = {}      -- spatial hash: "cx,cy" -> list of circle indices
@@ -39,6 +50,13 @@ local worldMaxX, worldMaxY = 10, 15
 local drawStyle = "mixed"
 local enabled   = true
 local generating = false  -- true while progressive generation is active
+
+-- Color lerp state
+local colorCurrent = {0.15, 0.35, 0.4}
+local colorTarget  = {0.15, 0.35, 0.4}
+local colorFrom    = {0.15, 0.35, 0.4}
+local lerpTimer    = 0
+local lerpActive   = false
 
 -- ─── Riemann Zeta approximation (partial sum) ────────────────────
 local function zetaPartial(c, n)
@@ -128,6 +146,32 @@ end
 
 -- ─── Public API ──────────────────────────────────────────────────
 
+-- Get theme color for a given stage number
+local function getThemeColor(stage)
+    for _, theme in ipairs(STAGE_THEMES) do
+        if not theme.maxStage or stage <= theme.maxStage then
+            return theme.color
+        end
+    end
+    return STAGE_THEMES[#STAGE_THEMES].color
+end
+
+--- Set stage theme color (with lerp transition)
+function M.setStage(stageNum)
+    local target = getThemeColor(stageNum)
+    -- Skip if already at target
+    if colorTarget[1] == target[1] and colorTarget[2] == target[2] and colorTarget[3] == target[3] then
+        return
+    end
+    colorFrom[1], colorFrom[2], colorFrom[3] = colorCurrent[1], colorCurrent[2], colorCurrent[3]
+    colorTarget[1], colorTarget[2], colorTarget[3] = target[1], target[2], target[3]
+    lerpTimer = 0
+    lerpActive = true
+    logger.info(string.format("[BG] Stage %d theme: (%.2f, %.2f, %.2f) → (%.2f, %.2f, %.2f)",
+        stageNum, colorFrom[1], colorFrom[2], colorFrom[3],
+        colorTarget[1], colorTarget[2], colorTarget[3]))
+end
+
 function M.init(stageNum)
     circles   = {}
     grid      = {}
@@ -169,6 +213,19 @@ function M.init(stageNum)
 end
 
 function M.update(dt)
+    -- Color lerp
+    if lerpActive then
+        lerpTimer = lerpTimer + dt
+        local t = _min(lerpTimer / LERP_DURATION, 1)
+        colorCurrent[1] = colorFrom[1] + (colorTarget[1] - colorFrom[1]) * t
+        colorCurrent[2] = colorFrom[2] + (colorTarget[2] - colorFrom[2]) * t
+        colorCurrent[3] = colorFrom[3] + (colorTarget[3] - colorFrom[3]) * t
+        if t >= 1 then
+            lerpActive = false
+        end
+    end
+
+    -- Progressive circle generation
     if not generating then return end
 
     local placed = 0
@@ -222,7 +279,7 @@ function M.draw(camera)
                         local c = circles[idx]
                         -- Alpha scales with radius (bigger = more subtle, smaller = brighter)
                         local alpha = BASE_ALPHA + (1 - _min(c.r / 2, 1)) * 0.08
-                        lg.setColor(0.15, 0.35, 0.4, alpha)
+                        lg.setColor(colorCurrent[1], colorCurrent[2], colorCurrent[3], alpha)
 
                         if drawStyle == "filled" then
                             lg.circle("fill", c.x, c.y, c.r)

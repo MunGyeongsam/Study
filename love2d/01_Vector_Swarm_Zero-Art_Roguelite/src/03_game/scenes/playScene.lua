@@ -57,6 +57,7 @@ function PlayScene:_initGame()
     cameraManager.getGameCamera():setOrthographicSize(5)
 
     background.init(1)
+    background.setStage(1)
     gameState.startPlaying()
     levelUp.reset()
     _hitStopTimer = 0
