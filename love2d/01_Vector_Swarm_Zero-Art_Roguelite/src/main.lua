@@ -246,12 +246,10 @@ function love.load()
     pauseMenu.setCallbacks({
         onContinue = function() gameState.resume() end,
         onRestart = function()
-            gameState.resume()  -- unpause first
-            restartGame()
+            restartGame()  -- startPlaying()이 상태를 PLAYING으로 직접 전환
         end,
         onMenu = function()
-            gameState.resume()
-            returnToTitle()
+            returnToTitle()  -- toTitle()이 상태를 TITLE로 직접 전환
         end,
     })
     
@@ -574,6 +572,24 @@ end
 -- Debug console functions are now handled automatically by Logger
 
 function love.keypressed(key)
+    -- 디버그 키는 모든 상태에서 작동
+    local debugHandled = true
+    if key == "f1" then
+        debug.toggleConsole()
+    elseif key == "`" then
+        logger.toggleConsole()
+    elseif key == "f2" then
+        uiManager.toggleVisibility()
+    elseif key == "f3" then
+        uiManager.toggleDebugMode()
+    elseif key == "f4" then
+        showWorldGrid = not showWorldGrid
+        screenDebugDraw.toggle()
+    else
+        debugHandled = false
+    end
+    if debugHandled then return end
+
     -- 타이틀 화면 키 입력
     if gameState.isTitle() then
         -- 업그레이드 트리가 열려있으면 먼저 처리
@@ -595,18 +611,7 @@ function love.keypressed(key)
     -- 업그레이드 트리 키 입력 처리
     if upgradeTree.keypressed(key) then return end
 
-    if key == "f1" then
-        debug.toggleConsole()   -- F1: 디버그 watch panel 토글
-    elseif key == "`" then
-        logger.toggleConsole()  -- ` (백틱): 로거 콘솔 토글
-    elseif key == "f2" then
-        uiManager.toggleVisibility()  -- F2키로 UI 토글
-    elseif key == "f3" then
-        uiManager.toggleDebugMode()  -- F3키로 UI 디버그 모드 토글
-    elseif key == "f4" then
-        showWorldGrid = not showWorldGrid
-        screenDebugDraw.toggle()    -- F4: 그리드 토글 (월드+스크린)
-    elseif key == "f5" then
+    if key == "f5" then
         cameraManager.toggle()      -- F5: 게임/디버그 카메라 전환
     elseif key == "f6" then
         bloom.toggle()              -- F6: Bloom 토글

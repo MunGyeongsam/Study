@@ -190,6 +190,7 @@ end
 
 function GameState.pause()
     if state.current == GameState.PLAYING then
+        state.preTimeScale = state.timeScale  -- 포커스 슬로모 보존
         state.current = GameState.PAUSED
         state.timeScale = 0
         logInfo("[GAME] Paused")
@@ -199,7 +200,8 @@ end
 function GameState.resume()
     if state.current == GameState.PAUSED then
         state.current = GameState.PLAYING
-        state.timeScale = 1.0
+        state.timeScale = state.preTimeScale or 1.0  -- 포커스 슬로모 복원
+        state.preTimeScale = nil
         logInfo("[GAME] Resumed")
     end
 end
