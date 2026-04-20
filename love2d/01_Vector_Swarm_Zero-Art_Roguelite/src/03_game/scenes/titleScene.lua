@@ -30,7 +30,8 @@ function TitleScene:enter(prev)
             self._sceneStack:push(UpgradeScene.new(self._sceneStack))
         end,
         onCredits = function()
-            logInfo("[MENU] Credits (not yet implemented)")
+            local CreditsScene = require("03_game.scenes.creditsScene")
+            self._sceneStack:push(CreditsScene.new(self._sceneStack))
         end,
     })
     if stopBGM then stopBGM() end
