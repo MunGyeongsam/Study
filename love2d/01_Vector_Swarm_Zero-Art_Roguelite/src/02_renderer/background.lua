@@ -51,10 +51,10 @@ local drawStyle = "mixed"
 local enabled   = true
 local generating = false  -- true while progressive generation is active
 
--- Color lerp state
-local colorCurrent = {0.15, 0.35, 0.4}
-local colorTarget  = {0.15, 0.35, 0.4}
-local colorFrom    = {0.15, 0.35, 0.4}
+-- Color lerp state (initialized from first theme)
+local colorCurrent = {STAGE_THEMES[1].color[1], STAGE_THEMES[1].color[2], STAGE_THEMES[1].color[3]}
+local colorTarget  = {STAGE_THEMES[1].color[1], STAGE_THEMES[1].color[2], STAGE_THEMES[1].color[3]}
+local colorFrom    = {STAGE_THEMES[1].color[1], STAGE_THEMES[1].color[2], STAGE_THEMES[1].color[3]}
 local lerpTimer    = 0
 local lerpActive   = false
 

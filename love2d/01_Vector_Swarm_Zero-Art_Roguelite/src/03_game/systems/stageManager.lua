@@ -142,6 +142,7 @@ function StageManager:update(dt)
         if self.wave >= config.waves then
             self.state = StageManager.STATE_STAGE_CLEAR
             self.clearTimer = 0
+            self.stageClearProcessed = false
             logInfo(string.format("[STAGE] Stage %d CLEAR!", self.stage))
         else
             self.state = StageManager.STATE_WAVE_INTRO
@@ -150,7 +151,8 @@ function StageManager:update(dt)
 
     elseif st == StageManager.STATE_STAGE_CLEAR then
         self.clearTimer = self.clearTimer + dt
-        if self.clearTimer < 0.05 then
+        if not self.stageClearProcessed then
+            self.stageClearProcessed = true
             self.ecsManager.bulletPool:clear()
             self:_vacuumXpOrbs()  -- XP auto-collect trigger
             -- Fragment stage clear bonus

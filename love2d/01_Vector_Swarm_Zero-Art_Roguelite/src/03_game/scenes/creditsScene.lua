@@ -42,14 +42,19 @@ local LINE_H = { small = 18, medium = 24, large = 28, xlarge = 32 }
 function CreditsScene.new(sceneStack)
     return setmetatable({
         _sceneStack = sceneStack,
-        _scrollY = 0,
         _timer = 0,
+        _fonts = nil,
     }, CreditsScene)
 end
 
 function CreditsScene:enter(prev)
-    self._scrollY = 0
     self._timer = 0
+    self._fonts = {
+        small  = love.graphics.newFont(12),
+        medium = love.graphics.newFont(16),
+        large  = love.graphics.newFont(20),
+        xlarge = love.graphics.newFont(24),
+    }
     logInfo("[CREDITS] CreditsScene entered")
 end
 
@@ -69,15 +74,8 @@ function CreditsScene:draw()
     lg.setColor(0, 0, 0, 0.85)
     lg.rectangle("fill", 0, 0, W, H)
 
-    -- Fonts
-    local fonts = {
-        small  = lg.newFont(12),
-        medium = lg.newFont(16),
-        large  = lg.newFont(20),
-        xlarge = lg.newFont(24),
-    }
-
     -- Calculate total height
+    local fonts = self._fonts
     local totalH = 0
     for _, line in ipairs(CREDITS) do
         totalH = totalH + (LINE_H[line.size] or 18)
