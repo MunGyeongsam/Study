@@ -6,6 +6,7 @@
 -- Uses a spatial hash grid for O(1) visibility culling.
 
 local logger = require("00_common.logger")
+local world  = require("01_core.world")
 
 local M = {}
 
@@ -139,7 +140,6 @@ function M.init(stageNum)
     rng = love.math.newRandomGenerator(seed)
 
     -- World size from world module
-    local world = require("01_core.world")
     worldW = world.size.width
     worldH = world.size.height
     worldMinX = world.center.x - worldW / 2

@@ -23,6 +23,18 @@ local _floor = math.floor
 
 local EntityFactory = {}
 
+-- ─── Player defaults ─────────────────────────────────────────────
+local PLAYER = {
+    speed    = 2,   maxSpeed  = 5,   damping = 1.0,
+    radius   = 0.1, color     = {0, 1, 1, 1},
+    hp       = 5,   iFrames   = 1.5,
+    fireRate = 4,   bulletSpeed = 4, bulletCount = 1, range = 6,
+    dashDist = 2.0, dashCooldown = 3.0, dashIFrames = 0.3,
+}
+
+-- ─── Enemy max speed (scaled by difficulty) ──────────────────────
+local ENEMY_MAX_SPEED = 3
+
 -- Enemy type presets (세계관 기반 6종 — Worm 제외 5종 구현)
 local ENEMY_TYPES = {
     -- Bit: 접촉형 무리. 탄막 없이 몸통으로 돌진
@@ -96,29 +108,30 @@ function EntityFactory.createPlayer(world, x, y)
     }))
 
     world:addComponent(entityId, "Velocity", Velocity.new({
-        speed = 2, maxSpeed = 5, damping = 1.0,  -- InputSystem이 매 프레임 직접 설정
+        speed = PLAYER.speed, maxSpeed = PLAYER.maxSpeed, damping = PLAYER.damping,
     }))
 
     world:addComponent(entityId, "Collider", Collider.new({
-        radius = 0.1, layer = "player",
+        radius = PLAYER.radius, layer = "player",
         mask = {"enemy", "bullet", "powerup"},
     }))
 
     world:addComponent(entityId, "Renderable", Renderable.new({
-        type = "circle", radius = 0.1,
-        color = {0, 1, 1, 1},
+        type = "circle", radius = PLAYER.radius,
+        color = PLAYER.color,
     }))
 
     -- 플레이어 전용 컴포넌트
     world:addComponent(entityId, "Input", Input.new())
     world:addComponent(entityId, "PlayerTag", PlayerTag.new())
     world:addComponent(entityId, "WorldBound", WorldBound.new())
-    world:addComponent(entityId, "Health", Health.new({ hp = 5, maxHp = 5, iFrames = 1.5 }))
+    world:addComponent(entityId, "Health", Health.new({ hp = PLAYER.hp, maxHp = PLAYER.hp, iFrames = PLAYER.iFrames }))
     world:addComponent(entityId, "PlayerWeapon", PlayerWeapon.new({
-        fireRate = 4, bulletSpeed = 4, bulletCount = 1, range = 6,
+        fireRate = PLAYER.fireRate, bulletSpeed = PLAYER.bulletSpeed,
+        bulletCount = PLAYER.bulletCount, range = PLAYER.range,
     }))
     world:addComponent(entityId, "Dash", Dash.new({
-        distance = 2.0, cooldown = 3.0, iFrames = 0.3,
+        distance = PLAYER.dashDist, cooldown = PLAYER.dashCooldown, iFrames = PLAYER.dashIFrames,
     }))
     world:addComponent(entityId, "Focus", Focus.new())
     world:addComponent(entityId, "PlayerXP", PlayerXP.new())
@@ -146,7 +159,7 @@ function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
         x = x or 0, y = y or 5,
     }))
     world:addComponent(entityId, "Velocity", Velocity.new({
-        vx = 0, vy = 0, speed = (preset.ai.speed or 1) * spdMult, maxSpeed = 3 * spdMult, damping = 1.0,
+        vx = 0, vy = 0, speed = (preset.ai.speed or 1) * spdMult, maxSpeed = ENEMY_MAX_SPEED * spdMult, damping = 1.0,
     }))
     world:addComponent(entityId, "Collider", Collider.new({
         radius = preset.radius, layer = "enemy",

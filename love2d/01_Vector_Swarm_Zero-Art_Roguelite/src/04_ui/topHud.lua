@@ -89,12 +89,12 @@ function topHud.draw()
     
     -- 수집 요소 표시
     if gameData.powerUps then
-        local powerUpText = string.format("⚡:%d", gameData.powerUps)
+        local powerUpText = string.format("PWR:%d", gameData.powerUps)
         lg.print(powerUpText, 150, 25)
     end
     
     if gameData.secrets then
-        local secretText = string.format("🔍:%d", gameData.secrets)
+        local secretText = string.format("SEC:%d", gameData.secrets)
         lg.print(secretText, 200, 25)
     end
     

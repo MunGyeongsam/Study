@@ -42,15 +42,17 @@ src/
 │   ├── logger.lua    # 4-level logging + in-game console (` key)
 │   ├── debug.lua     # In-game debug overlay (key-value watch panel)
 │   └── gridDebugDraw.lua  # Screen-space grid overlay (F4)
-├── 01_core/          # Engine layer
+├── 01_core/          # Engine layer (pure engine, no game deps)
 │   ├── world.lua     # World boundaries, zones, fun elements
 │   ├── ecs.lua       # ECS core (entity/component management, componentIndex cache)
-│   ├── system.lua    # System base class (performance monitoring)
-│   └── ecsManager.lua # ECS orchestrator (system registration, update/draw split)
-├── 02_renderer/      # Camera & rendering
+│   └── system.lua    # System base class (performance monitoring)
+├── 02_renderer/      # Camera & rendering & post-processing
 │   ├── camera.lua    # Unity-style orthographic camera
-│   └── cameraManager.lua  # Game/debug camera modes (F5 toggle)
+│   ├── cameraManager.lua  # Game/debug camera modes (F5 toggle)
+│   ├── bloom.lua     # Bloom post-processing (threshold + Gaussian blur)
+│   └── background.lua # Random Space Filling background (Paul Bourke)
 ├── 03_game/          # Game logic
+│   ├── ecsManager.lua # ECS orchestrator (system registration, update/draw split)
 │   ├── components/   # Pure-data ECS components (17 types)
 │   │   ├── transform.lua, velocity.lua, collider.lua, renderable.lua
 │   │   ├── lifespan.lua, playerTag.lua, input.lua, worldBound.lua
@@ -72,11 +74,15 @@ src/
 │   └── states/       # Game states
 │       ├── gameState.lua      # Game state machine (playing/game_over/level_up)
 │       └── levelUp.lua        # Level-up 3-choice UI + diminishing returns
-└── 04_ui/            # HUD, mobile layout, button controls
-    ├── uiManager.lua
-    ├── topHud.lua
-    ├── bottomControls.lua
-    └── mobileLayout.lua
+├── 04_ui/            # HUD, mobile layout, button controls
+│   ├── uiManager.lua
+│   ├── topHud.lua
+│   ├── bottomControls.lua
+│   └── mobileLayout.lua
+└── 05_sound/         # Zero-Art procedural audio
+    ├── synth.lua     # Oscillator engine (5 waveforms, ADSR, freq sweep)
+    ├── soundManager.lua # Hybrid loader (ext_res file → code gen fallback)
+    └── sfxDefs.lua   # SFX recipes (6 sound effects)
 ```
 
 ### Key cross-layer rules
@@ -84,10 +90,10 @@ src/
 - `00_common/global.lua` must be loaded **first** in `love.load()`; it defines globals used everywhere (`log`, `setColor`, etc.).
 - `logger.init()` is called immediately after `global.init()`.
 
-### ECS architecture (`01_core/`)
+### ECS architecture (`01_core/` + `03_game/ecsManager.lua`)
 - **ecs.lua**: Entity lifecycle (create/destroy with ID recycling), component CRUD, `queryEntities()` with pivot optimization and `componentIndex` cache.
 - **system.lua**: `System.new(name, requiredComponents, updateFn)` — base class with built-in performance timing.
-- **ecsManager.lua**: Orchestrates all systems. `update(dt)` runs logic systems; `draw()` runs render systems separately. Systems registered via `addSystem()` execute in registration order.
+- **ecsManager.lua** (`03_game/`): Orchestrates all systems. `update(dt)` runs logic systems; `draw()` runs render systems separately. Systems registered via `addSystem()` execute in registration order.
 
 ### Component pattern (`03_game/components/`)
 Each component file exports `{ name, defaults, new(data) }`:

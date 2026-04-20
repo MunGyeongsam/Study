@@ -1,7 +1,7 @@
 # Vector Swarm — 프로젝트 로드맵 & TODO
 
-> 마지막 갱신: 2026-04-19
-> 현재 위치: **Phase 3A 완료** — 보스 5종 + 밸런스 패스 + 성능 최적화. 다음: 3C.1 Bloom 셰이더 / 3B 적 다양성
+> 마지막 갱신: 2026-04-20
+> 현재 위치: **Phase 3B/3C 완료** — 적 다양성 + 비주얼 이펙트 + SFX 시스템. 다음: 3D.1 BGM / 3D.3 보스전 BGM 전환
 
 ---
 
@@ -133,9 +133,9 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시
 ### 3D. 사운드
 | # | 작업 | 상태 |
 |---|------|------|
-| 3D.1 | 신스웨이브 BGM | 🔲 |
-| 3D.2 | 효과음 (발사, 피격, 처치, 레벨업) | 🔲 |
-| 3D.3 | 보스전 BGM 전환 | 🔲 |
+| 3D.1 | 절차적 사운드 시스템 (synth 엔진 + SFX 6종) | ✅ |
+| 3D.2 | 효과음 게임 통합 (발사, 피격, 처치, 대쉬, 레벨업) | ✅ |
+| 3D.3 | BGM + 보스전 BGM 전환 | 🔲 |
 
 ---
 
@@ -159,18 +159,12 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시
 ## 기술 부채 & 메모
 
 - [ ] world.lua 존 텍스트 한글 인코딩 깨짐 (로그에서 문자열 깨짐)
-- [x] ~~gameState.lua 폰트 캐싱~~ (이미 lazy init 적용됨, 메모만 outdated)
-- [x] ~~bulletEmitterSystem angle 오버플로~~ (modulo 2π 감싸기 적용)
-- [x] ~~컴포넌트 테이블 공유 참조 버그~~ (collider/renderable/bulletEmitter/playerWeapon)
-- [x] ~~ecs._indexSize O(1) 카운터 최적화~~ (`2d17115`)
-- [x] ~~mobileLayout.getLayout() GC 제거~~ (`2d17115`)
-- [x] ~~적 처치 파편 파티클 효과 (2A.3)~~ (`bdab36c`)
-- [ ] 구역 전환 연출 (배경색 변화, 텍스트) — Phase 3으로 이동
-- [ ] 보스 처치 연출 풀 버전: 탄막→XP 변환, 회복 애니메이션, 글리치 텍스트 — Phase 3C
-- [x] ~~HEAP/RECURSION/OVERFLOW 보스 프리셋 구현 (3A.10~12)~~
-- [x] ~~main.lua의 `ecsEnemyId` 미사용 변수~~ (d7460e0에서 제거)
-- [x] ~~onReset 콜백 미연동~~ (refactor에서 정리)
-- [x] ~~적 스폰 top-only 문제~~ (59f923e — 4방향 스폰)
+- [ ] 구역 전환 연출 (배경색 변화, 텍스트) — Phase 4로 이동
+- [ ] 보스 처치 연출 풀 버전: 탄막→XP 변환, 회복 애니메이션, 글리치 텍스트 — Phase 4
+- [x] ~~ecsManager 레이어 위반~~ (01_core/ → 03_game/ 이동)
+- [x] ~~emoji 렌더링 (topHud)~~ (ASCII 태그로 교체)
+- [x] ~~late require (ecsManager, background)~~ (모듈 상단으로 이동)
+- [x] ~~magic number (entityFactory)~~ (PLAYER/ENEMY_MAX_SPEED 상수 추출)
 
 ---
 

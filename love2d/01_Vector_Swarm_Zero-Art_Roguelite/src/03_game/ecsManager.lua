@@ -2,6 +2,7 @@
 -- 전체 ECS 월드와 시스템들을 관리
 
 local ECS = require("01_core.ecs")
+local world = require("01_core.world")
 
 local _random = math.random
 local _pi     = math.pi
@@ -50,7 +51,6 @@ function ECSManager.init(getPlayerPos)
     ECSManager.bulletPool = BulletPool.new(2000)
 
     -- World bounds for bullet culling (use getBounds for consistency)
-    local world = require("01_core.world")
     local left, bottom, right, top = world.getBounds()
     ECSManager.bulletBounds = {
         minX = left, maxX = right,
