@@ -1,5 +1,5 @@
 -- Game State Manager
--- Manages game states: playing, game_over
+-- Manages game states: title, playing, paused, game_over
 -- Tracks score (survival time) and handles restart.
 
 local GameState = {}
@@ -7,7 +7,9 @@ local GameState = {}
 local _sin = math.sin
 
 -- States
+GameState.TITLE     = "title"
 GameState.PLAYING   = "playing"
+GameState.PAUSED    = "paused"
 GameState.GAME_OVER = "game_over"
 
 -- Cached fonts (created once on first draw)
@@ -16,7 +18,7 @@ local scoreFont = nil
 
 -- State
 local state = {
-    current     = GameState.PLAYING,
+    current     = GameState.TITLE,
     score       = 0,        -- survival time in seconds
     bestScore   = 0,        -- best survival time
     waveReached = 0,
@@ -176,6 +178,50 @@ end
 
 function GameState.getTimeScale()
     return state.timeScale
+end
+
+function GameState.isTitle()
+    return state.current == GameState.TITLE
+end
+
+function GameState.isPaused()
+    return state.current == GameState.PAUSED
+end
+
+function GameState.pause()
+    if state.current == GameState.PLAYING then
+        state.current = GameState.PAUSED
+        state.timeScale = 0
+        logInfo("[GAME] Paused")
+    end
+end
+
+function GameState.resume()
+    if state.current == GameState.PAUSED then
+        state.current = GameState.PLAYING
+        state.timeScale = 1.0
+        logInfo("[GAME] Resumed")
+    end
+end
+
+function GameState.toTitle()
+    state.current = GameState.TITLE
+    state.timeScale = 0
+    if stopBGM then stopBGM() end
+    logInfo("[GAME] Returned to title")
+end
+
+function GameState.startPlaying()
+    state.current = GameState.PLAYING
+    state.score = 0
+    state.gameOverTimer = 0
+    state.timeScale = 1.0
+    state.stage = 1
+    state.wave = 0
+    state.waveReached = 0
+    state.fragments = 0
+    if playBGM then playBGM("stage") end
+    logInfo("[GAME] Started playing")
 end
 
 return GameState

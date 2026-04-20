@@ -20,11 +20,15 @@ local ecsManager = require("03_game.ecsManager")  -- ECS 오케스트레이터
 local gameState = require("03_game.states.gameState")
 local levelUp = require("03_game.states.levelUp")
 local upgradeTree = require("03_game.states.upgradeTree")
+local titleMenu = require("03_game.states.titleMenu")
+local pauseMenu = require("03_game.states.pauseMenu")
 local soundManager = require("05_sound.soundManager")
 local saveData = require("00_common.saveData")
 
 local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
+local startGame         -- forward declaration
 local restartGame       -- forward declaration (콜백에서 참조)
+local returnToTitle     -- forward declaration
 local hitStopTimer = 0  -- hit-stop freeze (boss defeat)
 local godMode = false   -- debug: player invincibility (F7)
 
@@ -226,9 +230,76 @@ function love.load()
     -- 배경 초기화 (스테이지 1)
     background.init(1)
 
-    -- 게임 상태 초기화
-    gameState.init()
+    -- 타이틀 메뉴에서 시작 (게임은 아직 시작하지 않음)
+    gameState.toTitle()
+
+    -- 타이틀 메뉴 콜백 설정
+    titleMenu.setCallbacks({
+        onPlay = function() startGame() end,
+        onUpgrades = function() upgradeTree.show() end,
+        onCredits = function()
+            logInfo("[MENU] Credits (not yet implemented)")
+        end,
+    })
+
+    -- 일시정지 메뉴 콜백 설정
+    pauseMenu.setCallbacks({
+        onContinue = function() gameState.resume() end,
+        onRestart = function()
+            gameState.resume()  -- unpause first
+            restartGame()
+        end,
+        onMenu = function()
+            gameState.resume()
+            returnToTitle()
+        end,
+    })
     
+end
+
+-- 게임 시작 (타이틀 → 플레이)
+startGame = function()
+    -- ECS 월드 초기화
+    ecsManager.restart()
+
+    -- 플레이어 재생성 + 바인딩 (하단 시작)
+    local playerId = ecsManager.createPlayer(0, -12)
+    player.bind(ecsManager.getWorld(), playerId)
+    player.init(0, -12)
+    upgradeTree.applyToPlayer(ecsManager.getWorld(), playerId)
+
+    -- 카메라 리셋
+    local px, py = player.getPosition()
+    cameraManager.getGameCamera():lookAt(px, py)
+    cameraManager.getGameCamera():setOrthographicSize(5)
+
+    -- 배경 재생성
+    background.init(1)
+
+    -- 게임 상태 시작
+    gameState.startPlaying()
+    levelUp.reset()
+    hitStopTimer = 0
+
+    logInfo("[GAME] Game started from title")
+end
+
+-- 타이틀로 복귀
+returnToTitle = function()
+    -- Fragment 저장
+    local runFragments = gameState.getFragments()
+    if runFragments > 0 then
+        saveData.addFragments(runFragments)
+    end
+    local score = gameState.getScore()
+    local stageInfo = gameState.getStageInfo()
+    saveData.recordRun(score, stageInfo)
+    saveData.save()
+
+    gameState.toTitle()
+    titleMenu.reset()
+    levelUp.reset()
+    hitStopTimer = 0
 end
 
 -- 게임 리스타트
@@ -261,13 +332,27 @@ restartGame = function()
     background.init(1)
 
     -- 게임 상태 리셋
-    gameState.init()
+    gameState.startPlaying()
     levelUp.reset()  -- 감쇠 스택 초기화
+    hitStopTimer = 0
 
     logInfo("[GAME] Restarted!")
 end
 
 function love.update(dt)
+    -- 타이틀 화면: 타이틀 메뉴만 업데이트
+    if gameState.isTitle() then
+        titleMenu.update(dt)
+        -- 업그레이드 트리 열려있으면 그것도 업데이트
+        if upgradeTree.isActive() then return end
+        return
+    end
+
+    -- 일시정지: 게임 로직 정지
+    if gameState.isPaused() then
+        return
+    end
+
     -- Hit-stop freeze (boss defeat moment)
     if hitStopTimer > 0 then
         hitStopTimer = hitStopTimer - dt
@@ -474,11 +559,36 @@ function love.draw()
 
     -- 업그레이드 트리 UI (최상위)
     upgradeTree.draw()
+
+    -- 타이틀 메뉴 (최상위)
+    if gameState.isTitle() then
+        titleMenu.draw()
+    end
+
+    -- 일시정지 오버레이 (최상위)
+    if gameState.isPaused() then
+        pauseMenu.draw()
+    end
 end
 
 -- Debug console functions are now handled automatically by Logger
 
 function love.keypressed(key)
+    -- 타이틀 화면 키 입력
+    if gameState.isTitle() then
+        -- 업그레이드 트리가 열려있으면 먼저 처리
+        if upgradeTree.keypressed(key) then return end
+        if key == "escape" then love.event.quit(); return end
+        titleMenu.keypressed(key)
+        return
+    end
+
+    -- 일시정지 화면 키 입력
+    if gameState.isPaused() then
+        pauseMenu.keypressed(key)
+        return
+    end
+
     -- 레벨업 선택 우선 처리
     if levelUp.keypressed(key) then return end
 
@@ -541,7 +651,12 @@ function love.keypressed(key)
         end
     end
     if key == 'escape' then
-        love.event.quit()  -- ESC키로 게임 종료
+        if gameState.isPlaying() then
+            gameState.pause()
+            pauseMenu.reset()
+        else
+            love.event.quit()  -- 게임오버 등에서 ESC = 종료
+        end
     end
     
     -- 디버그 카메라 모드: +/- 키로 줌 조절
@@ -564,6 +679,19 @@ end
 
 -- 모바일 터치 입력 처리
 function love.touchpressed(id, x, y, dx, dy, pressure)
+    -- 타이틀 화면 터치 처리
+    if gameState.isTitle() then
+        if upgradeTree.touchpressed(x, y) then return end
+        titleMenu.touchpressed(x, y)
+        return
+    end
+
+    -- 일시정지 화면 터치 처리
+    if gameState.isPaused() then
+        pauseMenu.touchpressed(x, y)
+        return
+    end
+
     -- 레벨업 선택 우선 처리
     if levelUp.touchpressed(x, y) then return end
 
