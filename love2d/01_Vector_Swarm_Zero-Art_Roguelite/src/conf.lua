@@ -21,7 +21,7 @@ local resolutionIndex = 5
 local resolution = resolutionList[resolutionIndex]
 
 function love.conf(t)
-    print("config.lua loaded!") -- Debug: 설정 파일 로드 확인
+    -- Note: logger unavailable at conf time; use print only for critical debug
     
     t.title = "Vector Swarm - Zero Art Roguelite"    -- The title of the window
     t.author = "Your Name"                           -- The author of the game
