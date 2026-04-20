@@ -29,6 +29,10 @@ function TitleScene:enter(prev)
             local UpgradeScene = require("03_game.scenes.upgradeScene")
             self._sceneStack:push(UpgradeScene.new(self._sceneStack))
         end,
+        onAchievements = function()
+            local AchievementScene = require("03_game.scenes.achievementScene")
+            self._sceneStack:push(AchievementScene.new(self._sceneStack))
+        end,
         onCredits = function()
             local CreditsScene = require("03_game.scenes.creditsScene")
             self._sceneStack:push(CreditsScene.new(self._sceneStack))

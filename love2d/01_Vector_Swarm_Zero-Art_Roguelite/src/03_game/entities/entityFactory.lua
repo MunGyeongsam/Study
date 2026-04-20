@@ -32,6 +32,25 @@ local PLAYER = {
     dashDist = 2.0, dashCooldown = 3.0, dashIFrames = 0.3,
 }
 
+-- ─── Character Presets (해금 시스템) ─────────────────────────────
+local CHARACTER_PRESETS = {
+    default = PLAYER,
+    debugger = {
+        speed    = 2.5, maxSpeed  = 6,   damping = 1.0,
+        radius   = 0.06, color    = {0.4, 1, 0.4, 1},
+        hp       = 3,   iFrames   = 1.0,
+        fireRate = 5,   bulletSpeed = 5, bulletCount = 1, range = 6,
+        dashDist = 2.5, dashCooldown = 2.5, dashIFrames = 0.3,
+    },
+    compiler = {
+        speed    = 1.5, maxSpeed  = 3.5, damping = 1.0,
+        radius   = 0.15, color    = {1, 0.6, 0.2, 1},
+        hp       = 8,   iFrames   = 2.0,
+        fireRate = 3,   bulletSpeed = 3.5, bulletCount = 1, range = 7,
+        dashDist = 1.5, dashCooldown = 4.0, dashIFrames = 0.4,
+    },
+}
+
 -- ─── Enemy max speed (scaled by difficulty) ──────────────────────
 local ENEMY_MAX_SPEED = 3
 
@@ -99,8 +118,9 @@ local ENEMY_TYPES = {
     wave    = nil,  -- → matrix로 대체
 }
 
--- 플레이어 엔티티 생성
-function EntityFactory.createPlayer(world, x, y)
+-- 플레이어 엔티티 생성 (characterId: "default", "debugger", "compiler")
+function EntityFactory.createPlayer(world, x, y, characterId)
+    local P = CHARACTER_PRESETS[characterId or "default"] or PLAYER
     local entityId = world:createEntity()
 
     world:addComponent(entityId, "Transform", Transform.new({
@@ -108,30 +128,30 @@ function EntityFactory.createPlayer(world, x, y)
     }))
 
     world:addComponent(entityId, "Velocity", Velocity.new({
-        speed = PLAYER.speed, maxSpeed = PLAYER.maxSpeed, damping = PLAYER.damping,
+        speed = P.speed, maxSpeed = P.maxSpeed, damping = P.damping,
     }))
 
     world:addComponent(entityId, "Collider", Collider.new({
-        radius = PLAYER.radius, layer = "player",
+        radius = P.radius, layer = "player",
         mask = {"enemy", "bullet", "powerup"},
     }))
 
     world:addComponent(entityId, "Renderable", Renderable.new({
-        type = "circle", radius = PLAYER.radius,
-        color = PLAYER.color,
+        type = "circle", radius = P.radius,
+        color = P.color,
     }))
 
     -- 플레이어 전용 컴포넌트
     world:addComponent(entityId, "Input", Input.new())
     world:addComponent(entityId, "PlayerTag", PlayerTag.new())
     world:addComponent(entityId, "WorldBound", WorldBound.new())
-    world:addComponent(entityId, "Health", Health.new({ hp = PLAYER.hp, maxHp = PLAYER.hp, iFrames = PLAYER.iFrames }))
+    world:addComponent(entityId, "Health", Health.new({ hp = P.hp, maxHp = P.hp, iFrames = P.iFrames }))
     world:addComponent(entityId, "PlayerWeapon", PlayerWeapon.new({
-        fireRate = PLAYER.fireRate, bulletSpeed = PLAYER.bulletSpeed,
-        bulletCount = PLAYER.bulletCount, range = PLAYER.range,
+        fireRate = P.fireRate, bulletSpeed = P.bulletSpeed,
+        bulletCount = P.bulletCount, range = P.range,
     }))
     world:addComponent(entityId, "Dash", Dash.new({
-        distance = PLAYER.dashDist, cooldown = PLAYER.dashCooldown, iFrames = PLAYER.dashIFrames,
+        distance = P.dashDist, cooldown = P.dashCooldown, iFrames = P.dashIFrames,
     }))
     world:addComponent(entityId, "Focus", Focus.new())
     world:addComponent(entityId, "PlayerXP", PlayerXP.new())

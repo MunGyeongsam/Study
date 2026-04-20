@@ -18,12 +18,16 @@ local SAVE_FILE = "save/progress.dat"
 -- Default data (첫 실행 시)
 local function defaultData()
     return {
-        fragments    = 0,          -- 보유 Data Fragment
-        totalFragments = 0,        -- 누적 획득 Fragment
-        upgrades     = {},         -- { [upgradeId] = level }
-        bestScore    = 0,          -- 최고 생존시간
-        bestStage    = 0,          -- 최고 도달 스테이지
-        totalRuns    = 0,          -- 총 플레이 횟수
+        fragments      = 0,          -- 보유 Data Fragment
+        totalFragments = 0,          -- 누적 획득 Fragment
+        upgrades       = {},         -- { [upgradeId] = level }
+        bestScore      = 0,          -- 최고 생존시간
+        bestStage      = 0,          -- 최고 도달 스테이지
+        totalRuns      = 0,          -- 총 플레이 횟수
+        totalKills     = 0,          -- 누적 적 처치 수
+        bossesDefeated = {},         -- { ["NULL"]=true, ["STACK"]=true, ... }
+        achievements   = {},         -- { ["stage3_clear"]=true, ... }
+        selectedCharacter = "default",  -- 선택된 캐릭터 ID
     }
 end
 
@@ -185,13 +189,41 @@ end
 
 function saveData.getStats()
     return {
-        fragments      = data.fragments,
-        totalFragments = data.totalFragments,
-        bestScore      = data.bestScore,
-        bestStage      = data.bestStage,
-        totalRuns      = data.totalRuns,
-        upgrades       = data.upgrades,
+        fragments        = data.fragments,
+        totalFragments   = data.totalFragments,
+        bestScore        = data.bestScore,
+        bestStage        = data.bestStage,
+        totalRuns        = data.totalRuns,
+        upgrades         = data.upgrades,
+        totalKills       = data.totalKills,
+        bossesDefeated   = data.bossesDefeated,
+        achievements     = data.achievements,
+        selectedCharacter = data.selectedCharacter,
     }
+end
+
+-- 누적 킬 수 추가
+function saveData.addKills(count)
+    data.totalKills = data.totalKills + count
+end
+
+-- 보스 처치 기록
+function saveData.recordBossDefeat(bossType)
+    data.bossesDefeated[bossType] = true
+end
+
+-- 도전과제 해금
+function saveData.unlockAchievement(achievementId)
+    data.achievements[achievementId] = true
+end
+
+-- 캐릭터 선택
+function saveData.setSelectedCharacter(charId)
+    data.selectedCharacter = charId
+end
+
+function saveData.getSelectedCharacter()
+    return data.selectedCharacter or "default"
 end
 
 -- 디버그: 세이브 리셋

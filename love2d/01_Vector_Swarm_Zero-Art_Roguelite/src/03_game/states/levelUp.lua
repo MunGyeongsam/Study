@@ -365,4 +365,17 @@ function LevelUp.reset()
     pickCounts = {}
 end
 
+--- Apply a single random upgrade silently (for Start Boost passive)
+function LevelUp.applyRandomUpgrade(ecs, playerId)
+    local options = pickRandomOptions(1)
+    if #options > 0 then
+        local opt = options[1]
+        local count = pickCounts[opt.id] or 0
+        local factor = getDiminishingFactor(count)
+        opt.apply(ecs, playerId, factor)
+        pickCounts[opt.id] = count + 1
+        logInfo(string.format("[LEVELUP] Start Boost: %s applied (factor: %.0f%%)", opt.name, factor * 100))
+    end
+end
+
 return LevelUp

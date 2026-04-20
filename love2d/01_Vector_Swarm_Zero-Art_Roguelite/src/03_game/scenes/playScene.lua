@@ -11,6 +11,7 @@ local ecsManager    = require("03_game.ecsManager")
 local gameState     = require("03_game.states.gameState")
 local levelUp       = require("03_game.states.levelUp")
 local upgradeTree   = require("03_game.states.upgradeTree")
+local achievementSystem = require("03_game.states.achievementSystem")
 local world         = require("01_core.world")
 
 local _floor = math.floor
@@ -47,7 +48,9 @@ function PlayScene.getHitStopTimer() return _hitStopTimer end
 function PlayScene:_initGame()
     self._gameOverPushed = false
     ecsManager.restart()
-    local playerId = ecsManager.createPlayer(0, -12)
+    local saveData = require("00_common.saveData")
+    local charId = saveData.getSelectedCharacter()
+    local playerId = ecsManager.createPlayer(0, -12, charId)
     player.bind(ecsManager.getWorld(), playerId)
     player.init(0, -12)
     upgradeTree.applyToPlayer(ecsManager.getWorld(), playerId)
@@ -60,7 +63,14 @@ function PlayScene:_initGame()
     background.setStage(1)
     gameState.startPlaying()
     levelUp.reset()
+    achievementSystem.resetSession()
     _hitStopTimer = 0
+
+    -- Start Boost: 해금되면 게임 시작 시 랜덤 업그레이드 1개 자동 적용
+    if achievementSystem.isRewardUnlocked("start_boost") then
+        levelUp.applyRandomUpgrade(ecsManager.getWorld(), playerId)
+        logInfo("[BOOST] Start Boost applied")
+    end
 end
 
 --- 런 결과 저장 (returnToTitle, restart 공용)
@@ -73,6 +83,7 @@ function PlayScene:_saveRunResult()
     local score = gameState.getScore()
     local stageInfo = gameState.getStageInfo()
     saveData.recordRun(score, stageInfo)
+    achievementSystem.onRunEnd()
     saveData.save()
 end
 

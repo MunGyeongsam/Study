@@ -7,6 +7,7 @@ local world = require("01_core.world")
 local EntityFactory = require("03_game.entities.entityFactory")
 local gameState = require("03_game.states.gameState")
 local background = require("02_renderer.background")
+local achievementSystem = require("03_game.states.achievementSystem")
 
 local _min    = math.min
 local _max    = math.max
@@ -159,6 +160,8 @@ function StageManager:update(dt)
             local bonus = self.stage * 2
             gameState.addFragments(bonus)
             logInfo(string.format("[STAGE] Fragment bonus: +%d (stage %d)", bonus, self.stage))
+            -- Achievement: stage clear
+            achievementSystem.onStageClear(self.stage)
         end
         if self.clearTimer >= self.clearDuration then
             self.state = StageManager.STATE_COLLECTING
@@ -224,6 +227,9 @@ function StageManager:update(dt)
             local bonus = 5 + self.stage
             gameState.addFragments(bonus)
             logInfo(string.format("[STAGE] Boss fragment bonus: +%d", bonus))
+            -- Achievement: boss defeated
+            achievementSystem.onBossDefeated(self.bossType)
+            achievementSystem.onStageClear(self.stage)
         end
         if self.clearTimer >= self.clearDuration + 1.0 then  -- extra second for boss
             -- Destroy boss entity from ECS

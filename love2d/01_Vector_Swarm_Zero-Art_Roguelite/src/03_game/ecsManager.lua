@@ -25,6 +25,7 @@ local BulletPool                = require("03_game.systems.bulletPool")
 local createBulletEmitterSystem = require("03_game.systems.bulletEmitterSystem")
 local createCollisionSystem     = require("03_game.systems.collisionSystem")
 local createEnemyCollisionSystem = require("03_game.systems.enemyCollisionSystem")
+local achievementSystem           = require("03_game.states.achievementSystem")
 local createPlayerWeaponSystem  = require("03_game.systems.playerWeaponSystem")
 local createEnemyAISystem       = require("03_game.systems.enemyAISystem")
 local DashSystem                = require("03_game.systems.dashSystem")
@@ -156,12 +157,12 @@ function ECSManager.draw()
 end
 
 -- 플레이어 엔티티 생성 (EntityFactory 위임)
-function ECSManager.createPlayer(x, y)
+function ECSManager.createPlayer(x, y, characterId)
     if not ECSManager.world then
         logError("ECS: World not initialized")
         return nil
     end
-    return EntityFactory.createPlayer(ECSManager.world, x, y)
+    return EntityFactory.createPlayer(ECSManager.world, x, y, characterId)
 end
 
 -- 적 엔티티 생성 (EntityFactory 위임, difficulty 포워딩)
@@ -283,6 +284,9 @@ function ECSManager._registerBasicSystems()
         if _random() < dropRate then
             gameState.addFragments(1)
         end
+
+        -- Achievement: 킬 수 추적
+        achievementSystem.onEnemyKill()
     end
     ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath))
     -- 12. XpCollection: XP 오브 자석 수집 + 레벨업

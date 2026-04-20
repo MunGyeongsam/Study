@@ -3,6 +3,7 @@
 -- 게임 시작, 업그레이드, 옵션 진입
 
 local saveData = require("00_common.saveData")
+local achievementSystem = require("03_game.states.achievementSystem")
 
 local _sin   = math.sin
 local _cos   = math.cos
@@ -12,14 +13,33 @@ local titleMenu = {}
 
 -- Menu items
 local MENU_ITEMS = {
-    { id = "play",     label = "PLAY" },
-    { id = "upgrades", label = "UPGRADES" },
-    { id = "credits",  label = "CREDITS" },
+    { id = "play",         label = "PLAY" },
+    { id = "upgrades",     label = "UPGRADES" },
+    { id = "achievements", label = "ACHIEVEMENTS" },
+    { id = "credits",      label = "CREDITS" },
 }
+
+-- Character definitions for selection
+local CHARACTER_LIST = {
+    { id = "default",  name = "DEFAULT",  desc = "Balanced stats",    locked = false },
+    { id = "debugger", name = "DEBUGGER", desc = "Fast, small, fragile", locked = true, rewardId = "debugger" },
+    { id = "compiler", name = "COMPILER", desc = "Slow, tough, heavy",  locked = true, rewardId = "compiler" },
+}
+
+local function getAvailableCharacters()
+    local avail = {}
+    for _, ch in ipairs(CHARACTER_LIST) do
+        if not ch.locked or achievementSystem.isRewardUnlocked(ch.rewardId) then
+            avail[#avail + 1] = ch
+        end
+    end
+    return avail
+end
 
 local state = {
     selectedIndex = 1,
     timer = 0,           -- animation timer
+    charIndex = 1,       -- selected character index in available list
 }
 
 -- Cached fonts
@@ -29,9 +49,10 @@ local subFont     = nil
 
 -- Callbacks (set from main.lua)
 local callbacks = {
-    onPlay     = nil,
-    onUpgrades = nil,
-    onCredits  = nil,
+    onPlay         = nil,
+    onUpgrades     = nil,
+    onAchievements = nil,
+    onCredits      = nil,
 }
 
 function titleMenu.setCallbacks(cbs)
@@ -41,6 +62,13 @@ end
 function titleMenu.reset()
     state.selectedIndex = 1
     state.timer = 0
+    -- Sync character selection from save
+    local savedChar = saveData.getSelectedCharacter()
+    local avail = getAvailableCharacters()
+    state.charIndex = 1
+    for i, ch in ipairs(avail) do
+        if ch.id == savedChar then state.charIndex = i; break end
+    end
 end
 
 function titleMenu.update(dt)
@@ -128,6 +156,30 @@ function titleMenu.draw()
         lg.print(item.label, (w - tw) / 2, iy + 4)
     end
 
+    -- Character selector (only show if multiple characters available)
+    local available = getAvailableCharacters()
+    if #available > 1 then
+        lg.setFont(subFont)
+        local charY = menuStartY + #MENU_ITEMS * itemH + 10
+        lg.setColor(0.3, 0.6, 0.7, 0.6)
+        lg.printf("CHARACTER", 0, charY, w, "center")
+
+        local ch = available[state.charIndex] or available[1]
+        lg.setColor(0, 0.9, 0.8, 0.9)
+        lg.printf(string.format("< %s >", ch.name), 0, charY + 16, w, "center")
+        lg.setColor(0.4, 0.5, 0.6, 0.6)
+        lg.printf(ch.desc, 0, charY + 32, w, "center")
+    elseif #available == 1 then
+        -- Single character — no selector, but show name if not default
+        local ch = available[1]
+        if ch.id ~= "default" then
+            lg.setFont(subFont)
+            local charY = menuStartY + #MENU_ITEMS * itemH + 10
+            lg.setColor(0, 0.9, 0.8, 0.7)
+            lg.printf(string.format("Character: %s", ch.name), 0, charY, w, "center")
+        end
+    end
+
     -- Fragment balance (bottom)
     lg.setFont(subFont)
     lg.setColor(0.4, 0.8, 1.0, 0.6)
@@ -167,6 +219,8 @@ local function executeSelection()
         callbacks.onPlay()
     elseif item.id == "upgrades" and callbacks.onUpgrades then
         callbacks.onUpgrades()
+    elseif item.id == "achievements" and callbacks.onAchievements then
+        callbacks.onAchievements()
     elseif item.id == "credits" and callbacks.onCredits then
         callbacks.onCredits()
     end
@@ -180,6 +234,22 @@ function titleMenu.keypressed(key)
     elseif key == "down" then
         state.selectedIndex = state.selectedIndex + 1
         if state.selectedIndex > #MENU_ITEMS then state.selectedIndex = 1 end
+        return true
+    elseif key == "left" or key == "right" then
+        -- Character cycling
+        local avail = getAvailableCharacters()
+        if #avail > 1 then
+            if key == "left" then
+                state.charIndex = state.charIndex - 1
+                if state.charIndex < 1 then state.charIndex = #avail end
+            else
+                state.charIndex = state.charIndex + 1
+                if state.charIndex > #avail then state.charIndex = 1 end
+            end
+            local ch = avail[state.charIndex]
+            saveData.setSelectedCharacter(ch.id)
+            saveData.save()
+        end
         return true
     elseif key == "return" or key == "kpenter" or key == "space" then
         executeSelection()
