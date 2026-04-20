@@ -78,11 +78,13 @@ src/
 │   │   ├── levelUpScene.lua   # Level-up overlay (auto-pop)
 │   │   ├── upgradeScene.lua   # Upgrade tree overlay (auto-pop)
 │   │   ├── gameOverScene.lua  # Game over result scene
-│   │   └── creditsScene.lua   # Credits overlay scene (Paul Bourke attribution)
+│   │   ├── creditsScene.lua   # Credits overlay scene (Paul Bourke attribution)
+│   │   └── achievementScene.lua # Achievement list overlay
 │   ├── patterns/     # Bullet patterns (planned)
 │   └── states/       # Game states
 │       ├── gameState.lua      # Game state machine (playing/game_over/level_up)
-│       └── levelUp.lua        # Level-up 3-choice UI + diminishing returns
+│   │   ├── levelUp.lua        # Level-up 3-choice UI + diminishing returns
+│   │   └── achievementSystem.lua # Achievement tracking + unlock management
 ├── 04_ui/            # HUD, mobile layout, button controls
 │   ├── uiManager.lua
 │   ├── topHud.lua
