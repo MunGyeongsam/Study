@@ -198,6 +198,7 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시 ← 진행 중
 - [x] ~~emoji 렌더링 (topHud)~~ (ASCII 태그로 교체)
 - [x] ~~late require (ecsManager, background)~~ (모듈 상단으로 이동)
 - [x] ~~magic number (entityFactory)~~ (PLAYER/ENEMY_MAX_SPEED 상수 추출)
+- [x] ~~main.lua if-else 상태 분기 폭발~~ (Scene Stack 아키텍처 도입, `ae1b1c4`)
 
 ---
 
