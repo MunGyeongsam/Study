@@ -77,7 +77,8 @@ src/
 │   │   ├── pauseScene.lua     # Pause overlay scene (drawBelow)
 │   │   ├── levelUpScene.lua   # Level-up overlay (auto-pop)
 │   │   ├── upgradeScene.lua   # Upgrade tree overlay (auto-pop)
-│   │   └── gameOverScene.lua  # Game over result scene
+│   │   ├── gameOverScene.lua  # Game over result scene
+│   │   └── creditsScene.lua   # Credits overlay scene (Paul Bourke attribution)
 │   ├── patterns/     # Bullet patterns (planned)
 │   └── states/       # Game states
 │       ├── gameState.lua      # Game state machine (playing/game_over/level_up)
