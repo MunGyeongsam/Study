@@ -187,6 +187,23 @@ function BulletPool:clearLayer(layer)
     end
 end
 
+--- Collect positions of all bullets in a layer, then remove them.
+--- Returns array of {x, y} tables.
+function BulletPool:harvestLayer(layer)
+    local positions = {}
+    local i = 1
+    while i <= self.activeCount do
+        local b = self.active[i]
+        if b.layer == layer then
+            positions[#positions + 1] = { x = b.x, y = b.y }
+            self:_recycle(i)
+        else
+            i = i + 1
+        end
+    end
+    return positions
+end
+
 --- Get pool statistics.
 function BulletPool:getStats()
     return {

@@ -12,6 +12,7 @@ local _min    = math.min
 local _max    = math.max
 local _floor  = math.floor
 local _random = math.random
+local _char   = string.char
 
 local StageManager = {}
 StageManager.__index = StageManager
@@ -195,6 +196,7 @@ function StageManager:update(dt)
                 if not health or not health.alive then
                     self.state = StageManager.STATE_BOSS_CLEAR
                     self.clearTimer = 0
+                    self.bossClearProcessed = false
                     logInfo(string.format("[STAGE] Boss %s DEFEATED!", self.bossType))
                 end
             end
@@ -202,8 +204,19 @@ function StageManager:update(dt)
 
     elseif st == StageManager.STATE_BOSS_CLEAR then
         self.clearTimer = self.clearTimer + dt
-        if self.clearTimer < 0.05 then
-            self.ecsManager.bulletPool:clearLayer("enemy_bullet")
+        if not self.bossClearProcessed then
+            self.bossClearProcessed = true
+            -- Convert enemy bullets → XP orbs (visual payoff)
+            local w = self.ecsManager.getWorld()
+            local positions = self.ecsManager.bulletPool:harvestLayer("enemy_bullet")
+            local converted = 0
+            if w and #positions > 0 then
+                for _, pos in ipairs(positions) do
+                    EntityFactory.createXpOrb(w, pos.x, pos.y, 1)
+                    converted = converted + 1
+                end
+                logInfo(string.format("[BOSS] %d bullets → XP orbs", converted))
+            end
             self:_vacuumXpOrbs()  -- Boss XP burst auto-collect
             -- Fragment boss bonus: 5 + stage
             local bonus = 5 + self.stage
@@ -474,9 +487,31 @@ function StageManager:draw()
     end
 
     if self.state == StageManager.STATE_BOSS_CLEAR then
-        local alpha = _min(1, self.clearTimer / 0.3)
-        local sub = string.format("%s — PURIFIED", self.bossType or "")
-        drawOverlay("BOSS CLEAR!", {1, 0.85, 0.2}, alpha, sub, 0.4, 0.35)
+        local t = self.clearTimer
+        local alpha = _min(1, t / 0.3)
+
+        -- Glitch text: boss name scrambles for ~1.5s, then shows "PURIFIED"
+        local bossName = self.bossType or "???"
+        local title
+        if t < 1.5 then
+            -- Random glitch characters
+            local glitchChars = {}
+            local glitchIntensity = _max(0, 1 - t / 1.5)  -- fades from 1→0
+            for i = 1, #bossName do
+                if _random() < glitchIntensity then
+                    glitchChars[i] = _char(_random(33, 126))
+                else
+                    glitchChars[i] = bossName:sub(i, i)
+                end
+            end
+            title = table.concat(glitchChars)
+        else
+            title = "PURIFIED"
+        end
+
+        local sub = t >= 1.5 and string.format("%s — BOSS CLEAR!", bossName) or nil
+        local titleColor = t < 1.5 and {1, 0.3, 0.3} or {0.2, 1, 0.5}
+        drawOverlay(title, titleColor, alpha, sub, 0.4, 0.35)
         return
     end
 

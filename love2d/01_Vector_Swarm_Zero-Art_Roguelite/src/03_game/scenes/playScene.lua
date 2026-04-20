@@ -114,8 +114,8 @@ function PlayScene:update(dt)
         local stageState = ecsManager.stageManager.state
         if stageState == "boss_clear" and not ecsManager.stageManager.bossRewardsApplied then
             ecsManager.stageManager.bossRewardsApplied = true
-            _hitStopTimer = 0.2
-            screenShake(0.35, 0.5)
+            _hitStopTimer = 0.4
+            screenShake(0.5, 0.7)
             local w = ecsManager.getWorld()
             local pEnts = w:queryEntities({"PlayerTag", "Health"})
             if #pEnts > 0 then
