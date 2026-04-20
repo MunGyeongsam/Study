@@ -35,6 +35,7 @@ local createBossSystem          = require("03_game.systems.bossSystem")
 
 -- Game state (for XP scaling by stage)
 local gameState = require("03_game.states.gameState")
+local upgradeTree = require("03_game.states.upgradeTree")
 
 -- Entity factories (03_game/entities/)
 local EntityFactory = require("03_game.entities.entityFactory")
@@ -277,8 +278,9 @@ function ECSManager._registerBasicSystems()
         local scaledXP = _max(1, _floor(xpValue * xpMult + 0.5))
         EntityFactory.createXpOrb(ecs, x, y, scaledXP)
 
-        -- Fragment 드롭: 10% 확률 × 1개
-        if _random() < 0.10 then
+        -- Fragment 드롭: 기본 10% + Data Miner 보너스
+        local dropRate = 0.10 + upgradeTree.getFragmentDropBonus()
+        if _random() < dropRate then
             gameState.addFragments(1)
         end
     end

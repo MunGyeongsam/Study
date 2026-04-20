@@ -19,6 +19,7 @@ local player = require("03_game.entities.player")  -- 플레이어 엔티티
 local ecsManager = require("03_game.ecsManager")  -- ECS 오케스트레이터
 local gameState = require("03_game.states.gameState")
 local levelUp = require("03_game.states.levelUp")
+local upgradeTree = require("03_game.states.upgradeTree")
 local soundManager = require("05_sound.soundManager")
 local saveData = require("00_common.saveData")
 
@@ -74,6 +75,7 @@ function love.load()
     local playerId = ecsManager.createPlayer(0, -12)
     player.bind(ecsManager.getWorld(), playerId)
     player.init(0, -12)
+    upgradeTree.applyToPlayer(ecsManager.getWorld(), playerId)
     
     local startX, startY = player.getPosition()
 
@@ -248,6 +250,7 @@ restartGame = function()
     local playerId = ecsManager.createPlayer(0, -12)
     player.bind(ecsManager.getWorld(), playerId)
     player.init(0, -12)
+    upgradeTree.applyToPlayer(ecsManager.getWorld(), playerId)
 
     -- 카메라 리셋
     local px, py = player.getPosition()
@@ -273,6 +276,11 @@ function love.update(dt)
 
     -- 레벨업 선택 중이면 게임 로직 정지
     if levelUp.isActive() then
+        return
+    end
+
+    -- 업그레이드 트리 열려있으면 게임 로직 정지
+    if upgradeTree.isActive() then
         return
     end
 
@@ -463,6 +471,9 @@ function love.draw()
 
     -- 레벨업 선택 UI (최상위)
     levelUp.draw()
+
+    -- 업그레이드 트리 UI (최상위)
+    upgradeTree.draw()
 end
 
 -- Debug console functions are now handled automatically by Logger
@@ -470,6 +481,9 @@ end
 function love.keypressed(key)
     -- 레벨업 선택 우선 처리
     if levelUp.keypressed(key) then return end
+
+    -- 업그레이드 트리 키 입력 처리
+    if upgradeTree.keypressed(key) then return end
 
     if key == "f1" then
         debug.toggleConsole()   -- F1: 디버그 watch panel 토글
@@ -504,6 +518,15 @@ function love.keypressed(key)
     elseif key == "r" then
         if gameState.canRestart() then
             restartGame()
+        end
+    elseif key == "u" then
+        -- 게임오버 시 업그레이드 메뉴 토글
+        if gameState.isGameOver() and gameState.canRestart() then
+            if upgradeTree.isActive() then
+                upgradeTree.hide()
+            else
+                upgradeTree.show()
+            end
         end
     elseif key == "lshift" or key == "rshift" then
         -- 대쉬 요청 → Input 컴포넌트로 전달
@@ -543,6 +566,9 @@ end
 function love.touchpressed(id, x, y, dx, dy, pressure)
     -- 레벨업 선택 우선 처리
     if levelUp.touchpressed(x, y) then return end
+
+    -- 업그레이드 트리 터치 처리
+    if upgradeTree.touchpressed(x, y) then return end
 
     -- 게임 오버 시 터치로 리스타트
     if gameState.canRestart() then

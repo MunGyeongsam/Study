@@ -100,13 +100,21 @@ function GameState.draw()
     local ww = scoreFont:getWidth(waveText)
     lg.print(waveText, (w - ww) / 2, h * 0.54)
 
+    -- Fragment 획득 표시
+    if state.fragments > 0 then
+        lg.setColor(0.4, 0.8, 1.0, 1)
+        local fragText = string.format("+ %d DATA FRAGMENTS", state.fragments)
+        local fw = scoreFont:getWidth(fragText)
+        lg.print(fragText, (w - fw) / 2, h * 0.60)
+    end
+
     -- Restart prompt (after delay)
     if state.gameOverTimer >= state.restartDelay then
         local alpha = 0.5 + 0.5 * _sin(love.timer.getTime() * 3)
         lg.setColor(1, 1, 1, alpha)
-        local restartText = "Tap or press R to restart"
+        local restartText = "R: restart | U: upgrades"
         local rw = scoreFont:getWidth(restartText)
-        lg.print(restartText, (w - rw) / 2, h * 0.65)
+        lg.print(restartText, (w - rw) / 2, h * 0.70)
     end
 
     lg.setColor(1, 1, 1, 1)
