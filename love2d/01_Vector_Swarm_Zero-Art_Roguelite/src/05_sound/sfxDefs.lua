@@ -117,7 +117,7 @@ end
 
 -- Stage BGM: Am synthwave — 아르페지오 + 베이스 + 하이햇
 -- Key: A minor, 4 bars, 120bpm
-sfxDefs.bgm_stage = function(synth)
+sfxDefs.bgm_stage = function(_synth)
     -- ─── Arpeggio (square wave, 1 octave up) ─────────────────
     local arp = {}
     local arpNotes = { "A4", "C5", "E5", "A5", "E5", "C5" }  -- Am arp up-down
@@ -144,7 +144,7 @@ sfxDefs.bgm_stage = function(synth)
     -- ─── Hi-hat (noise, every half beat) ─────────────────────
     local hat = {}
     for b = 1, 16, 0.5 do
-        local accent = (b % 1 == 0) and 0.15 or 0.08
+        local accent = (floor(b) == b) and 0.15 or 0.08
         hat[#hat + 1] = { beat = b, dur = 0.08, amp = accent }
     end
 
@@ -172,7 +172,7 @@ end
 
 -- Boss BGM: 같은 키, 템포 빠르고 공격적
 -- 베이스 옥타브 ↓, square 디스토션, 16th note hihat
-sfxDefs.bgm_boss = function(synth)
+sfxDefs.bgm_boss = function(_synth)
     -- ─── Aggressive arpeggio (square, fast) ──────────────────
     local arp = {}
     local arpNotes = { "A4", "C5", "E5", "G5", "E5", "C5", "A4", "E4" }
@@ -199,7 +199,7 @@ sfxDefs.bgm_boss = function(synth)
     -- ─── Fast hi-hat + accented kick ─────────────────────────
     local hat = {}
     for b = 1, 16, 0.25 do
-        local accent = (b % 1 == 0) and 0.18 or 0.06
+        local accent = (floor(b) == b) and 0.18 or 0.06
         hat[#hat + 1] = { beat = b, dur = 0.04, amp = accent }
     end
 

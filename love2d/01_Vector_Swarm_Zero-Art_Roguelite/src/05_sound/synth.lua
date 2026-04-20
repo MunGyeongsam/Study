@@ -263,8 +263,6 @@ function synth.generateSequence(pattern)
         local s0 = ev.s0
         local s1 = ev.s1
         if s1 >= totalSamples then s1 = totalSamples - 1 end
-        local durSamples = s1 - s0 + 1
-        if durSamples < 1 then durSamples = 1 end
         local durSec = ev.dur
 
         for s = s0, s1 do
