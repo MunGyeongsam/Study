@@ -36,6 +36,7 @@ function GameState.init()
     state.stage        = 1
     state.wave         = 0
     state.waveReached  = 0
+    if playBGM then playBGM("stage") end
 end
 
 function GameState.update(dt, playerHealth)
@@ -47,6 +48,7 @@ function GameState.update(dt, playerHealth)
             state.current = GameState.GAME_OVER
             state.gameOverTimer = 0
             state.timeScale = 1.0  -- 포커스 슬로모 해제
+            if stopBGM then stopBGM() end
             if state.score > state.bestScore then
                 state.bestScore = state.score
             end

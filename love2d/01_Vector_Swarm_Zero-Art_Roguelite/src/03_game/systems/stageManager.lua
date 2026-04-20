@@ -114,6 +114,7 @@ function StageManager:update(dt)
         if BOSS_STAGES[self.stage] then
             self:_spawnBoss()
             self.state = StageManager.STATE_BOSS_INTRO
+            if playBGM then playBGM("boss") end
             return
         end
 
@@ -195,6 +196,7 @@ function StageManager:update(dt)
             self.bossEntityId = nil
             self.bossType = nil
             self:_advanceStage()
+            if playBGM then playBGM("stage") end
         end
 
     elseif st == StageManager.STATE_NEXT_STAGE then
@@ -350,6 +352,12 @@ function StageManager:debugSkipStage()
 
     -- Force advance
     self:_advanceStage()
+    -- BGM: next stage could be boss or normal
+    if BOSS_STAGES[self.stage] then
+        if playBGM then playBGM("boss") end
+    else
+        if playBGM then playBGM("stage") end
+    end
     logInfo(string.format("[DEBUG] Stage skipped → now Stage %d", self.stage))
 end
 

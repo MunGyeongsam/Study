@@ -51,6 +51,8 @@ function love.load()
 
     -- 사운드 재생 글로벌 등록 (시스템들에서 직접 호출용)
     playSound = function(name) soundManager.play(name) end
+    playBGM   = function(name) soundManager.playBGM(name) end
+    stopBGM   = function() soundManager.stopBGM() end
 
     -- Bloom 포스트프로세싱 초기화
     bloom.init()

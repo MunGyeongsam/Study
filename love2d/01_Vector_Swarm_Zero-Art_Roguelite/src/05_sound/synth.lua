@@ -151,4 +151,148 @@ function synth.generate(params)
     return sd
 end
 
+-- ─── Note Frequency Table (A4 = 440Hz) ──────────────────────────
+-- MIDI note number → Hz.  Middle C (C4) = 60
+local function noteToFreq(note)
+    return 440 * 2 ^ ((note - 69) / 12)
+end
+
+-- Convenience: name → MIDI note (e.g. "C4"=60, "A4"=69, "F#3"=54)
+local NOTE_NAMES = { C=0, D=2, E=4, F=5, G=7, A=9, B=11 }
+local function parseNote(str)
+    if type(str) == "number" then return str end
+    local letter = str:sub(1,1):upper()
+    local offset = NOTE_NAMES[letter] or 0
+    local sharp = 0
+    local rest = str:sub(2)
+    if rest:sub(1,1) == "#" then sharp = 1; rest = rest:sub(2) end
+    if rest:sub(1,1) == "b" then sharp = -1; rest = rest:sub(2) end
+    local octave = tonumber(rest) or 4
+    return (octave + 1) * 12 + offset + sharp
+end
+
+-- ─── Pattern Sequencer ───────────────────────────────────────────
+-- Generates a loopable SoundData from a pattern definition.
+--
+-- pattern = {
+--   bpm        = 120,
+--   beatsPerBar = 4,
+--   bars       = 4,              -- total bars to generate
+--   sampleRate = 44100,
+--   tracks = {
+--     { -- track 1: melody
+--       wave = "square",
+--       amp  = 0.25,
+--       adsr = { a=0.01, d=0.05, s=0.3, r=0.05 },
+--       notes = {
+--         { note="C4", beat=1, dur=0.5 },
+--         { note="E4", beat=1.5, dur=0.5 },
+--         ...
+--       },
+--     },
+--     { -- track 2: bass
+--       wave = "saw", amp = 0.2, ...
+--       notes = { ... },
+--     },
+--     { -- track 3: drums (noise-based)
+--       wave = "noise", amp = 0.3,
+--       adsr = { a=0, d=0.03, s=0, r=0.02 },
+--       notes = {
+--         { beat=1, dur=0.05 },  -- kick-like
+--         ...
+--       },
+--     },
+--   },
+--   master = { volume = 0.5, clip = 0.95 },
+-- }
+
+function synth.generateSequence(pattern)
+    local bpm         = pattern.bpm or 120
+    local beatsPerBar = pattern.beatsPerBar or 4
+    local bars        = pattern.bars or 4
+    local sampleRate  = pattern.sampleRate or 44100
+    local master      = pattern.master or {}
+    local masterVol   = master.volume or 0.5
+    local clip        = master.clip or 0.95
+
+    local secPerBeat  = 60 / bpm
+    local totalBeats  = beatsPerBar * bars
+    local totalSec    = totalBeats * secPerBeat
+    local totalSamples = floor(totalSec * sampleRate)
+    if totalSamples < 1 then totalSamples = 1 end
+
+    local sd = love.sound.newSoundData(totalSamples, sampleRate, 16, 1)
+
+    -- Build note events: { startSample, endSample, freq, waveFn, amp, env }
+    local events = {}
+    for _, track in ipairs(pattern.tracks or {}) do
+        local waveFn = WAVES[track.wave] or waveSin
+        local amp    = track.amp or 0.25
+        local env    = track.adsr or { a = 0.01, d = 0.05, s = 0.3, r = 0.05 }
+        local freqEnd = track.freqEnd  -- optional: all notes sweep to this factor
+
+        for _, n in ipairs(track.notes or {}) do
+            local beatStart = (n.beat or 1) - 1  -- 1-indexed → 0-indexed
+            local dur       = (n.dur or 0.5) * secPerBeat
+            local startSec  = beatStart * secPerBeat
+            local noteFreq  = n.freq or (n.note and noteToFreq(parseNote(n.note))) or 440
+            local noteFreqEnd = noteFreq
+            if freqEnd then
+                noteFreqEnd = noteFreq * freqEnd
+            end
+            if n.freqEnd then
+                noteFreqEnd = n.freqEnd
+            end
+
+            events[#events + 1] = {
+                s0   = floor(startSec * sampleRate),
+                s1   = floor((startSec + dur) * sampleRate) - 1,
+                freq = noteFreq,
+                freqEnd = noteFreqEnd,
+                dur  = dur,
+                fn   = waveFn,
+                amp  = n.amp or amp,
+                env  = n.adsr or env,
+            }
+        end
+    end
+
+    -- Render all events into buffer
+    for _, ev in ipairs(events) do
+        local phase = 0
+        local s0 = ev.s0
+        local s1 = ev.s1
+        if s1 >= totalSamples then s1 = totalSamples - 1 end
+        local durSamples = s1 - s0 + 1
+        if durSamples < 1 then durSamples = 1 end
+        local durSec = ev.dur
+
+        for s = s0, s1 do
+            local t = (s - s0) / sampleRate
+            local progress = t / durSec
+
+            -- Frequency sweep within note
+            local freq = ev.freq + (ev.freqEnd - ev.freq) * progress
+            phase = phase + pi2 * freq / sampleRate
+
+            local val = ev.fn(phase) * ev.amp * adsr(t, durSec, ev.env)
+
+            -- Additive mix
+            local prev = sd:getSample(s)
+            local mixed = prev + val
+            sd:setSample(s, mixed)
+        end
+    end
+
+    -- Master pass: volume + clipping
+    for s = 0, totalSamples - 1 do
+        local val = sd:getSample(s) * masterVol
+        if val > clip then val = clip
+        elseif val < -clip then val = -clip end
+        sd:setSample(s, val)
+    end
+
+    return sd
+end
+
 return synth
