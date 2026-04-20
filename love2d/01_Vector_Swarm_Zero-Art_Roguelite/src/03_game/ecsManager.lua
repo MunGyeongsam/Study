@@ -276,6 +276,11 @@ function ECSManager._registerBasicSystems()
         local xpMult = 1.0 + (stage - 1) * 0.15
         local scaledXP = _max(1, _floor(xpValue * xpMult + 0.5))
         EntityFactory.createXpOrb(ecs, x, y, scaledXP)
+
+        -- Fragment 드롭: 10% 확률 × 1개
+        if _random() < 0.10 then
+            gameState.addFragments(1)
+        end
     end
     ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath))
     -- 12. XpCollection: XP 오브 자석 수집 + 레벨업

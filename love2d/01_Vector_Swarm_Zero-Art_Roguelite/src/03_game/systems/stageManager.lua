@@ -5,6 +5,7 @@
 
 local world = require("01_core.world")
 local EntityFactory = require("03_game.entities.entityFactory")
+local gameState = require("03_game.states.gameState")
 
 local _min    = math.min
 local _max    = math.max
@@ -19,6 +20,7 @@ StageManager.STATE_WAVE_INTRO  = "wave_intro"
 StageManager.STATE_SPAWNING    = "spawning"
 StageManager.STATE_CLEARING    = "clearing"
 StageManager.STATE_STAGE_CLEAR = "stage_clear"
+StageManager.STATE_COLLECTING  = "collecting"    -- XP auto-vacuum phase
 StageManager.STATE_NEXT_STAGE  = "next_stage"
 StageManager.STATE_BOSS_INTRO  = "boss_intro"
 StageManager.STATE_BOSS_ACTIVE = "boss_active"
@@ -64,6 +66,8 @@ function StageManager.new(ecsManager, getPlayerPos)
         waveTimer      = 0,
         clearTimer     = 0,
         clearDuration  = 2.0,
+        collectDuration = 1.5,  -- XP vacuum time
+        collectTimer   = 0,
 
         -- Cumulative stats
         totalWaves = 0,
@@ -146,8 +150,24 @@ function StageManager:update(dt)
         self.clearTimer = self.clearTimer + dt
         if self.clearTimer < 0.05 then
             self.ecsManager.bulletPool:clear()
+            self:_vacuumXpOrbs()  -- XP auto-collect trigger
+            -- Fragment stage clear bonus
+            local bonus = self.stage * 2
+            gameState.addFragments(bonus)
+            logInfo(string.format("[STAGE] Fragment bonus: +%d (stage %d)", bonus, self.stage))
         end
         if self.clearTimer >= self.clearDuration then
+            self.state = StageManager.STATE_COLLECTING
+            self.collectTimer = 0
+        end
+
+    elseif st == StageManager.STATE_COLLECTING then
+        self.collectTimer = self.collectTimer + dt
+        -- Keep XP orbs attracted during collection phase
+        self:_vacuumXpOrbs()
+        -- Check if all orbs collected or time expired
+        local orbCount = self:_countXpOrbs()
+        if orbCount == 0 or self.collectTimer >= self.collectDuration then
             self:_advanceStage()
         end
 
@@ -183,6 +203,11 @@ function StageManager:update(dt)
         self.clearTimer = self.clearTimer + dt
         if self.clearTimer < 0.05 then
             self.ecsManager.bulletPool:clearLayer("enemy_bullet")
+            self:_vacuumXpOrbs()  -- Boss XP burst auto-collect
+            -- Fragment boss bonus: 5 + stage
+            local bonus = 5 + self.stage
+            gameState.addFragments(bonus)
+            logInfo(string.format("[STAGE] Boss fragment bonus: +%d", bonus))
         end
         if self.clearTimer >= self.clearDuration + 1.0 then  -- extra second for boss
             -- Destroy boss entity from ECS
@@ -195,7 +220,9 @@ function StageManager:update(dt)
             end
             self.bossEntityId = nil
             self.bossType = nil
-            self:_advanceStage()
+            -- Enter collecting phase (XP vacuum) before advancing
+            self.state = StageManager.STATE_COLLECTING
+            self.collectTimer = 0
             if playBGM then playBGM("stage") end
         end
 
@@ -318,6 +345,10 @@ function StageManager:_advanceStage()
     self.stage = self.stage + 1
     self.wave = 0
     self.state = StageManager.STATE_NEXT_STAGE
+
+    -- Player reset to bottom (0, -12)
+    self:_resetPlayerToBottom()
+
     logInfo(string.format("[STAGE] Advancing to Stage %d", self.stage))
 end
 
@@ -327,6 +358,45 @@ function StageManager:_countEnemies()
     if not world then return 0 end
     local enemies = world:queryEntities({"EnemyAI"})
     return #enemies
+end
+
+-- Count remaining XP orbs
+function StageManager:_countXpOrbs()
+    local w = self.ecsManager.getWorld()
+    if not w then return 0 end
+    local orbs = w:queryEntities({"XpOrb"})
+    return #orbs
+end
+
+-- Force all XP orbs to be attracted to player (instant vacuum)
+local VACUUM_SPEED = 15  -- very fast magnet speed for vacuum
+function StageManager:_vacuumXpOrbs()
+    local w = self.ecsManager.getWorld()
+    if not w then return end
+    local orbs = w:queryEntities({"XpOrb"})
+    for _, orbId in ipairs(orbs) do
+        local orb = w:getComponent(orbId, "XpOrb")
+        if orb then
+            orb.attracted = true
+            orb.magnetSpeed = VACUUM_SPEED
+        end
+    end
+end
+
+-- Reset player position to bottom center (0, -12)
+local STAGE_START_Y = -12
+function StageManager:_resetPlayerToBottom()
+    local w = self.ecsManager.getWorld()
+    if not w then return end
+    local players = w:queryEntities({"PlayerTag", "Transform"})
+    if #players > 0 then
+        local transform = w:getComponent(players[1], "Transform")
+        if transform then
+            transform.x = 0
+            transform.y = STAGE_START_Y
+            logInfo(string.format("[STAGE] Player reset to (0, %d)", STAGE_START_Y))
+        end
+    end
 end
 
 -- Debug: skip current stage instantly (F8)
@@ -431,6 +501,7 @@ end
 function StageManager:isClearing()
     return self.state == StageManager.STATE_STAGE_CLEAR
         or self.state == StageManager.STATE_BOSS_CLEAR
+        or self.state == StageManager.STATE_COLLECTING
 end
 
 return StageManager

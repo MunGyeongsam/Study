@@ -26,6 +26,7 @@ local state = {
     gameOverTimer = 0,      -- time since game over (for UI delay)
     restartDelay = 1.0,     -- seconds before restart is allowed
     timeScale    = 1.0,     -- 시간 배율 (포커스 슬로모용)
+    fragments   = 0,        -- 이번 런에서 획득한 Data Fragment
 }
 
 function GameState.init()
@@ -36,6 +37,7 @@ function GameState.init()
     state.stage        = 1
     state.wave         = 0
     state.waveReached  = 0
+    state.fragments    = 0
     if playBGM then playBGM("stage") end
 end
 
@@ -141,6 +143,14 @@ function GameState.setWaveReached(wave)
     state.waveReached = wave
 end
 
+function GameState.addFragments(amount)
+    state.fragments = state.fragments + amount
+end
+
+function GameState.getFragments()
+    return state.fragments
+end
+
 function GameState.getState()
     return {
         current   = state.current,
@@ -148,6 +158,7 @@ function GameState.getState()
         bestScore = state.bestScore,
         waveReached = state.waveReached,
         timeScale   = state.timeScale,
+        fragments   = state.fragments,
     }
 end
 

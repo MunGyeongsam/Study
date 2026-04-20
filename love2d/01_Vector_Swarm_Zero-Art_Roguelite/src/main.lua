@@ -20,6 +20,7 @@ local ecsManager = require("03_game.ecsManager")  -- ECS 오케스트레이터
 local gameState = require("03_game.states.gameState")
 local levelUp = require("03_game.states.levelUp")
 local soundManager = require("05_sound.soundManager")
+local saveData = require("00_common.saveData")
 
 local fonts = nil       -- 폰트 테이블 (love.load에서 초기화)
 local restartGame       -- forward declaration (콜백에서 참조)
@@ -62,14 +63,17 @@ function love.load()
     
     -- Initialize core systems
     world.init()
+
+    -- Save data 로드 (영구 저장)
+    saveData.load()
     
-    -- 🏗️ ECS 시스템 초기화 (플레이어 위치 조회 콜백 전달)
+    -- ECS 시스템 초기화 (플레이어 위치 조회 콜백 전달)
     ecsManager.init(function() return player.getPosition() end)
     
-    -- 🎮 플레이어 ECS 엔티티 생성 + 파사드 바인딩
-    local playerId = ecsManager.createPlayer(0, 0)  -- 임시 위치, player.init()에서 설정
+    -- 플레이어 ECS 엔티티 생성 + 파사드 바인딩 (하단 시작)
+    local playerId = ecsManager.createPlayer(0, -12)
     player.bind(ecsManager.getWorld(), playerId)
-    player.init()  -- 월드 시작 위치로 설정
+    player.init(0, -12)
     
     local startX, startY = player.getPosition()
 
@@ -227,13 +231,23 @@ end
 
 -- 게임 리스타트
 restartGame = function()
+    -- Fragment 저장 (사망 시 영구 보존)
+    local runFragments = gameState.getFragments()
+    if runFragments > 0 then
+        saveData.addFragments(runFragments)
+    end
+    local score = gameState.getScore()
+    local stageInfo = gameState.getStageInfo()
+    saveData.recordRun(score, stageInfo)
+    saveData.save()
+
     -- ECS 월드 초기화 (엔티티 + 불릿 + 스포너)
     ecsManager.restart()
 
-    -- 플레이어 재생성 + 바인딩
-    local playerId = ecsManager.createPlayer(0, 0)
+    -- 플레이어 재생성 + 바인딩 (하단 시작)
+    local playerId = ecsManager.createPlayer(0, -12)
     player.bind(ecsManager.getWorld(), playerId)
-    player.init()
+    player.init(0, -12)
 
     -- 카메라 리셋
     local px, py = player.getPosition()
@@ -262,7 +276,7 @@ function love.update(dt)
         return
     end
 
-    -- 스테이지 클리어 중이면 스테이지 매니저만 업데이트 (연출 진행)
+    -- 스테이지 클리어 중이면 제한된 시스템만 업데이트
     if ecsManager.stageManager:isClearing() then
         -- Detect boss defeat → apply rewards once
         local stageState = ecsManager.stageManager.state
@@ -285,6 +299,27 @@ function love.update(dt)
             end
             logInfo("[BOSS] Rewards applied: HP full, dash/focus reset")
         end
+
+        -- Collecting phase: XP orbs need movement + collection systems
+        if stageState == "collecting" then
+            -- Run movement + XP collection so orbs fly to player
+            local moveSys = ecsManager.systems["Movement"]
+            if moveSys then moveSys:update(ecsManager.getWorld(), dt) end
+            local xpSys = ecsManager.systems["XpCollection"]
+            if xpSys then xpSys:update(ecsManager.getWorld(), dt) end
+
+            -- Check for pending level-ups during collection
+            local w = ecsManager.getWorld()
+            local xpEntities = w:queryEntities({"PlayerTag", "PlayerXP"})
+            if #xpEntities > 0 then
+                local playerXP = w:getComponent(xpEntities[1], "PlayerXP")
+                if playerXP.pendingLevelUp then
+                    playerXP.pendingLevelUp = false
+                    levelUp.show(w, xpEntities[1])
+                end
+            end
+        end
+
         ecsManager.stageManager:update(dt)
         return
     end
