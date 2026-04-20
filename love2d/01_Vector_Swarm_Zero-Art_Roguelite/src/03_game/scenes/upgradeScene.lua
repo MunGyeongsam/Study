@@ -11,11 +11,10 @@ UpgradeScene.name        = "UpgradeScene"
 UpgradeScene.transparent = false
 UpgradeScene.drawBelow   = true
 
-local _sceneStack = nil
-
 function UpgradeScene.new(sceneStack)
-    _sceneStack = sceneStack
-    return setmetatable({}, UpgradeScene)
+    return setmetatable({
+        _sceneStack = sceneStack,
+    }, UpgradeScene)
 end
 
 function UpgradeScene:enter(prev)
@@ -31,7 +30,7 @@ end
 function UpgradeScene:update(dt)
     -- 닫힘 감지 → 자동 pop
     if not upgradeTree.isActive() then
-        _sceneStack:pop()
+        self._sceneStack:pop()
     end
 end
 

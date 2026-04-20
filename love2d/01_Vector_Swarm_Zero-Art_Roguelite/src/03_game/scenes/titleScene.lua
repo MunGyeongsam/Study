@@ -11,12 +11,10 @@ TitleScene.name        = "TitleScene"
 TitleScene.transparent = false
 TitleScene.drawBelow   = false
 
-local _sceneStack = nil
-
 function TitleScene.new(sceneStack)
-    _sceneStack = sceneStack
-    local self = setmetatable({}, TitleScene)
-    return self
+    return setmetatable({
+        _sceneStack = sceneStack,
+    }, TitleScene)
 end
 
 function TitleScene:enter(prev)
@@ -25,11 +23,11 @@ function TitleScene:enter(prev)
     titleMenu.setCallbacks({
         onPlay = function()
             local PlayScene = require("03_game.scenes.playScene")
-            _sceneStack:replace(PlayScene.new(_sceneStack))
+            self._sceneStack:replace(PlayScene.new(self._sceneStack))
         end,
         onUpgrades = function()
             local UpgradeScene = require("03_game.scenes.upgradeScene")
-            _sceneStack:push(UpgradeScene.new(_sceneStack))
+            self._sceneStack:push(UpgradeScene.new(self._sceneStack))
         end,
         onCredits = function()
             logInfo("[MENU] Credits (not yet implemented)")

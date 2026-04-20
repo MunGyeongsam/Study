@@ -11,13 +11,11 @@ GameOverScene.name        = "GameOverScene"
 GameOverScene.transparent = false
 GameOverScene.drawBelow   = true
 
-local _sceneStack = nil
-local _playScene  = nil
-
 function GameOverScene.new(sceneStack, playScene)
-    _sceneStack = sceneStack
-    _playScene  = playScene
-    return setmetatable({}, GameOverScene)
+    return setmetatable({
+        _sceneStack = sceneStack,
+        _playScene  = playScene,
+    }, GameOverScene)
 end
 
 function GameOverScene:enter(prev)
@@ -40,20 +38,20 @@ end
 
 function GameOverScene:keypressed(key)
     if key == "r" and gameState.canRestart() then
-        _sceneStack:pop()  -- GameOverScene 제거
-        _playScene._gameOverPushed = false
-        _playScene:restart()
+        self._sceneStack:pop()  -- GameOverScene 제거
+        self._playScene._gameOverPushed = false
+        self._playScene:restart()
         return true
     end
 
     if key == "u" and gameState.canRestart() then
         local UpgradeScene = require("03_game.scenes.upgradeScene")
-        _sceneStack:push(UpgradeScene.new(_sceneStack))
+        self._sceneStack:push(UpgradeScene.new(self._sceneStack))
         return true
     end
 
     if key == "escape" then
-        _playScene:returnToTitle()
+        self._playScene:returnToTitle()
         return true
     end
 
@@ -62,9 +60,9 @@ end
 
 function GameOverScene:touchpressed(id, x, y, dx, dy, pressure)
     if gameState.canRestart() then
-        _sceneStack:pop()
-        _playScene._gameOverPushed = false
-        _playScene:restart()
+        self._sceneStack:pop()
+        self._playScene._gameOverPushed = false
+        self._playScene:restart()
         return true
     end
     return false

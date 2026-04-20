@@ -11,15 +11,12 @@ LevelUpScene.name        = "LevelUpScene"
 LevelUpScene.transparent = false
 LevelUpScene.drawBelow   = true
 
-local _sceneStack = nil
-
 function LevelUpScene.new(sceneStack, ecsWorld, playerEntityId)
-    _sceneStack = sceneStack
-    local self = setmetatable({
+    return setmetatable({
+        _sceneStack = sceneStack,
         _ecsWorld = ecsWorld,
         _playerId = playerEntityId,
     }, LevelUpScene)
-    return self
 end
 
 function LevelUpScene:enter(prev)
@@ -34,7 +31,7 @@ end
 function LevelUpScene:update(dt)
     -- 선택 완료 감지 → 자동 pop
     if not levelUp.isActive() then
-        _sceneStack:pop()
+        self._sceneStack:pop()
     end
 end
 

@@ -12,13 +12,11 @@ PauseScene.name        = "PauseScene"
 PauseScene.transparent = false
 PauseScene.drawBelow   = true
 
-local _sceneStack = nil
-local _playScene  = nil
-
 function PauseScene.new(sceneStack, playScene)
-    _sceneStack = sceneStack
-    _playScene  = playScene
-    return setmetatable({}, PauseScene)
+    return setmetatable({
+        _sceneStack = sceneStack,
+        _playScene  = playScene,
+    }, PauseScene)
 end
 
 function PauseScene:enter(prev)
@@ -26,14 +24,14 @@ function PauseScene:enter(prev)
     pauseMenu.setCallbacks({
         onContinue = function()
             gameState.resume()
-            _sceneStack:pop()
+            self._sceneStack:pop()
         end,
         onRestart = function()
-            _sceneStack:pop()  -- PauseScene 제거
-            _playScene:restart()
+            self._sceneStack:pop()  -- PauseScene 제거
+            self._playScene:restart()
         end,
         onMenu = function()
-            _playScene:returnToTitle()
+            self._playScene:returnToTitle()
         end,
     })
     logInfo("[PAUSE] PauseScene entered")

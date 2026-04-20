@@ -23,16 +23,17 @@ PlayScene.name        = "PlayScene"
 PlayScene.transparent = false
 PlayScene.drawBelow   = false
 
--- 게임 내 공유 상태 (main.lua에서 주입)
-local _sceneStack    = nil
+-- 게임 내 공유 상태 (static getter/setter 경유)
 local _hitStopTimer  = 0
 local _godMode       = false
 local _showWorldGrid = false
 
 --- Scene 생성
 function PlayScene.new(sceneStack)
-    _sceneStack = sceneStack
-    return setmetatable({}, PlayScene)
+    return setmetatable({
+        _sceneStack = sceneStack,
+        _gameOverPushed = false,
+    }, PlayScene)
 end
 
 --- 외부에서 설정하는 공유 상태
@@ -77,9 +78,9 @@ end
 --- 타이틀로 복귀
 function PlayScene:returnToTitle()
     self:_saveRunResult()
-    _sceneStack:clear()
+    self._sceneStack:clear()
     local TitleScene = require("03_game.scenes.titleScene")
-    _sceneStack:push(TitleScene.new(_sceneStack))
+    self._sceneStack:push(TitleScene.new(self._sceneStack))
 end
 
 --- 리스타트
@@ -141,7 +142,7 @@ function PlayScene:update(dt)
                 if playerXP.pendingLevelUp then
                     playerXP.pendingLevelUp = false
                     local LevelUpScene = require("03_game.scenes.levelUpScene")
-                    _sceneStack:push(LevelUpScene.new(_sceneStack, w, xpEntities[1]))
+                    self._sceneStack:push(LevelUpScene.new(self._sceneStack, w, xpEntities[1]))
                 end
             end
         end
@@ -157,7 +158,7 @@ function PlayScene:update(dt)
         if gameState.canRestart() and not self._gameOverPushed then
             self._gameOverPushed = true
             local GameOverScene = require("03_game.scenes.gameOverScene")
-            _sceneStack:push(GameOverScene.new(_sceneStack, self))
+            self._sceneStack:push(GameOverScene.new(self._sceneStack, self))
         end
         return
     end
@@ -234,7 +235,7 @@ function PlayScene:update(dt)
         if playerXP.pendingLevelUp then
             playerXP.pendingLevelUp = false
             local LevelUpScene = require("03_game.scenes.levelUpScene")
-            _sceneStack:push(LevelUpScene.new(_sceneStack, w, xpEntities[1]))
+            self._sceneStack:push(LevelUpScene.new(self._sceneStack, w, xpEntities[1]))
         end
     end
 end
@@ -295,7 +296,7 @@ function PlayScene:keypressed(key)
     if key == "escape" and gameState.isPlaying() then
         gameState.pause()
         local PauseScene = require("03_game.scenes.pauseScene")
-        _sceneStack:push(PauseScene.new(_sceneStack, self))
+        self._sceneStack:push(PauseScene.new(self._sceneStack, self))
         return true
     end
 
