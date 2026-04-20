@@ -44,6 +44,7 @@ function PlayScene.getHitStopTimer() return _hitStopTimer end
 
 --- 게임 새로 시작 (타이틀 → 플레이, 리스타트 공용)
 function PlayScene:_initGame()
+    self._gameOverPushed = false
     ecsManager.restart()
     local playerId = ecsManager.createPlayer(0, -12)
     player.bind(ecsManager.getWorld(), playerId)
@@ -103,11 +104,6 @@ function PlayScene:update(dt)
     -- Hit-stop freeze
     if _hitStopTimer > 0 then
         _hitStopTimer = _hitStopTimer - dt
-        return
-    end
-
-    -- 레벨업/업그레이드 열려있으면 정지 (상위 씬이 처리하지만, 방어)
-    if levelUp.isActive() or upgradeTree.isActive() then
         return
     end
 
@@ -295,8 +291,8 @@ function PlayScene:keypressed(key)
         return true
     end
 
-    -- ESC → 일시정지
-    if key == "escape" then
+    -- ESC → 일시정지 (플레이 중에만)
+    if key == "escape" and gameState.isPlaying() then
         gameState.pause()
         local PauseScene = require("03_game.scenes.pauseScene")
         _sceneStack:push(PauseScene.new(_sceneStack, self))

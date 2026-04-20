@@ -4,8 +4,6 @@
 -- Global utilities first (전역 함수 최우선 초기화)
 local global = require("00_common.global")
 
-local _floor = math.floor
-
 -- Load modules
 local logger = require("00_common.logger")
 local debug = require("00_common.debug")
