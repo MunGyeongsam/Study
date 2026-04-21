@@ -2,6 +2,7 @@
 
 > Phase 4: 메타 성장 → UX → 비주얼 마무리 → 성능 → 모바일 포팅
 > 마지막 갱신: 2026-04-20
+> 구현 상태: 4A ✅ / 4B ✅ / 4C ✅ / 4D 🔲 / 4E 🔲
 
 ---
 
@@ -32,17 +33,18 @@
 - 레벨업 3택 + 감쇠 스택 → 인런 성장 있음
 - Bloom + 파티클 + Screen Shake + Graze + BGM → Juice 레이어 완성
 
-**약점 (지금 없는 것):**
-- 죽으면 **완전 리셋** → "한 판 더" 동기 약함 (핵심 문제)
-- 메뉴 없음 → 게임 시작/종료가 코드 의존적
-- 튜토리얼 없음 → 터치 조작, 대쉬, 포커스를 모름
-- 일시정지 없음 → 모바일에서 치명적
+**약점 (지금 없는 것) → Phase 4에서 해소:**
+- ~~죽으면 **완전 리셋**~~ → ✅ Data Fragment + 영구 강화 트리 (4A)
+- ~~메뉴 없음~~ → ✅ TitleScene + PauseScene + GameOverScene (4B.1)
+- ~~튜토리얼 없음~~ → ✅ 슬로모+글리치 4단계 인게임 힌트 (4B.2)
+- ~~일시정지 없음~~ → ✅ PauseScene (ESC → Continue/Restart/Menu) (4B.1)
 
 ---
 
-## 2. Phase 4A — 게임 루프 완성 (메타 성장)
+## 2. Phase 4A — 게임 루프 완성 (메타 성장) ✅
 
 > 목표: 죽어도 쌓이는 보상 → "한 판 더"의 이유 만들기
+> 상태: 전체 구현 완료 (upgradeTree.lua + achievementSystem.lua + saveData.lua)
 
 ### 2.1. Data Fragment (영구 재화)
 
@@ -125,48 +127,54 @@
 
 ---
 
-## 3. Phase 4B — 플레이어 경험 (UX)
+## 3. Phase 4B — 플레이어 경험 (UX) ✅
+
+> Scene Stack 기반 구현 완료. 씨 8종 (sceneStack.lua + 7개 Scene 파일)
+> 파일들: `src/03_game/scenes/*.lua`, `src/01_core/sceneStack.lua`
 
 ### 3.1. 화면 흐름도
 
+**설계 → 구현 변경점**: 캐릭터/무기 선택은 4E(모바일 포팅) 시점으로 연기. Options는 미구현.
+
 ```
-[타이틀 메뉴]
-  ├── [Play] → 캐릭터/무기 선택 → [게임 시작] → [인게임]
-  │                                                ├── [일시정지] → 계속 / 메뉴로
-  │                                                ├── [레벨업] → 3택 선택
-  │                                                └── [게임오버] → 결과 화면
-  │                                                      ├── Fragment 획득 표시
-  │                                                      ├── 해금 알림 (있으면)
-  │                                                      └── [Retry] / [Menu]
-  ├── [Upgrades] → 영구 강화 트리
-  ├── [Achievements] → 도전과제 + 해금 목록
-  ├── [Options] → 볼륨, 화면 크기
-  └── [Credits]
+[타이틀 메뉴 (TitleScene)]
+  ├── [PLAY] → replace(PlayScene) → [인게임]
+  │                ├── [일시정지 (PauseScene)] → Continue / Restart / Menu
+  │                ├── [레벨업 (LevelUpScene)] → 3택 선택 → 자동 pop
+  │                └── [게임오버 (GameOverScene)]
+  │                      ├── 도전과제 해금 알림 (있으면)
+  │                      └── [R] Retry / [U] Upgrades / [ESC] Menu
+  ├── [UPGRADES] → push(UpgradeScene) → 영구 강화 트리
+  ├── [ACHIEVEMENTS] → push(AchievementScene) → 도전과제 + 해금 목록
+  └── [CREDITS] → push(CreditsScene)
 ```
 
-### 3.2. 타이틀 메뉴 (4B.1)
+### 3.2. 타이틀 메뉴 (4B.1) ✅
 
 #### 비주얼
 - Zero-Art: 배경에 프랙탈 배경(background.lua 재활용) + 느린 회전
 - "VECTOR SWARM" 로고: 벡터 도형 조합 (코드 드로잉)
 - 메뉴 항목: 텍스트 + 좌우 네온 발광선
 
-#### 구성
+#### 구성 (실제 구현)
 ```
 VECTOR SWARM
 ─────────────
 
 ▶ PLAY
   UPGRADES
-  OPTIONS
+  ACHIEVEMENTS
   CREDITS
 ```
 
-### 3.3. 일시정지 (4B.1)
+> OPTIONS는 미구현. 향후 모바일 포팅(4E) 시 볼륨/해상도 설정 추가 예정.
 
-- ESC / 화면 상단 터치 → 일시정지 오버레이
+### 3.3. 일시정지 (4B.1) ✅
+
+- ESC → push(PauseScene) — Scene Stack 기반 오버레이
+- drawBelow=true (게임 화면 보임), transparent=false (게임 정지)
 - 옵션: Continue / Restart / Main Menu
-- `love.update(dt)` 에서 `dt = 0` 처리 (간단)
+- PauseScene이 pauseMenu.lua를 래핑
 
 ### 3.4. 게임오버 결과 화면 (4B.1)
 
@@ -186,17 +194,24 @@ Best: 201.5s
 [Retry]  [Menu]
 ```
 
-### 3.5. 튜토리얼 (4B.2)
+### 3.5. 튜토리얼 (4B.2) ✅
 
-#### 방식: 첫 플레이 시 인게임 오버레이 (별도 모드 X)
+#### 구현 방식: 슬로모 + 글리치 텍스트 4단계 힌트
 
-| 타이밍 | 메시지 | 트리거 |
-|--------|--------|--------|
-| 시작 즉시 | "Drag to move" + 화살표 | 0초 |
-| 첫 적 출현 | "Auto-attack targets nearby enemies" | 적 1마리 스폰 시 |
-| 첫 피격 | "Swipe to DASH — you're invincible!" | HP -1 시 |
-| 레벨업 | "Choose an upgrade!" | Lv.2 도달 시 |
-| Stage 2 | "Hold FOCUS for precision" | Stage 2 시작 시 |
+설계(트리거 기반 5단계) → **구현(액션 감지 4단계)**로 변경.
+이유: 탄막 속에서 텍스트가 묻히는 문제 → 슬로모션으로 주의 확보.
+
+| 단계 | 메시지 | 완료 조건 | 슬로모 |
+|------|--------|-----------|--------|
+| 1 | **MOVE** — WASD to move | 이동 입력 감지 | 0.15× |
+| 2 | **DASH** — SHIFT to dash | 대쉬 입력 감지 | 0.15× |
+| 3 | **FOCUS** — SPACE to focus | 포커스 입력 감지 | 0.15× |
+| 4 | **AUTO** — Auto-attack nearby | 3초 대기 | 0.15× |
+
+- 활성 조건: `totalRuns == 0 and tutorialDone == false`
+- 페이즈: idle → delay → entering(0.4s ease-in) → showing → completing(0.3s ease-out)
+- 완료 시 `saveData.setTutorialDone(true)` → 이후 재표시 없음
+- 파일: `src/03_game/states/tutorialHints.lua`
 
 - 각 메시지는 1회만 표시 (세이브에 seen 플래그)
 - 화면 하단 반투명 패널, 2~3초 후 페이드아웃
@@ -222,9 +237,9 @@ Zero-Art: No sprites. Just math.
 
 ---
 
-## 4. Phase 4C — 비주얼 폴리싱
+## 4. Phase 4C — 비주얼 폴리싱 ✅
 
-### 4C.1. 구역 전환 연출 (기술부채)
+### 4C.1. 구역 전환 연출 ✅
 
 - 스테이지 번호에 따라 **배경 색조 변화**
 - `background.lua` 의 색상 파라미터를 스테이지 테마와 연동
@@ -237,7 +252,7 @@ Zero-Art: No sprites. Just math.
 | 6~8 | 붉은 톤 | 긴장 고조 |
 | 9+ | 흰/검 대비 | 최종 구역 |
 
-### 4C.2. 보스 처치 연출 풀 버전 (기술부채)
+### 4C.2. 보스 처치 연출 풀 버전 ✅
 
 현재: 텍스트 + 플래시 + 히트스톱
 추가:
@@ -245,12 +260,13 @@ Zero-Art: No sprites. Just math.
 - 글리치 텍스트: 보스명이 1~2초간 랜덤 문자로 깜빡이다 사라짐
 - HP바 파괴 애니메이션: 좌우로 갈라지며 사라짐
 
-### 4C.3. 미니맵 (선택적)
+### 4C.3. 미니맵 ✅
 
-- 화면 우상단 작은 사각형 (세계 전체 축소)
-- 플레이어 위치 = 시안 점, 보스 = 빨간 점
-- 단순 `love.graphics.rectangle` + 점 찍기
-- 필요성은 플레이테스트 후 판단
+- 화면 우상단, 화면 너비의 18%, 세로비 2:3 (월드 비율 동일)
+- 표시: 플레이어(흰), 적(빨강), 보스(큰 빨강), XP오브(초록), 카메라 뷰포트(시안)
+- Scissor 클리핑으로 범위 밖 렌더 방지
+- uiManager에서 setMinimapData(ecs, player, cam)으로 데이터 전달
+- 파일: `src/04_ui/minimap.lua`
 
 ---
 

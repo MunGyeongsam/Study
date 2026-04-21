@@ -1,103 +1,109 @@
 # 🚀 Vector Swarm - Zero Art Roguelite
 
-> **"수학적 패턴과 네온 그래픽의 조화, 모바일용 탄막 액션 게임"**
+> **"수학적 패턴과 네온 그래픽의 조화, Zero-Art 탄막 로그라이트"**
 
-절차적 생성으로 만들어지는 아름다운 탄막 패턴과 직관적인 터치 컨트롤이 만나는 혁신적인 모바일 게임입니다.
+코드만으로 그래픽과 사운드를 생성하는 **Zero-Art** 철학의 탄막 뱀서라이크.
+적을 피하고, 처치하고, 레벨업하고, 영구 강화로 "한 판 더"를 반복하라.
 
 ## 🎮 게임 특징
 
-### 🌟 **사용자 경험**
-- **🎯 직관적 터치 컨트롤**: 드래그로 이동, 스와이프로 대쉬, 롱프레스로 포커스 모드
-- **📱 모바일 최적화**: 갤럭시 노트 20 기준 9:20 세로 화면에서 최적의 플레이 경험
-- **✨ Zero-Art 비주얼**: 모든 그래픽을 코드로 생성하여 수학적 아름다움 구현
-- **⚡ 고성능 탄막**: 300-500개 이상의 탄환이 60FPS로 부드럽게 움직임
+### Core Loop
+- **탄막 회피 + 자동 공격**: 가장 가까운 적을 자동 조준·발사. 플레이어는 이동과 회피에 집중
+- **대쉬**: 순간이동 + 무적 (쿨타임 3초)
+- **포커스**: 슬로모션 + 히트박스 축소 (에너지 소모)
+- **인런 성장**: 적 처치 → XP 오브 → 레벨업 → 10종 업그레이드 3택
 
-### 🛠️ **기술적 혁신**
-- **🏗️ ECS 아키텍처**: 확장 가능한 Entity-Component-System 설계
-- **🎨 실시간 패턴 생성**: 수학 함수 기반의 절차적 탄막 패턴
-- **⚡ 고성능 렌더링**: SpriteBatch 기반 GPU 최적화
-- **🔧 모듈화 설계**: Engine-Rendering-Game 레이어 분리
+### Meta Growth
+- **Data Fragment**: 적/보스 처치 시 획득하는 영구 재화
+- **영구 강화 트리**: Attack / Defense / Utility 3갈래, 총 9종 강화
+- **도전과제 & 해금**: 5종 도전과제 → 무기/캐릭터/패시브 해금
+- **세이브 시스템**: 게임오버 시 자동 저장
+
+### Content
+- **적 5종**: Bit, Node, Vector, Loop, Matrix (각각 고유 AI + 탄막 패턴)
+- **보스 5종**: NULL → STACK → HEAP → RECURSION → OVERFLOW (페이즈별 탄막 전환)
+- **무한 스테이지**: Stage 16+ 무한 반복, 매 3스테이지마다 보스
+- **튜토리얼**: 첫 플레이 시 슬로모+글리치 4단계 인게임 힌트
+
+### Zero-Art
+- **그래픽**: 모든 비주얼을 코드로 생성 (수학 함수 + 벡터 도형)
+- **사운드**: 절차적 사운드 엔진 (5종 파형, ADSR, 주파수 스윕)
+- **배경**: Random Space Filling 알고리즘 (Paul Bourke)
+- **이펙트**: Bloom, Screen Shake, Graze, 파티클, 히트스톱
 
 ## 🚀 빠른 시작
 
-### 📋 **필요 조건**
-- [LOVE2D 11.5+](https://love2d.org/) (게임 실행용)
-- [VS Code](https://code.visualstudio.com/) (개발용, 권장)
+### 게임 실행
 
-### 🎮 **게임 실행**
-
-#### Windows
-```bash
-./run.bat
-```
-
-#### macOS
+**macOS:**
 ```bash
 ./run.sh
 ```
 
-#### 개발 모드 (VS Code)
-```bash
-F5 키 또는 Ctrl+Shift+P → "LÖVE: Run"
+**Windows:**
+```bat
+run.bat
 ```
 
-### 🎯 **게임 컨트롤**
-- **이동**: 드래그로 플레이어 이동
-- **대쉬**: 빠른 스와이프로 순간이동 (쿨타임 3초)
-- **포커스**: 롱프레스로 시간 느려짐 (에너지 소모)
-- **디버그**: F1~F3 키로 디버그 정보 표시
+**VS Code:**
+`F5` 키로 실행 (번들된 LÖVE 11.5 사용)
+
+### 게임 컨트롤 (PC)
+| 키 | 동작 |
+|----|------|
+| WASD / 방향키 | 이동 |
+| Shift | 대쉬 (순간이동 + 무적) |
+| Space (홀드) | 포커스 (슬로모 + 정밀이동) |
+| 1 / 2 / 3 | 레벨업 옵션 선택 |
+| ESC | 일시정지 / 종료 |
+
+> ⚠️ 모바일 터치 조작은 개발 중. 현재 PC 키보드 권장.
 
 ## 🏗️ 기술 스택
 
-### 🎯 **Core Engine**
-- **LOVE2D 11.5**: 고성능 2D 게임 엔진
-- **Lua**: 빠르고 유연한 스크립팅 언어
-- **ECS Pattern**: 대규모 엔티티 관리를 위한 아키텍처
-
-### 🎨 **Graphics & Effects**
-- **SpriteBatch**: GPU 최적화 배치 렌더링
-- **GLSL Shaders**: 네온 이펙트, Bloom, Motion Blur
-- **Procedural Generation**: 수학 함수 기반 패턴 생성
-
-### 📱 **Mobile Optimization**
-- **Touch Input System**: 멀티터치 제스처 인식
-- **Performance Profiling**: 60FPS 유지를 위한 최적화
-- **Battery Efficiency**: 모바일 GPU 효율성 고려
+- **LÖVE2D 11.5** — 2D 게임 프레임워크
+- **Lua** — 스크립팅 언어
+- **ECS** — Entity-Component-System 아키텍처 (ecs.lua, 17 컴포넌트, 17+ 시스템)
+- **Scene Stack** — push/pop 기반 UI 상태 관리 (8개 씬)
+- **Bloom Shader** — GLSL 기반 네온 발광
 
 ## 📂 프로젝트 구조
 
 ```
-├── src/                       # 메인 소스 코드
-│   ├── core/                  # 🔧 Engine Layer (재사용 가능)
-│   │   ├── ecs.lua           # ECS 아키텍처 엔진
-│   │   ├── registry.lua      # 전역 객체 관리
-│   │   └── resource.lua      # 리소스 로더 (핫 리로딩)
-│   │
-│   ├── renderer/             # 🎨 Rendering Layer
-│   │   ├── batcher.lua       # 고성능 배치 렌더링
-│   │   ├── camera.lua        # 카메라 & 화면 효과
-│   │   └── post_effect.lua   # 포스트 프로세싱
-│   │
-│   ├── game/                 # 🎮 Game Layer
-│   │   ├── systems/          # 게임 시스템 (움직임, 충돌 등)
-│   │   ├── components/       # 데이터 컴포넌트
-│   │   ├── patterns/         # 탄막 패턴 스크립트
-│   │   └── states/           # 게임 상태 관리
-│   │
-│   └── lib/                  # 📚 공통 라이브러리
-│       └── logger.lua        # 4레벨 로깅 시스템
-│
-├── assets/                   # 📦 게임 리소스
-│   ├── shaders/             # GLSL 셰이더 파일
-│   ├── data/                # 게임 데이터 (JSON/Lua)
-│   └── sfx/                 # 사운드 에셋
-│
-├── doc/                     # 📖 개발 문서
-│   └── VECTOR_SWARM_SPEC.md # 상세 게임 기획서
-│
-├── .vscode/                 # ⚙️ VS Code 설정
-└── love-11.5-*/            # 🎮 LÖVE2D 실행 파일
+src/
+├── main.lua              # LÖVE 콜백 (load/update/draw/input)
+├── conf.lua              # 윈도우 설정 (432×960 세로)
+├── 00_common/            # 유틸리티 (로거, 디버그, 세이브)
+├── 01_core/              # 엔진 (ECS, Scene Stack, World)
+├── 02_renderer/          # 카메라, Bloom, 배경
+├── 03_game/              # 게임 로직
+│   ├── components/       # ECS 컴포넌트 17종
+│   ├── systems/          # ECS 시스템 17종+
+│   ├── entities/         # 엔티티 팩토리 + 플레이어 파사드
+│   ├── scenes/           # Scene Stack 씬 8종
+│   └── states/           # 게임 상태 + 메타 시스템
+├── 04_ui/                # HUD, 미니맵, 모바일 레이아웃
+└── 05_sound/             # 절차적 사운드 (synth + sfxDefs)
+
+doc/                      # 설계 문서 (00~14)
+work_log/                 # 작업 일지
 ```
+
+## 📊 개발 상태
+
+```
+Phase 0  ███████████  기반 구축              ✅
+Phase 1  ███████████  MVP 게임 루프          ✅
+Phase 2  ███████████  게임플레이 확장         ✅
+Phase 3  ███████████  콘텐츠 & 비주얼        ✅
+Phase 4  ████████░░░  폴리싱 & 출시          진행 중
+```
+
+Phase 4: 게임 루프 ✅ → UX ✅ → 비주얼 폴리싱 ✅ → 밸런싱 & 최적화 → 모바일 포팅
+
+---
+
+*Vector Swarm — LÖVE2D 11.5 / Lua / Zero-Art*
 
 ## 📊 개발 현황
 

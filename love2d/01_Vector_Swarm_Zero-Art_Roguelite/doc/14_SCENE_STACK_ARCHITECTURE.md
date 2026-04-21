@@ -1,7 +1,7 @@
 # 14. Scene Stack 아키텍처 — Vector Swarm
 
 > 작성: 2026-04-20
-> 상태: 설계 단계 (구현 전)
+> 상태: 구현 완료 (Phase 4B.1)
 
 ---
 
@@ -237,21 +237,20 @@ drawBelow = true, transparent = true (투명 오버레이)
 
 ## 4. 적용 설계
 
-### 4.1. 현재 모듈 → Scene 매핑
+### 4.1. 현재 모듈 → Scene 매핑 (구현 완료)
 
-| 현재 모듈 | Scene 이름 | drawBelow | transparent | 비고 |
+| Scene 이름 | 래핑 모듈 | drawBelow | transparent | 비고 |
 |-----------|-----------|:---------:|:-----------:|------|
-| titleMenu.lua | TitleScene | false | false | 전체화면, 게임 루프 실행 안 함 |
-| (게임 플레이) | PlayScene | — | — | 스택 베이스. ECS 업데이트 + 렌더링 |
-| pauseMenu.lua | PauseScene | true | false | 오버레이. 아래 보이지만 업데이트 정지 |
-| levelUp.lua | LevelUpScene | true | false | 오버레이. 게임 정지 + 카드 선택 |
-| upgradeTree.lua | UpgradeScene | true | false | 어디서든 push 가능 (타이틀/게임오버) |
-| gameState.draw() | GameOverScene | true | false | 게임오버 결과 + 리스타트 프롬프트 |
-| (향후) | CreditsScene | false | false | 크레딧 화면 |
-| (향후) | OptionsScene | true | false | 설정 화면 |
-| (향후) | TutorialScene | true | true | 투명 오버레이, 게임 진행 중 힌트 |
+| TitleScene | titleMenu.lua | false | false | 전체화면, BGM 정지 |
+| PlayScene | ecsManager + player + bloom + bg | — | — | 스택 베이스. ECS 업데이트 + 렌더링 |
+| PauseScene | pauseMenu.lua | true | false | Continue / Restart / Menu |
+| LevelUpScene | levelUp.lua | true | false | 3택 선택 후 자동 pop |
+| UpgradeScene | upgradeTree.lua | true | false | 타이틀/게임오버에서 push 가능 |
+| GameOverScene | gameState.lua draw | true | false | 도전과제 해금 toast + R/U/ESC |
+| CreditsScene | (자체 구현) | true | false | Zero-Art 스타일 크레딧 |
+| AchievementScene | achievementSystem | true | false | 진행도 바 + 보상 정보 |
 
-### 4.2. 게임 플로우 (Scene Stack 기준)
+### 4.2. 게임 플로우 (Scene Stack 기준 — 구현 완료)
 
 ```
 [앱 시작]
@@ -280,7 +279,7 @@ drawBelow = true, transparent = true (투명 오버레이)
   stack: [ PlayScene, LevelUpScene ]
 
 [선택 완료]
-  → pop()
+  → auto pop (levelUp.isActive() == false)
   stack: [ PlayScene ]
 
 [UPGRADES (타이틀에서)]
@@ -291,13 +290,25 @@ drawBelow = true, transparent = true (투명 오버레이)
   → pop()
   stack: [ TitleScene ]
 
+[ACHIEVEMENTS (타이틀에서)]
+  → push(AchievementScene)
+  stack: [ TitleScene, AchievementScene ]
+
+[CREDITS (타이틀에서)]
+  → push(CreditsScene)
+  stack: [ TitleScene, CreditsScene ]
+
 [플레이어 사망]
   → push(GameOverScene)
   stack: [ PlayScene, GameOverScene ]
 
 [R 리스타트]
-  → pop + replace(PlayScene)  (또는 clear + push(PlayScene))
+  → pop + playScene:restart()
   stack: [ PlayScene ]
+
+[U 업그레이드 (게임오버에서)]
+  → push(UpgradeScene)
+  stack: [ PlayScene, GameOverScene, UpgradeScene ]
 ```
 
 ### 4.3. main.lua 변화 (Before → After)
@@ -420,40 +431,44 @@ draw 전파:
 
 ---
 
-## 6. 마이그레이션 전략
+## 6. 마이그레이션 — 완료
 
-### 6.1. 원칙
+### 6.1. 원칙 (적용됨)
 
-- **점진적 전환** — 한 번에 전부 바꾸지 않음. 씬 하나씩 이동.
-- **회귀 테스트** — 씬 하나 이동할 때마다 전체 플로우 확인.
+- **점진적 전환** — 씨 하나씩 Scene 래퍼로 이동.
+- **회귀 테스트** — 씨 하나 이동할 때마다 전체 플로우 확인.
 - **기존 모듈 유지** — titleMenu.lua 등은 그대로 두고, Scene이 래핑(wrap)만 함.
 
-### 6.2. 단계 계획
+### 6.2. 단계 계획 → 완료
 
 ```
-Step 1: sceneStack.lua 엔진 구현 (01_core/)
-Step 2: PlayScene 작성 (기존 게임 로직 래핑)
-Step 3: TitleScene 작성 (titleMenu.lua 래핑)
-Step 4: main.lua를 sceneStack 기반으로 전환
-Step 5: PauseScene, LevelUpScene, UpgradeScene, GameOverScene 순차 이동
-Step 6: gameState에서 TITLE/PAUSED 상태 제거 (stack이 대체)
+Step 1: sceneStack.lua 엔진 구현 (01_core/)                 ✅
+Step 2: PlayScene 작성 (기존 게임 로직 래핑)                 ✅
+Step 3: TitleScene 작성 (titleMenu.lua 래핑)               ✅
+Step 4: main.lua를 sceneStack 기반으로 전환              ✅
+Step 5: PauseScene, LevelUpScene, UpgradeScene,         ✅
+        GameOverScene, CreditsScene, AchievementScene
+Step 6: gameState에서 TITLE/PAUSED 상태 제거              ✅
 ```
 
-### 6.3. gameState 역할 변화
+### 6.3. gameState 역할 변화 (완료)
 
 Scene Stack 도입 전:
 ```
 gameState = 상태 머신(TITLE/PLAYING/PAUSED/GAME_OVER) + 점수 + timeScale
 ```
 
-Scene Stack 도입 후:
+Scene Stack 도입 후 (현재):
 ```
 gameState = 런 데이터 (score, fragments, timeScale)만 관리
 sceneStack = 상태 전이 (어떤 화면이 활성인지) 담당
 ```
 
-상태 전이 책임이 gameState에서 sceneStack으로 이동한다.
-gameState.isTitle(), isPaused() 등은 더 이상 필요 없어진다.
+gameState.isTitle(), isPaused() 등은 Scene Stack이 대체했다.
+
+> **참고: tutorialHints는 Scene이 아님**
+> tutorialHints.lua는 PlayScene 내부에서 update/draw되는 모듈.
+> 독립적 인풋 핸들링 없고 게임 재생 중 오버레이로 반투명 표시되므로 Scene 분리 불필요.
 
 ---
 
