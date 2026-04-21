@@ -249,6 +249,30 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                     lg.setLineWidth(1)
                     lg.pop()
                 end
+
+                -- ===== VARIANT OVERLAYS =====
+                local vari = renderable.variant
+                if vari == "swift" then
+                    -- Ghost trail: 2-3 fading afterimages behind movement direction
+                    local vel = ecs:getComponent(entityId, "Velocity")
+                    if vel then
+                        local vx, vy = vel.vx or 0, vel.vy or 0
+                        local spd = (vx * vx + vy * vy)
+                        if spd > 0.01 then
+                            spd = spd ^ 0.5
+                            local nx, ny = vx / spd, vy / spd
+                            local c = renderable.color
+                            for g = 1, 3 do
+                                local dist = g * r * 1.2
+                                local gx = x - nx * dist
+                                local gy = y - ny * dist
+                                local ga = (4 - g) * 0.15  -- 0.45, 0.30, 0.15
+                                setColor(c[1] * 255, c[2] * 255, c[3] * 255, ga * 255)
+                                lg.circle("fill", gx, gy, r * (1 - g * 0.15))
+                            end
+                        end
+                    end
+                end
             end
         end
 

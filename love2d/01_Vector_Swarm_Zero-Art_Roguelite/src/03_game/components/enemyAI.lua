@@ -58,6 +58,7 @@ function EnemyAI.new(data)
         chargeDirY   = 0,
         spinSpeed    = d.spinSpeed    or def.spinSpeed,
         xpValue      = d.xpValue     or def.xpValue,
+        variant      = d.variant,  -- nil for normal, "swift"/"armored"/etc
     }
 end
 

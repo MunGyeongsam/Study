@@ -485,6 +485,25 @@ local function _formationChance(stage)
     return _min(0.6, 0.2 + (stage - 4) * 0.05)
 end
 
+-- Pick a variant (or nil) based on stage progression
+-- Returns nil for normal enemies, or a variant string
+local VARIANT_TIERS = {
+    { stage = 4,  variant = "swift",    chance = 0.15 },
+    -- future: { stage = 7,  variant = "armored",  chance = 0.12 },
+    -- future: { stage = 10, variant = "splitter", chance = 0.10 },
+    -- future: { stage = 13, variant = "shielded", chance = 0.08 },
+}
+
+local function _pickVariant(stage)
+    for i = #VARIANT_TIERS, 1, -1 do
+        local vt = VARIANT_TIERS[i]
+        if stage >= vt.stage and _random() < vt.chance then
+            return vt.variant
+        end
+    end
+    return nil
+end
+
 function StageManager:_spawnWave(config)
     self.wave = self.wave + 1
     self.totalWaves = self.totalWaves + 1
@@ -524,6 +543,7 @@ function StageManager:_spawnWave(config)
         local direction = self:_pickSpawnDirection(config)
         local spawnX, spawnY = self:_getSpawnPosition(direction, px, py)
         local enemyType = self:_pickEnemyType(config, direction)
+        local variant = _pickVariant(self.stage)
 
         if enemyType == "bit" then
             -- Bit: swarm spawn (3~5 clustered around position)
@@ -531,10 +551,10 @@ function StageManager:_spawnWave(config)
             for _ = 1, swarmCount do
                 local ox = spawnX + (_random() - 0.5) * 0.6
                 local oy = spawnY + (_random() - 0.5) * 0.6
-                self.ecsManager.createEnemy(ox, oy, "bit", diff)
+                self.ecsManager.createEnemy(ox, oy, "bit", diff, variant)
             end
         else
-            self.ecsManager.createEnemy(spawnX, spawnY, enemyType, diff)
+            self.ecsManager.createEnemy(spawnX, spawnY, enemyType, diff, variant)
         end
     end
 

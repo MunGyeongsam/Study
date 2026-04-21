@@ -54,6 +54,17 @@ local CHARACTER_PRESETS = {
 -- ─── Enemy max speed (scaled by difficulty) ──────────────────────
 local ENEMY_MAX_SPEED = 3
 
+-- ─── Variant Definitions ─────────────────────────────────────────
+-- Each variant modifies base stats multiplicatively and sets a visual tag.
+local VARIANT_DEFS = {
+    swift = {
+        speedMult  = 1.5,
+        hpMult     = 0.8,
+        scaleMult  = 0.8,   -- radius × 0.8
+        xpMult     = 1.2,
+    },
+}
+
 -- Enemy type presets (세계관 기반 6종 — Worm 제외 5종 구현)
 local ENEMY_TYPES = {
     -- Bit: 접촉형 무리. 탄막 없이 몸통으로 돌진
@@ -166,14 +177,25 @@ local function scaled(value, mult)
     return nil
 end
 
--- 적 엔티티 생성 (difficulty: optional scaling from stageManager)
-function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
+-- 적 엔티티 생성 (difficulty: optional scaling, variant: optional "swift"/"armored"/etc)
+function EntityFactory.createEnemy(world, x, y, enemyType, difficulty, variant)
     local preset = ENEMY_TYPES[enemyType] or ENEMY_TYPES.node
     local diff = difficulty or {}
     local hpMult = diff.enemyHpMult or 1.0
     local spdMult = diff.enemySpeedMult or 1.0
     local bspdMult = diff.bulletSpeedMult or 1.0
+
+    -- Apply variant multipliers on top of difficulty
+    local vdef = variant and VARIANT_DEFS[variant]
+    if vdef then
+        spdMult = spdMult * (vdef.speedMult or 1)
+        hpMult  = hpMult * (vdef.hpMult or 1)
+    end
+    local radiusMult = vdef and vdef.scaleMult or 1
+    local xpMult     = vdef and vdef.xpMult or 1
+
     local entityId = world:createEntity()
+    local radius = preset.radius * radiusMult
 
     world:addComponent(entityId, "Transform", Transform.new({
         x = x or 0, y = y or 5,
@@ -182,12 +204,13 @@ function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
         vx = 0, vy = 0, speed = (preset.ai.speed or 1) * spdMult, maxSpeed = ENEMY_MAX_SPEED * spdMult, damping = 1.0,
     }))
     world:addComponent(entityId, "Collider", Collider.new({
-        radius = preset.radius, layer = "enemy",
+        radius = radius, layer = "enemy",
         mask = {"player", "playerBullet"},
     }))
     world:addComponent(entityId, "Renderable", Renderable.new({
-        type = preset.shape or "circle", radius = preset.radius,
+        type = preset.shape or "circle", radius = radius,
         color = preset.color,
+        variant = variant,  -- visual tag for renderSystem
     }))
     world:addComponent(entityId, "LifeSpan", LifeSpan.new({
         time = 15, destroyOffScreen = true,
@@ -207,7 +230,8 @@ function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
         chargeSpeed    = scaled(ai.chargeSpeed, spdMult),
         chargeWarnTime = ai.chargeWarnTime,
         spinSpeed      = ai.spinSpeed,
-        xpValue        = preset.xpValue or 1,
+        xpValue        = _floor((preset.xpValue or 1) * xpMult + 0.5),
+        variant        = variant,  -- for systems that need variant info
     }))
 
     if preset.emitter then
@@ -234,7 +258,8 @@ function EntityFactory.createEnemy(world, x, y, enemyType, difficulty)
         aiComp.orbitCenterY = y or 5
     end
 
-    logInfo(string.format("[ENTITY] Enemy created: %d (%s)", entityId, enemyType or "node"))
+    logInfo(string.format("[ENTITY] Enemy created: %d (%s%s)", entityId,
+        variant and (variant .. "-") or "", enemyType or "node"))
     return entityId
 end
 

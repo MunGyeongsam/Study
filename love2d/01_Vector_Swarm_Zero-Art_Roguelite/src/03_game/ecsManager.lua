@@ -165,13 +165,13 @@ function ECSManager.createPlayer(x, y, characterId)
     return EntityFactory.createPlayer(ECSManager.world, x, y, characterId)
 end
 
--- 적 엔티티 생성 (EntityFactory 위임, difficulty 포워딩)
-function ECSManager.createEnemy(x, y, enemyType, difficulty)
+-- 적 엔티티 생성 (EntityFactory 위임, difficulty/variant 포워딩)
+function ECSManager.createEnemy(x, y, enemyType, difficulty, variant)
     if not ECSManager.world then
         logError("ECS: World not initialized")
         return nil
     end
-    return EntityFactory.createEnemy(ECSManager.world, x, y, enemyType, difficulty)
+    return EntityFactory.createEnemy(ECSManager.world, x, y, enemyType, difficulty, variant)
 end
 
 -- ECS 통계 반환

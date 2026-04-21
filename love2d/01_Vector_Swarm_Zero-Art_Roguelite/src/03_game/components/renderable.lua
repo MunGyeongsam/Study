@@ -27,6 +27,7 @@ function Renderable.new(data)
         color    = d.color    or {0, 1, 1, 1},
         visible  = vis,
         rotation = d.rotation or 0,
+        variant  = d.variant,  -- nil for normal, "swift"/"armored"/etc for variants
     }
 end
 
