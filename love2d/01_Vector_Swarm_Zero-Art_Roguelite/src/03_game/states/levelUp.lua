@@ -9,6 +9,11 @@ local _min    = math.min
 local _floor  = math.floor
 local _random = math.random
 local _sin    = math.sin
+local _exp    = math.exp
+
+-- Card entrance animation constants
+local CARD_ANIM_K  = 6     -- exp decay speed (higher = snappier)
+local CARD_STAGGER = 0.08  -- seconds between each card entrance
 
 local LevelUp = {}
 
@@ -145,6 +150,7 @@ local state = {
     selectedIndex = 0, -- 선택된 인덱스 (1-3), 0 = 미선택
     playerId = nil,
     ecs = nil,
+    showTime = 0,      -- wall-clock time when show() was called
 }
 
 -- 감쇠 스택: 업그레이드별 선택 횟수 추적
@@ -187,6 +193,7 @@ function LevelUp.show(ecs, playerId)
     state.playerId = playerId
     state.ecs = ecs
     gameState.setTimeScale(0)  -- 게임 일시정지
+    state.showTime = love.timer.getTime()
 
     -- 옵션 이름에 현재 효과량 표시
     for _, opt in ipairs(state.options) do
@@ -272,49 +279,65 @@ function LevelUp.draw()
     local startX = (w - totalW) / 2
     local cardY = h * 0.35
 
+    -- entrance animation: per-card stagger with exp decay
+    local elapsed = love.timer.getTime() - state.showTime
+    local slideDist = cardH * 0.3
+
     for i, option in ipairs(state.options) do
         local cx = startX + (i - 1) * (cardW + gap)
+
+        -- per-card animation progress
+        local cardElapsed = elapsed - (i - 1) * CARD_STAGGER
+        local t = 1  -- fully visible by default
+        if cardElapsed < 0 then
+            t = 0
+        elseif cardElapsed < 1.0 then
+            t = 1 - _exp(-CARD_ANIM_K * cardElapsed)
+        end
+        local offsetY = (1 - t) * slideDist
+        local alpha = t
+        local cy = cardY + offsetY
 
         -- 카드 배경
         local isWeapon = option.category == "weapon"
         if isWeapon then
-            lg.setColor(0.15, 0.1, 0.25, 0.9)
+            lg.setColor(0.15, 0.1, 0.25, 0.9 * alpha)
         else
-            lg.setColor(0.1, 0.2, 0.15, 0.9)
+            lg.setColor(0.1, 0.2, 0.15, 0.9 * alpha)
         end
-        lg.rectangle("fill", cx, cardY, cardW, cardH, 8, 8)
+        lg.rectangle("fill", cx, cy, cardW, cardH, 8, 8)
 
         -- 카드 테두리
         if isWeapon then
-            lg.setColor(0.6, 0.3, 1, 0.8)
+            lg.setColor(0.6, 0.3, 1, 0.8 * alpha)
         else
-            lg.setColor(0.3, 0.8, 0.4, 0.8)
+            lg.setColor(0.3, 0.8, 0.4, 0.8 * alpha)
         end
         lg.setLineWidth(2)
-        lg.rectangle("line", cx, cardY, cardW, cardH, 8, 8)
+        lg.rectangle("line", cx, cy, cardW, cardH, 8, 8)
 
         -- 번호
         lg.setFont(descFont)
-        lg.setColor(0.5, 0.5, 0.5, 1)
-        lg.print(tostring(i), cx + 8, cardY + 8)
+        lg.setColor(0.5, 0.5, 0.5, alpha)
+        lg.print(tostring(i), cx + 8, cy + 8)
 
         -- 이름 (감쇠 효과량 포함)
         lg.setFont(optionFont)
-        lg.setColor(1, 1, 1, 1)
+        lg.setColor(1, 1, 1, alpha)
         local displayName = option.displayName or option.name
         local nameW = optionFont:getWidth(displayName)
-        lg.print(displayName, cx + (cardW - nameW) / 2, cardY + cardH * 0.3)
+        lg.print(displayName, cx + (cardW - nameW) / 2, cy + cardH * 0.3)
 
         -- 설명
         lg.setFont(descFont)
-        lg.setColor(0.7, 0.7, 0.7, 1)
+        lg.setColor(0.7, 0.7, 0.7, alpha)
         local descW = descFont:getWidth(option.desc)
-        lg.print(option.desc, cx + (cardW - descW) / 2, cardY + cardH * 0.6)
+        lg.print(option.desc, cx + (cardW - descW) / 2, cy + cardH * 0.6)
 
         -- 카테고리 태그
-        lg.setColor(0.5, 0.5, 0.5, 0.6)
+        lg.setColor(0.5, 0.5, 0.5, 0.6 * alpha)
         local tag = isWeapon and "[WEAPON]" or "[PASSIVE]"
-        lg.print(tag, cx + 8, cardY + cardH - 20)
+        lg.print(tag, cx + 8, cy + cardH - 20)
     end
 
     -- 안내 텍스트

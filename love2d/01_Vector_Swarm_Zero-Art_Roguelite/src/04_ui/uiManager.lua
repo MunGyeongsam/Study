@@ -39,6 +39,7 @@ end
 function uiManager.update(dt)
     if not uiManager.isVisible then return end
     
+    topHud.update(dt)
     bottomControls.update(dt)
 end
 

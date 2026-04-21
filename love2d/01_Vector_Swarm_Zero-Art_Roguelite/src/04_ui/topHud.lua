@@ -1,8 +1,9 @@
 -- Top HUD
 -- 상단 영역 UI (점수, 설정, 상태 정보)
 
-local logger = require("00_common.logger")
+local logger     = require("00_common.logger")
 local mobileLayout = require("04_ui.mobileLayout")
+local mathUtil   = require("00_common.mathUtil")
 
 local _max = math.max
 
@@ -21,6 +22,8 @@ local gameData = {
     bossMaxHp = 1,
     bossPhase = 1,
     bossMaxPhase = 1,
+    -- Smoothed display value
+    bossDisplayHp = 0,
 }
 
 -- UI 요소들
@@ -36,6 +39,13 @@ local elements = {
 function topHud.init()
     logger.info("Top HUD initialized")
     topHud.updateLayout()
+end
+
+-- 프레임 업데이트 (보스 HP 바 슬라이딩 등)
+function topHud.update(dt)
+    if gameData.bossActive then
+        gameData.bossDisplayHp = mathUtil.expDecay(gameData.bossDisplayHp, gameData.bossHp, 4, dt)
+    end
 end
 
 -- 레이아웃 업데이트
@@ -150,7 +160,13 @@ function topHud.setGameData(data)
     if data.wave then gameData.wave = data.wave end
     if data.wavesPerStage then gameData.wavesPerStage = data.wavesPerStage end
     -- Boss data
-    if data.bossActive ~= nil then gameData.bossActive = data.bossActive end
+    if data.bossActive ~= nil then
+        -- bossActive가 켜지는 순간 displayHp를 초기화
+        if data.bossActive and not gameData.bossActive then
+            gameData.bossDisplayHp = data.bossHp or gameData.bossHp
+        end
+        gameData.bossActive = data.bossActive
+    end
     if data.bossName then gameData.bossName = data.bossName end
     if data.bossHp then gameData.bossHp = data.bossHp end
     if data.bossMaxHp then gameData.bossMaxHp = data.bossMaxHp end
@@ -197,12 +213,22 @@ function topHud.drawBossHpBar()
     lg.rectangle("fill", barX - 1, barY - 1, barW + 2, barH + 2)
 
     -- HP fill
-    local ratio = _max(0, gameData.bossHp / _max(1, gameData.bossMaxHp))
+    local ratio = _max(0, gameData.bossDisplayHp / _max(1, gameData.bossMaxHp))
+    -- Damage flash: show instant HP behind smoothed bar
+    local instantRatio = _max(0, gameData.bossHp / _max(1, gameData.bossMaxHp))
     -- Color: green→yellow→red
     local r = ratio < 0.5 and 1 or (1 - (ratio - 0.5) * 2)
     local g = ratio > 0.5 and 1 or (ratio * 2)
+
+    -- Instant (behind) bar — white flash
+    if ratio > instantRatio + 0.005 then
+        lg.setColor(1, 1, 1, 0.4)
+        lg.rectangle("fill", barX, barY, barW * ratio, barH)
+    end
+
+    -- Smoothed bar
     lg.setColor(r, g, 0.1, 1)
-    lg.rectangle("fill", barX, barY, barW * ratio, barH)
+    lg.rectangle("fill", barX, barY, barW * instantRatio, barH)
 
     -- Phase markers
     if gameData.bossMaxPhase > 1 then

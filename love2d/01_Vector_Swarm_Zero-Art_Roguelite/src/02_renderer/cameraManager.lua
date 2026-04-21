@@ -5,13 +5,17 @@
 --   "game"  — 플레이어를 자동 추적 (기본)
 --   "debug" — 마우스 드래그로 자유 이동, 휠로 줌
 
-local camera = require("02_renderer.camera")
+local camera   = require("02_renderer.camera")
+local mathUtil = require("00_common.mathUtil")
 
 local cameraManager = {}
 
 local gameCamera  = nil
 local debugCamera = nil
 local mode = "game"  -- "game" | "debug"
+
+-- Camera follow damping (k: higher = snappier)
+local CAM_FOLLOW_K = 12
 
 -- Screen shake state
 local shakeIntensity = 0
@@ -66,10 +70,13 @@ function cameraManager.getGameCamera()
     return gameCamera
 end
 
--- 업데이트: 게임 모드일 때 플레이어 추적
+-- 업데이트: 게임 모드일 때 플레이어 추적 (exponential smoothing)
 function cameraManager.update(dt, targetX, targetY)
     if mode == "game" and targetX and targetY then
-        gameCamera:lookAt(targetX, targetY)
+        local cx, cy = gameCamera:pos()
+        local nx = mathUtil.expDecay(cx, targetX, CAM_FOLLOW_K, dt)
+        local ny = mathUtil.expDecay(cy, targetY, CAM_FOLLOW_K, dt)
+        gameCamera:lookAt(nx, ny)
     end
 
     -- Shake decay

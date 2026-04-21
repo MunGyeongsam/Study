@@ -2,7 +2,8 @@
 -- XpOrb 엔티티를 플레이어 쪽으로 자석처럼 끌어당기고, 닿으면 수집.
 -- 플레이어가 PlayerXP 컴포넌트를 통해 XP를 축적, 레벨업 판정.
 
-local System = require("01_core.system")
+local System   = require("01_core.system")
+local mathUtil = require("00_common.mathUtil")
 local sqrt = math.sqrt
 local floor = math.floor
 
@@ -57,8 +58,10 @@ local function createXpCollectionSystem(getPlayerPos)
                     local dist = sqrt(dist2)
                     if dist > 0.01 then
                         local nx, ny = dx / dist, dy / dist
-                        velocity.vx = nx * orb.magnetSpeed
-                        velocity.vy = ny * orb.magnetSpeed
+                        local targetVx = nx * orb.magnetSpeed
+                        local targetVy = ny * orb.magnetSpeed
+                        velocity.vx = mathUtil.expDecay(velocity.vx, targetVx, 8, dt)
+                        velocity.vy = mathUtil.expDecay(velocity.vy, targetVy, 8, dt)
                     end
                 end
 
