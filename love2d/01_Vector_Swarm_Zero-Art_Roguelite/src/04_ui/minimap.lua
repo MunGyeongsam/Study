@@ -1,14 +1,12 @@
 -- Minimap
 -- 화면 우상단 월드 미니맵 오버레이
 -- 플레이어(흰), 적(빨강), 보스(큰 빨강), 카메라 뷰포트(테두리)
--- 크기: 화면 너비의 20%, 월드 비율(2:3) 유지
+-- 크기: 화면 너비의 18%, 월드 비율(2:3) 유지
 
 local world         = require("01_core.world")
 local mobileLayout  = require("04_ui.mobileLayout")
 
 local _floor = math.floor
-local _min   = math.min
-local _max   = math.max
 
 local minimap = {}
 

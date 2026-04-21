@@ -41,7 +41,8 @@ src/
 │   ├── global.lua    # Injects globals: log, setColor, resetColor
 │   ├── logger.lua    # 4-level logging + in-game console (` key)
 │   ├── debug.lua     # In-game debug overlay (key-value watch panel)
-│   └── gridDebugDraw.lua  # Screen-space grid overlay (F4)
+│   ├── gridDebugDraw.lua  # Screen-space grid overlay (F4)
+│   └── saveData.lua  # love.filesystem JSON save/load (fragments, upgrades, tutorialDone)
 ├── 01_core/          # Engine layer (pure engine, no game deps)
 │   ├── world.lua     # World boundaries, zones, fun elements
 │   ├── ecs.lua       # ECS core (entity/component management, componentIndex cache)
@@ -84,12 +85,17 @@ src/
 │   └── states/       # Game states
 │       ├── gameState.lua      # Game state machine (playing/game_over/level_up)
 │   │   ├── levelUp.lua        # Level-up 3-choice UI + diminishing returns
-│   │   └── achievementSystem.lua # Achievement tracking + unlock management
+│   │   ├── achievementSystem.lua # Achievement tracking + unlock management
+│   │   ├── upgradeTree.lua    # Permanent upgrade tree (Data Fragments)
+│   │   ├── titleMenu.lua      # Title screen menu (PLAY/UPGRADES/CREDITS)
+│   │   ├── pauseMenu.lua      # In-game pause overlay
+│   │   └── tutorialHints.lua  # First-play contextual hints (slowmo + glitch text)
 ├── 04_ui/            # HUD, mobile layout, button controls
 │   ├── uiManager.lua
 │   ├── topHud.lua
 │   ├── bottomControls.lua
-│   └── mobileLayout.lua
+│   ├── mobileLayout.lua
+│   └── minimap.lua   # World minimap overlay (resolution-proportional)
 └── 05_sound/         # Zero-Art procedural audio
     ├── synth.lua     # Oscillator engine (5 waveforms, ADSR, freq sweep)
     ├── soundManager.lua # Hybrid loader (ext_res file → code gen fallback)
