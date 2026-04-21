@@ -200,8 +200,8 @@ Phase 5  ░░░░░░░░░░░  콘텐츠 확장 & 엔드게임 (예
 ### 5A. 보스 & 적 비주얼/행동 다양화 — "원만 보이는 건 아니다"
 | # | 작업 | 상태 | 비고 |
 |---|------|------|------|
-| 5A.1 | 🐛 보스 월드바운드 이탈 버그 수정 | 🔲 | createBoss에 WorldBound 누락 + 텔레포트 X좌표 클램핑 누락 |
-| 5A.2 | 보스 고유 외형 (Zero-Art 기하학 도형) | 🔲 | NULL=삼각형, STACK=겹원, HEAP=다이아몬드, RECURSION=나선, OVERFLOW=다면체 |
+| 5A.1 | 🐛 보스 월드바운드 이탈 버그 수정 | ✅ | createBoss에 WorldBound 추가 + 텔레포트 클램핑 (1e87e0d) |
+| 5A.2 | 보스 고유 외형 (Zero-Art 기하학 도형) | ✅ | CS 자료구조 × 글리치: null=역삼각, stack=적층사각, heap=다이아+트리, recursion=프랙탈삼각, overflow=헥사+고스트 (f80cf8a) |
 | 5A.3 | 적 고유 외형 다양화 (5종) | 🔲 | bit=점군, node=십자, vector=화살표, loop=링, matrix=격자 |
 | 5A.4 | 보스 등장/페이즈 전환 비주얼 연출 강화 | 🔲 | 페이즈별 외형 변화, 크기 팽창, 파티클 |
 
@@ -232,9 +232,9 @@ Phase 5  ░░░░░░░░░░░  콘텐츠 확장 & 엔드게임 (예
 - [x] ~~late require (ecsManager, background)~~ (모듈 상단으로 이동)
 - [x] ~~magic number (entityFactory)~~ (PLAYER/ENEMY_MAX_SPEED 상수 추출)
 - [x] ~~main.lua if-else 상태 분기 폭발~~ (Scene Stack 아키텍처 도입, `ae1b1c4`)
-- [ ] 🐛 보스 WorldBound 누락 — createBoss()에 WorldBound 미부착 → 경계 이탈 가능 (5A.1)
-- [ ] 🐛 보스 텔레포트 X좌표 클램핑 누락 — bossSystem 텔레포트 시 newX 바운드 체크 불완전 (5A.1)
-- [ ] 보스/적 비주얼 획일화 — 전부 circle 렌더링, Zero-Art 도형 다양화 필요 (5A.2, 5A.3)
+- [x] ~~🐛 보스 WorldBound 누락~~ — createBoss()에 WorldBound 추가 + 텔레포트 클램핑 (5A.1, `1e87e0d`)
+- [x] ~~🐛 보스 텔레포트 X좌표 클램핑 누락~~ — bossSystem 텔레포트 시 반경 고려 클램핑 (5A.1, `1e87e0d`)
+- [ ] 적 비주얼 획일화 — 적 5종 아직 circle 렌더링, 도형 다양화 필요 (5A.3)
 
 ---
 
