@@ -415,3 +415,65 @@ Matrix.translate(x, y)  Matrix.rotate(angle)
 - `local` 선언은 핫패스 밖에서
 - `string.format` 선호 (루프 내 `..` 연결 지양)
 - `math.sin/cos` → 필요 시 LUT 캐시
+
+---
+
+## 15. Spatial Hash Grid 패턴
+
+프로젝트에서 반복적으로 사용되는 공간 분할 기법. 가까운 오브젝트 탐색을 O(n²) → O(n)으로 줄인다.
+
+### 핵심 구조
+
+```
+┌───┬───┬───┐
+│   │ ● │   │  셀 크기 = CELL_SIZE
+├───┼───┼───┤  키 = floor(x/CELL_SIZE) * PRIME + floor(y/CELL_SIZE)
+│ ● │ ★ │ ● │  ★ 기준 3×3 이웃 셀만 탐색
+├───┼───┼───┤
+│   │ ● │   │
+└───┴───┴───┘
+```
+
+### 구현 패턴
+
+```lua
+local CELL_SIZE = 0.5
+local INV_CELL  = 1 / CELL_SIZE
+local grid = {}
+
+-- 삽입: O(1)
+local cx = floor(x * INV_CELL)
+local cy = floor(y * INV_CELL)
+local key = cx * 100003 + cy   -- 정수 키 (string concat 회피)
+grid[key] = grid[key] or {}
+grid[key][#grid[key] + 1] = entity
+
+-- 이웃 탐색: 3×3 = 최대 9셀
+for nx = cx - 1, cx + 1 do
+    for ny = cy - 1, cy + 1 do
+        local cell = grid[nx * 100003 + ny]
+        if cell then
+            for i = 1, #cell do ... end
+        end
+    end
+end
+
+-- 매 프레임 초기화: for k in pairs(grid) do grid[k] = nil end
+```
+
+### 설계 포인트
+
+| 항목 | 설명 |
+|------|------|
+| 셀 크기 | ≥ 탐색 반경. 너무 크면 퇴화, 너무 작으면 빈 셀 낭비 |
+| 키 해싱 | `cx * PRIME + cy` (정수 연산). `tostring` / `..` 절대 금지 |
+| 메모리 | 테이블 재사용 + `nil` 초기화 (GC 최소화) |
+| 자기 제외 | 저장된 entityId로 비교 (배열 인덱스 ≠ entityId 주의) |
+
+### 프로젝트 적용 현황
+
+| 위치 | 용도 | 셀 크기 | 탐색 반경 |
+|------|------|---------|----------|
+| `02_renderer/background.lua` | RSF 원 배치 중복 방지 | 가변 (원 반지름 기반) | 원 반지름 |
+| `03_game/systems/enemyAISystem.lua` | Bit swarm 군집 분리력 | 0.5 | 0.25 |
+| *(예정)* `playerWeaponSystem` | 최근접 적 탐색 최적화 | TBD | TBD |
