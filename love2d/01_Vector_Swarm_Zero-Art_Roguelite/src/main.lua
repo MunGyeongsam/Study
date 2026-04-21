@@ -149,8 +149,9 @@ function love.load()
     end)
     debug.add("debug keys", function()
         local PlayScene = require("03_game.scenes.playScene")
-        return string.format("%10s : GOD[F7]:%s BLOOM[F6]:%s BG[F9]:%s", "debug",
+        return string.format("%10s : GOD[F7]:%s+WPN:%s BLOOM[F6]:%s BG[F9]:%s", "debug",
             PlayScene.getGodMode() and "ON" or "off",
+            PlayScene.getDisableWeapon() and "OFF" or "on",
             bloom.isEnabled() and "ON" or "off",
             background.isEnabled() and "ON" or "off")
     end)

@@ -29,6 +29,7 @@ PlayScene.drawBelow   = false
 -- 게임 내 공유 상태 (static getter/setter 경유)
 local _hitStopTimer  = 0
 local _godMode       = false
+local _disableWeapon = false
 local _showWorldGrid = false
 
 --- Scene 생성
@@ -42,6 +43,7 @@ end
 --- 외부에서 설정하는 공유 상태
 function PlayScene.setGodMode(v) _godMode = v end
 function PlayScene.getGodMode() return _godMode end
+function PlayScene.getDisableWeapon() return _disableWeapon end
 function PlayScene.setShowWorldGrid(v) _showWorldGrid = v end
 function PlayScene.getShowWorldGrid() return _showWorldGrid end
 function PlayScene.getHitStopTimer() return _hitStopTimer end
@@ -313,7 +315,8 @@ function PlayScene:keypressed(key)
         return true
     elseif key == "f7" then
         _godMode = not _godMode
-        logInfo(string.format("[DEBUG] God mode: %s", _godMode and "ON" or "OFF"))
+        _disableWeapon = _godMode
+        logInfo(string.format("[DEBUG] God mode: %s (weapon: %s)", _godMode and "ON" or "OFF", _disableWeapon and "OFF" or "ON"))
         return true
     elseif key == "f8" then
         local sm = ecsManager.getStageManager and ecsManager.getStageManager()

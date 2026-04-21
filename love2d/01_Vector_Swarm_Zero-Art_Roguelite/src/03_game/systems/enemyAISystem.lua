@@ -2,6 +2,7 @@
 -- Reads EnemyAI + Transform + Velocity, sets velocity based on behavior.
 -- Receives playerQuery function via closure to find player position.
 -- Each behavior is a separate handler for maintainability.
+-- Swarm behavior includes spatial-hash-based separation for 3000+ entities.
 
 local System = require("01_core.system")
 
@@ -10,6 +11,75 @@ local sin = math.sin
 local sqrt = math.sqrt
 local atan2 = math.atan2
 local floor = math.floor
+
+-- ===== Swarm Spatial Hash (rebuilt each frame, swarm entities only) =====
+local SEPARATION_RADIUS = 0.25    -- 분리 반경 (world units)
+local SEPARATION_FORCE  = 1.2     -- 분리력 강도
+local CELL_SIZE         = 0.5     -- 그리드 셀 크기 (≥ SEPARATION_RADIUS)
+local INV_CELL          = 1 / CELL_SIZE
+
+-- Pre-allocated tables (reused each frame to avoid GC)
+local swarmGrid   = {}  -- "cx,cy" → { {x,y,idx}, ... }
+local swarmList   = {}  -- flat list of {x, y, entityId}
+local swarmCount  = 0
+
+local function swarmGridClear()
+    for k in pairs(swarmGrid) do swarmGrid[k] = nil end
+    swarmCount = 0
+end
+
+local function swarmGridInsert(x, y, entityId)
+    swarmCount = swarmCount + 1
+    local entry = swarmList[swarmCount]
+    if entry then
+        entry[1], entry[2], entry[3] = x, y, entityId
+    else
+        swarmList[swarmCount] = { x, y, entityId }
+    end
+    local cx = floor(x * INV_CELL)
+    local cy = floor(y * INV_CELL)
+    local key = cx * 100003 + cy  -- integer hash (no string concat)
+    local cell = swarmGrid[key]
+    if not cell then
+        cell = {}
+        swarmGrid[key] = cell
+    end
+    cell[#cell + 1] = swarmCount
+end
+
+-- Returns separation vector (sx, sy) for entity at (x, y)
+local function swarmSeparation(x, y, selfIdx)
+    local sx, sy = 0, 0
+    local cx = floor(x * INV_CELL)
+    local cy = floor(y * INV_CELL)
+    local r2 = SEPARATION_RADIUS * SEPARATION_RADIUS
+
+    for nx = cx - 1, cx + 1 do
+        for ny = cy - 1, cy + 1 do
+            local cell = swarmGrid[nx * 100003 + ny]
+            if cell then
+                for i = 1, #cell do
+                    local idx = cell[i]
+                    local other = swarmList[idx]
+                    if other[3] ~= selfIdx then
+                        local dx = x - other[1]
+                        local dy = y - other[2]
+                        local d2 = dx * dx + dy * dy
+                        if d2 < r2 and d2 > 0.0001 then
+                            local d = sqrt(d2)
+                            local invD = 1 / d
+                            -- 가까울수록 강한 반발 (1/d 비례)
+                            local strength = (SEPARATION_RADIUS - d) * invD * SEPARATION_FORCE
+                            sx = sx + dx * strength
+                            sy = sy + dy * strength
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return sx, sy
+end
 
 -- ===== Behavior Handlers =====
 -- Each handler receives (ai, transform, velocity, ecs, entityId, px, py, dt)
@@ -58,15 +128,21 @@ local function handleStationary(ai, _, velocity, ecs, entityId, _, _, dt)
     end
 end
 
-local function handleSwarm(ai, transform, velocity, _, _, px, py)
+local function handleSwarm(ai, transform, velocity, _, entityId, px, py)
     if not (px and py) then return end
+    -- Pursue player
     local dx = px - transform.x
     local dy = py - transform.y
     local dist = sqrt(dx * dx + dy * dy)
+    local vx, vy = 0, 0
     if dist > 0.01 then
-        velocity.vx = (dx / dist) * ai.swarmSpeed
-        velocity.vy = (dy / dist) * ai.swarmSpeed
+        vx = (dx / dist) * ai.swarmSpeed
+        vy = (dy / dist) * ai.swarmSpeed
     end
+    -- Add separation force (calculated from spatial hash)
+    local sx, sy = swarmSeparation(transform.x, transform.y, entityId)
+    velocity.vx = vx + sx
+    velocity.vy = vy + sy
 end
 
 local function handleCharge(ai, transform, velocity, ecs, entityId, px, py, dt)
@@ -126,6 +202,17 @@ local function createEnemyAISystem(getPlayerPos)
         function(ecs, dt, entities)
             local px, py = getPlayerPos()
 
+            -- Phase 1: Build swarm spatial hash (swarm entities only)
+            swarmGridClear()
+            for _, entityId in ipairs(entities) do
+                local ai = ecs:getComponent(entityId, "EnemyAI")
+                if ai.behavior == "swarm" then
+                    local t = ecs:getComponent(entityId, "Transform")
+                    swarmGridInsert(t.x, t.y, entityId)
+                end
+            end
+
+            -- Phase 2: Update all AI behaviors
             for _, entityId in ipairs(entities) do
                 local ai        = ecs:getComponent(entityId, "EnemyAI")
                 local transform = ecs:getComponent(entityId, "Transform")

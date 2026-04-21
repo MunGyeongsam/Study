@@ -251,7 +251,8 @@ function ECSManager._registerBasicSystems()
     -- 8. BulletEmitter: 이미터 → BulletPool spawn
     ECSManager.addSystem(createBulletEmitterSystem(ECSManager.bulletPool, getPlayerPos))
     -- 9. PlayerWeapon: 자동 조준 + 발사
-    ECSManager.addSystem(createPlayerWeaponSystem(ECSManager.bulletPool))
+    local PlayScene = require("03_game.scenes.playScene")
+    ECSManager.addSystem(createPlayerWeaponSystem(ECSManager.bulletPool, PlayScene.getDisableWeapon))
     -- 10. Collision: 플레이어 ↔ 적 불릿 충돌 + graze
     local onGraze = function(entityId, bx, by)
         -- 이펙트: 스침 파티클 2개 (짧은 선 느낌)
@@ -270,8 +271,7 @@ function ECSManager._registerBasicSystems()
             focus.energy = _min(focus.energy + 0.3, focus.maxEnergy)
         end
     end
-    ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool, { onGraze = onGraze }))
-    -- 11. EnemyCollision: 플레이어 불릿 ↔ 적 충돌 + XP 드롭
+    -- 11. Enemy death handler (shared by bullet collision + contact collision)
     local onEnemyDeath = function(ecs, x, y, xpValue)
         -- XP 스케일링: 스테이지가 올라갈수록 XP 보상 증가
         local stage = gameState.getStageInfo()
@@ -288,6 +288,13 @@ function ECSManager._registerBasicSystems()
         -- Achievement: 킬 수 추적
         achievementSystem.onEnemyKill()
     end
+    ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool, {
+        onGraze = onGraze,
+        onContactKill = function(ecs, enemyId, ex, ey, xpValue)
+            onEnemyDeath(ecs, ex, ey, xpValue)
+        end,
+    }))
+    -- 12. EnemyCollision: 플레이어 불릿 ↔ 적 충돌 + XP 드롭
     ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath, function(x, y, enemyType, difficulty, variant, scaleMult)
         local id = ECSManager.createEnemy(x, y, enemyType, difficulty, variant)
         if id and scaleMult then

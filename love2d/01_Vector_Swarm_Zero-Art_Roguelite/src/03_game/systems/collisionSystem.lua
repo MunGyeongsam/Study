@@ -13,6 +13,7 @@ local GRAZE_MULT = 3.0  -- graze radius = collider radius × GRAZE_MULT
 local function createCollisionSystem(bulletPool, callbacks)
     callbacks = callbacks or {}
     local onGraze = callbacks.onGraze  -- function(entityId, bulletX, bulletY) or nil
+    local onContactKill = callbacks.onContactKill  -- function(ecs, enemyId, ex, ey, xpValue) or nil
 
     local CollisionSystem = System.new("Collision", {"PlayerTag", "Transform", "Collider", "Health"},
         function(ecs, dt, entities)
@@ -23,6 +24,68 @@ local function createCollisionSystem(bulletPool, callbacks)
                     health.iTimer = health.iTimer - dt
                     if health.iTimer < 0 then health.iTimer = 0 end
                 end
+            end
+
+            -- === Enemy body contact check (before bullets) ===
+            for _, entityId in ipairs(entities) do
+                local health = ecs:getComponent(entityId, "Health")
+                if not health.alive then goto nextContactEntity end
+
+                local playerInvincible = health.iTimer > 0
+
+                local transform = ecs:getComponent(entityId, "Transform")
+                local collider  = ecs:getComponent(entityId, "Collider")
+                local px, py    = transform.x, transform.y
+                local pRadius   = collider.radius
+
+                local enemies = ecs:queryEntities({"EnemyAI", "Transform", "Collider", "Health"})
+                for _, enemyId in ipairs(enemies) do
+                    local eHealth = ecs:getComponent(enemyId, "Health")
+                    if not eHealth.alive then goto nextContactEnemy end
+
+                    local eTransform = ecs:getComponent(enemyId, "Transform")
+                    local eCollider  = ecs:getComponent(enemyId, "Collider")
+                    local ex, ey = eTransform.x, eTransform.y
+                    local dx = ex - px
+                    local dy = ey - py
+                    local dist2 = dx * dx + dy * dy
+                    local minDist = pRadius + eCollider.radius
+
+                    if dist2 < minDist * minDist then
+                        -- Kill the enemy on contact (always, even during iFrames/god mode)
+                        eHealth.alive = false
+                        eHealth.hp = 0
+                        local eAI = ecs:getComponent(enemyId, "EnemyAI")
+                        if onContactKill and eAI then
+                            onContactKill(ecs, enemyId, ex, ey, eAI.xpValue)
+                        end
+                        ecs:destroyEntity(enemyId)
+
+                        -- Damage player only if not invincible
+                        if not playerInvincible then
+                            health.hp = health.hp - 1
+                            health.hitCount = health.hitCount + 1
+                            health.iTimer = health.iFrames
+
+                            if health.hp <= 0 then
+                                health.alive = false
+                                screenShake(0.25, 0.4)
+                                logInfo("[COLLISION] Player destroyed by enemy contact!")
+                            else
+                                screenShake(0.08, 0.15)
+                                logInfo(string.format("[COLLISION] Player hit by contact! HP: %d/%d", health.hp, health.maxHp))
+                            end
+                            if playSound then playSound("player_hit") end
+
+                            -- One damage per frame
+                            goto nextContactEntity
+                        end
+                    end
+
+                    ::nextContactEnemy::
+                end
+
+                ::nextContactEntity::
             end
 
             if bulletPool.activeCount == 0 then return end

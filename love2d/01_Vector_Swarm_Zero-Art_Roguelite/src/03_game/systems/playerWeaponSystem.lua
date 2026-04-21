@@ -10,10 +10,13 @@ local cos = math.cos
 local sin = math.sin
 local pi2 = math.pi * 2
 
-local function createPlayerWeaponSystem(bulletPool)
+local function createPlayerWeaponSystem(bulletPool, isWeaponDisabled)
 
     local PlayerWeaponSystem = System.new("PlayerWeapon", {"PlayerTag", "Transform", "PlayerWeapon", "Health"},
         function(ecs, dt, entities)
+            -- Debug: weapon disabled check
+            if isWeaponDisabled and isWeaponDisabled() then return end
+
             -- Cache enemy positions once per frame
             local enemies = ecs:queryEntities({"EnemyAI", "Transform"})
 
