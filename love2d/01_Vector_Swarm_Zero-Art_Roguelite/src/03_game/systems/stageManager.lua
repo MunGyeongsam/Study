@@ -489,7 +489,7 @@ end
 -- Returns nil for normal enemies, or a variant string
 local VARIANT_TIERS = {
     { stage = 4,  variant = "swift",    chance = 0.15 },
-    -- future: { stage = 7,  variant = "armored",  chance = 0.12 },
+    { stage = 7,  variant = "armored",  chance = 0.12 },
     -- future: { stage = 10, variant = "splitter", chance = 0.10 },
     -- future: { stage = 13, variant = "shielded", chance = 0.08 },
 }

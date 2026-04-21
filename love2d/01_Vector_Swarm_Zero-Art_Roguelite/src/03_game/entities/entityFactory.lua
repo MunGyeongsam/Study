@@ -60,8 +60,14 @@ local VARIANT_DEFS = {
     swift = {
         speedMult  = 1.5,
         hpMult     = 0.8,
-        scaleMult  = 0.8,   -- radius × 0.8
+        scaleMult  = 0.8,
         xpMult     = 1.2,
+    },
+    armored = {
+        speedMult  = 0.7,
+        hpMult     = 2.5,
+        scaleMult  = 1.3,
+        xpMult     = 1.5,
     },
 }
 

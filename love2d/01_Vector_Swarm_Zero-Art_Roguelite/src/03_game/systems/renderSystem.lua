@@ -272,6 +272,13 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                             end
                         end
                     end
+                elseif vari == "armored" then
+                    -- Thick outline ring (3x normal stroke)
+                    local c = renderable.color
+                    setColor(c[1] * 200, c[2] * 200, c[3] * 200, 220)
+                    lg.setLineWidth(r * 0.35)
+                    lg.circle("line", x, y, r * 1.1)
+                    lg.setLineWidth(1)
                 end
             end
         end
