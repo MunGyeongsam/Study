@@ -28,6 +28,7 @@ local function defaultData()
         bossesDefeated = {},         -- { ["NULL"]=true, ["STACK"]=true, ... }
         achievements   = {},         -- { ["stage3_clear"]=true, ... }
         selectedCharacter = "default",  -- 선택된 캐릭터 ID
+        tutorialDone   = false,       -- 첫 플레이 튜토리얼 완료 여부
     }
 end
 
@@ -199,6 +200,7 @@ function saveData.getStats()
         bossesDefeated   = data.bossesDefeated,
         achievements     = data.achievements,
         selectedCharacter = data.selectedCharacter,
+        tutorialDone     = data.tutorialDone,
     }
 end
 
@@ -224,6 +226,11 @@ end
 
 function saveData.getSelectedCharacter()
     return data.selectedCharacter or "default"
+end
+
+-- 튜토리얼 완료
+function saveData.setTutorialDone(val)
+    data.tutorialDone = val
 end
 
 -- 디버그: 세이브 리셋

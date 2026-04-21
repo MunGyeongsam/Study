@@ -12,6 +12,7 @@ local gameState     = require("03_game.states.gameState")
 local levelUp       = require("03_game.states.levelUp")
 local upgradeTree   = require("03_game.states.upgradeTree")
 local achievementSystem = require("03_game.states.achievementSystem")
+local tutorialHints     = require("03_game.states.tutorialHints")
 local world         = require("01_core.world")
 
 local _floor = math.floor
@@ -71,6 +72,9 @@ function PlayScene:_initGame()
         levelUp.applyRandomUpgrade(ecsManager.getWorld(), playerId)
         logInfo("[BOOST] Start Boost applied")
     end
+
+    -- Tutorial: 첫 플레이 시 문맥 힌트
+    tutorialHints.init()
 end
 
 --- 런 결과 저장 (returnToTitle, restart 공용)
@@ -189,6 +193,9 @@ function PlayScene:update(dt)
 
     player.update(dt, {})
 
+    -- Tutorial hints (timeScale 오버라이드: ecsManager 이후 실행)
+    tutorialHints.update(dt, ecsManager.getWorld())
+
     local playerX, playerY = player.getCameraTarget()
     cameraManager.update(dt, playerX, playerY)
 
@@ -268,6 +275,9 @@ function PlayScene:draw()
 
     -- HUD
     uiManager.draw()
+
+    -- Tutorial overlay
+    tutorialHints.draw()
 
     -- 스테이지 클리어/게임오버 오버레이 (PlayScene 소속)
     gameState.draw()
