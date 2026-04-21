@@ -10,6 +10,7 @@ local sin = math.sin
 local pi2 = math.pi * 2
 local halfPi = math.pi / 2
 local floor = math.floor
+local sqrt = math.sqrt
 local getTime = love.timer.getTime
 
 -- Pre-built hexagon vertices (unit radius)
@@ -259,7 +260,7 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                         local vx, vy = vel.vx or 0, vel.vy or 0
                         local spd = (vx * vx + vy * vy)
                         if spd > 0.01 then
-                            spd = spd ^ 0.5
+                            spd = sqrt(spd)
                             local nx, ny = vx / spd, vy / spd
                             local c = renderable.color
                             for g = 1, 3 do

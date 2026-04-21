@@ -370,7 +370,6 @@ function StageManager:_spawnBoss()
     local w = self.ecsManager.getWorld()
     self.bossEntityId = EntityFactory.createBoss(w, spawnX, spawnY, bossType)
     self.bossType = bossType
-    self.bossRewardsApplied = false
 
     logInfo(string.format("[STAGE] Boss %s spawned at Stage %d", bossType, self.stage))
 end
