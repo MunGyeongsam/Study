@@ -271,6 +271,7 @@ local BOSS_TYPES = {
     NULL = {
         color    = {0.6, 0.6, 0.6, 1},
         radius   = 0.8,
+        renderType = "boss_null",
         hp       = 50,
         xpValue  = 50,
         maxPhase = 2,
@@ -304,6 +305,7 @@ local BOSS_TYPES = {
     STACK = {
         color    = {0.2, 0.8, 0.2, 1},
         radius   = 1.0,
+        renderType = "boss_stack",
         hp       = 100,
         xpValue  = 120,
         maxPhase = 3,
@@ -346,6 +348,7 @@ local BOSS_TYPES = {
     HEAP = {
         color    = {0.9, 0.3, 0.1, 1},
         radius   = 0.9,
+        renderType = "boss_heap",
         hp       = 160,
         xpValue  = 200,
         maxPhase = 3,
@@ -393,6 +396,7 @@ local BOSS_TYPES = {
     RECURSION = {
         color    = {0.5, 0.1, 0.9, 1},
         radius   = 0.7,
+        renderType = "boss_recursion",
         hp       = 200,
         xpValue  = 300,
         maxPhase = 3,
@@ -434,6 +438,7 @@ local BOSS_TYPES = {
     OVERFLOW = {
         color    = {1.0, 0.2, 0.2, 1},
         radius   = 1.2,
+        renderType = "boss_overflow",
         hp       = 300,
         xpValue  = 500,
         maxPhase = 4,
@@ -528,7 +533,7 @@ function EntityFactory.createBoss(world, x, y, bossType)
     }))
 
     world:addComponent(entityId, "Renderable", Renderable.new({
-        type = "circle", radius = preset.radius,
+        type = preset.renderType or "circle", radius = preset.radius,
         color = preset.color,
     }))
 
