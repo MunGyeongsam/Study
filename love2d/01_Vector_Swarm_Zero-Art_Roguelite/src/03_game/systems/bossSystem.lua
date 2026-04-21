@@ -185,10 +185,12 @@ local function createBossSystem(bulletPool, getPlayerPos)
 
             if boss.teleportTimer >= boss.teleportInterval then
                 local _, bottom, _, top = worldMod.getBounds()
+                local r = (ecs:getComponent(entityId, "Collider") or {}).radius or 0
                 local newX = left + margin + _random() * (right - left - margin * 2)
+                newX = _max(left + r, _min(right - r, newX))
                 local newY = (py or 0) + 2.0 + _random() * 3.0
-                newY = _min(newY, top - margin)
-                newY = _max(newY, bottom + margin)
+                newY = _min(newY, top - r)
+                newY = _max(newY, bottom + r)
 
                 transform.x = newX
                 transform.y = newY

@@ -560,6 +560,8 @@ function EntityFactory.createBoss(world, x, y, bossType)
         active         = false,  -- BossSystem activates after intro
     }))
 
+    world:addComponent(entityId, "WorldBound", WorldBound.new({ enabled = true }))
+
     world:addComponent(entityId, "BossTag", BossTag.new({
         bossType         = bossType or "NULL",
         maxPhase         = preset.maxPhase,

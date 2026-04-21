@@ -12,7 +12,8 @@ Phase 0  ███████████  기반 구축 (완료)
 Phase 1  ███████████  MVP 게임 루프 (완료)
 Phase 2  ███████████  게임플레이 확장 (완료)
 Phase 3  ███████████  콘텐츠 & 비주얼 (완료)
-Phase 4  ░░░░░░░░░░░  폴리싱 & 출시 ← 진행 중
+Phase 4  ▓▓▓▓▓▓░░░░░  폴리싱 & 출시 ← 진행 중 (4A~4C ✅, 4D~4E 🔲)
+Phase 5  ░░░░░░░░░░░  콘텐츠 확장 & 엔드게임 (예정)
 ```
 
 ### Phase 4 우선순위 원칙
@@ -190,6 +191,36 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시 ← 진행 중
 
 ---
 
+## Phase 5: 콘텐츠 확장 & 엔드게임 🔲
+
+> 목표: 엔드게임 달성감 + 콘텐츠 다양성 + 커스텀 스테이지로 리플레이 가치 극대화
+>
+> 순서 원칙: **버그 수정 → 비주얼 다양성 → 엔드게임 → 커스텀 스테이지**
+
+### 5A. 보스 & 적 비주얼/행동 다양화 — "원만 보이는 건 아니다"
+| # | 작업 | 상태 | 비고 |
+|---|------|------|------|
+| 5A.1 | 🐛 보스 월드바운드 이탈 버그 수정 | 🔲 | createBoss에 WorldBound 누락 + 텔레포트 X좌표 클램핑 누락 |
+| 5A.2 | 보스 고유 외형 (Zero-Art 기하학 도형) | 🔲 | NULL=삼각형, STACK=겹원, HEAP=다이아몬드, RECURSION=나선, OVERFLOW=다면체 |
+| 5A.3 | 적 고유 외형 다양화 (5종) | 🔲 | bit=점군, node=십자, vector=화살표, loop=링, matrix=격자 |
+| 5A.4 | 보스 등장/페이즈 전환 비주얼 연출 강화 | 🔲 | 페이즈별 외형 변화, 크기 팽창, 파티클 |
+
+### 5B. 엔드게임 — Victory + Endless
+| # | 작업 | 상태 | 비고 |
+|---|------|------|------|
+| 5B.1 | Victory 상태 + Victory Scene (OVERFLOW 처치 후) | 🔲 | 통계 + Continue/Return 선택 |
+| 5B.2 | Endless 모드 (Stage 16+ 보스 루프, 매 3스테이지) | 🔲 | HUD "ENDLESS +N" 표기, 기록 추적 |
+| 5B.3 | 첫 클리어 도전과제 ("SYSTEM.EXIT(0)") | 🔲 | achievementSystem 확장 |
+| 5B.4 | Endless 전용 배경 톤 변경 | 🔲 | 빨간 경고색 등 분위기 전환 |
+
+### 5C. 커스텀 스테이지 — "내가 만든 스테이지"
+| # | 작업 | 상태 | 비고 |
+|---|------|------|------|
+| 5C.1 | JSON 기반 스테이지 로드 (Phase A) | 🔲 | ext_res/stages/custom.json → STAGE_DEFS 덮어쓰기 |
+| 5C.2 | 인게임 스테이지 에디터 (Phase B) | 🔲 | 가로 16:9 별도 해상도, 마우스 기반 PC 도구 느낌 |
+
+---
+
 ## 기술 부채 & 메모
 
 - [x] ~~world.lua 존 텍스트 한글 인코딩 깨짐~~ (존 시스템 미사용으로 자연 해소)
@@ -201,6 +232,9 @@ Phase 4  ░░░░░░░░░░░  폴리싱 & 출시 ← 진행 중
 - [x] ~~late require (ecsManager, background)~~ (모듈 상단으로 이동)
 - [x] ~~magic number (entityFactory)~~ (PLAYER/ENEMY_MAX_SPEED 상수 추출)
 - [x] ~~main.lua if-else 상태 분기 폭발~~ (Scene Stack 아키텍처 도입, `ae1b1c4`)
+- [ ] 🐛 보스 WorldBound 누락 — createBoss()에 WorldBound 미부착 → 경계 이탈 가능 (5A.1)
+- [ ] 🐛 보스 텔레포트 X좌표 클램핑 누락 — bossSystem 텔레포트 시 newX 바운드 체크 불완전 (5A.1)
+- [ ] 보스/적 비주얼 획일화 — 전부 circle 렌더링, Zero-Art 도형 다양화 필요 (5A.2, 5A.3)
 
 ---
 
