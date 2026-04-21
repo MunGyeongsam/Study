@@ -201,6 +201,7 @@ function PlayScene:update(dt)
 
     background.update(dt)
     uiManager.update(dt)
+    uiManager.setMinimapData(ecsManager.getWorld(), player, cameraManager.getActive())
 
     -- UI 데이터 전달
     local worldStats = world.getWorldStats()

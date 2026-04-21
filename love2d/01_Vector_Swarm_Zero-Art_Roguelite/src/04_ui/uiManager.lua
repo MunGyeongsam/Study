@@ -5,6 +5,7 @@ local logger = require("00_common.logger")
 local mobileLayout = require("04_ui.mobileLayout")
 local topHud = require("04_ui.topHud")
 local bottomControls = require("04_ui.bottomControls")
+local minimap = require("04_ui.minimap")
 
 local uiManager = {}
 
@@ -20,6 +21,7 @@ function uiManager.init()
     mobileLayout.init()
     topHud.init()
     bottomControls.init()
+    minimap.init()
     
     -- 화면 크기 변경 감지
     uiManager.updateLayout()
@@ -30,6 +32,7 @@ function uiManager.updateLayout()
     mobileLayout.updateScreenInfo()
     topHud.updateLayout()
     bottomControls.updateLayout()
+    minimap.updateLayout()
 end
 
 -- 업데이트
@@ -59,6 +62,11 @@ function uiManager.draw()
     
     -- 하단 컨트롤 그리기
     bottomControls.draw()
+
+    -- 미니맵 (setMinimapData가 호출된 경우에만)
+    if uiManager._minimapEcs then
+        minimap.draw(uiManager._minimapEcs, uiManager._minimapPlayer, uiManager._minimapCam)
+    end
     
     -- 상태 복원
     lg.setColor(r, g, b, a)
@@ -130,6 +138,13 @@ end
 -- 게임 데이터 설정 (점수, 상태 등)
 function uiManager.setGameData(data)
     topHud.setGameData(data)
+end
+
+-- 미니맵 데이터 설정 (매 프레임 playScene에서 호출)
+function uiManager.setMinimapData(ecs, playerModule, cam)
+    uiManager._minimapEcs    = ecs
+    uiManager._minimapPlayer = playerModule
+    uiManager._minimapCam    = cam
 end
 
 -- 버튼 액션 콜백 설정
