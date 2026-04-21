@@ -7,6 +7,7 @@ local System = require("01_core.system")
 local lg = love.graphics
 local cos = math.cos
 local sin = math.sin
+local atan2 = math.atan2
 local pi2 = math.pi * 2
 local halfPi = math.pi / 2
 local floor = math.floor
@@ -292,6 +293,26 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                         local a2 = ((s + 1) / segments) * pi2
                         lg.arc("line", "open", x, y, rr, a1, a2)
                     end
+                    lg.setLineWidth(1)
+                elseif vari == "shielded" then
+                    -- Shield arc: 90° front-facing arc
+                    local vel = ecs:getComponent(entityId, "Velocity")
+                    local fvx = vel and vel.vx or 0
+                    local fvy = vel and vel.vy or 0
+                    if fvx * fvx + fvy * fvy < 0.001 then
+                        fvx, fvy = 0, -1
+                    end
+                    local facing = atan2(fvy, fvx)
+                    local arcHalf = 0.7854  -- pi/4
+                    local c = renderable.color
+                    -- Outer glow
+                    setColor(c[1] * 200, c[2] * 200, c[3] * 200, 100)
+                    lg.setLineWidth(r * 0.4)
+                    lg.arc("line", "open", x, y, r * 1.25, facing - arcHalf, facing + arcHalf)
+                    -- Inner bright
+                    setColor(c[1] * 255, c[2] * 255, c[3] * 255, 220)
+                    lg.setLineWidth(r * 0.2)
+                    lg.arc("line", "open", x, y, r * 1.2, facing - arcHalf, facing + arcHalf)
                     lg.setLineWidth(1)
                 end
             end

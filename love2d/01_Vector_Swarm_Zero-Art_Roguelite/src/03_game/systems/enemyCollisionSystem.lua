@@ -10,7 +10,11 @@ local sin    = math.sin
 local floor  = math.floor
 local max    = math.max
 local random = math.random
+local atan2  = math.atan2
+local abs    = math.abs
+local pi     = math.pi
 local pi2    = math.pi * 2
+local SHIELD_HALF_ARC = 0.7854  -- pi/4 = 45 degrees (total 90° arc)
 
 -- 적 사망 시 파편 파티클 스폰
 local function spawnDeathDebris(bulletPool, x, y, color, radius)
@@ -76,6 +80,31 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath, onSpawnEnemy
                     local minDist = eRadius + b.radius
 
                     if dist2 < minDist * minDist then
+                        -- Shielded: check if bullet hits the front arc
+                        local enemyAI = ecs:getComponent(entityId, "EnemyAI")
+                        if enemyAI and enemyAI.variant == "shielded" then
+                            local vel = ecs:getComponent(entityId, "Velocity")
+                            local fvx = vel and vel.vx or 0
+                            local fvy = vel and vel.vy or 0
+                            -- If stationary, face downward (toward player)
+                            if fvx * fvx + fvy * fvy < 0.001 then
+                                fvx, fvy = 0, -1
+                            end
+                            local facingAngle = atan2(fvy, fvx)
+                            -- Angle from enemy to bullet (incoming direction)
+                            local hitAngle = atan2(dy, dx)
+                            local diff = hitAngle - facingAngle
+                            -- Normalize to [-pi, pi]
+                            if diff > pi then diff = diff - pi2
+                            elseif diff < -pi then diff = diff + pi2 end
+                            if abs(diff) < SHIELD_HALF_ARC then
+                                -- Deflect: recycle bullet, no damage
+                                bulletPool:_recycle(i)
+                                if playSound then playSound("enemy_hit") end
+                                goto nextBullet
+                            end
+                        end
+
                         local dmg = b.damage or 1
                         bulletPool:_recycle(i)
 

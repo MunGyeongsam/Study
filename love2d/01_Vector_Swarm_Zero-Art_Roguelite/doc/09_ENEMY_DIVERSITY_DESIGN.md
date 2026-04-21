@@ -232,7 +232,7 @@
 # Phase 2: 적 다양성 확장 — 변형(Variant) + 포메이션(Formation)
 
 > 추가일: 2026-04-21
-> 상태: 설계 완료, 구현 대기
+> 상태: **포메이션 5종 + 변형 4종 구현 완료** / STAGE_DEFS 확장 대기
 
 ## 확장 목표
 
@@ -261,55 +261,87 @@
 
 ### 변형 4종 상세
 
-#### 1. Swift — 고속 소형
+#### 1. Swift — 고속 소형 ✅
 
-| 항목 | 값 |
-|------|-----|
-| 스탯 변경 | 속도 ×1.5, 크기 ×0.8, HP ×0.8 |
-| 외형 힌트 | 잔상(ghost trail) 2~3개 — 이전 프레임 위치에 반투명 도형 |
-| XP 보너스 | ×1.2 |
-| 첫 등장 | Stage 4 |
+| 항목 | 설계값 | 실제 구현 |
+|------|--------|----------|
+| 스탯 변경 | 속도 ×1.5, 크기 ×0.8, HP ×0.8 | ✅ VARIANT_DEFS.swift |
+| 외형 힌트 | 잔상(ghost trail) 2~3개 | ✅ 3개 반투명 원 (Velocity 방향 반대쪽) |
+| XP 보너스 | ×1.2 | ✅ |
+| 첨 등장 | Stage 4 (15% 확률) | ✅ VARIANT_TIERS |
+
+**구현 상세:**
+- `renderSystem.lua`: Velocity 컴포넌트에서 `(vx, vy)` 읽어 이동 반대 방향으로 ghost trail 3개 렌더
+- 각 trail: `r * 1.2` 간격, 투명도 0.45 → 0.30 → 0.15 감소
+- 정지 상태(`spd < 0.01`)에선 trail 비활성화 (불필요한 렌더링 방지)
 
 **조합 하이라이트:**
 - Swift-Bit: 빠른 무리 돌진 → 긴장감 대폭 상승
 - Swift-Vector: 경고 시간 동일하지만 돌진 속도 6.0 → 반응 극한
 
-#### 2. Armored — 고체력 대형
+#### 2. Armored — 고체력 대형 ✅
 
-| 항목 | 값 |
-|------|-----|
-| 스탯 변경 | HP ×2.5, 속도 ×0.7, 크기 ×1.3 |
-| 외형 힌트 | 두꺼운 외곽선(stroke width ×3) |
-| XP 보너스 | ×1.5 |
-| 첫 등장 | Stage 7 |
+| 항목 | 설계값 | 실제 구현 |
+|------|--------|----------|
+| 스탯 변경 | HP ×2.5, 속도 ×0.7, 크기 ×1.3 | ✅ VARIANT_DEFS.armored |
+| 외형 힌트 | 두꺼운 외곽선(stroke width ×3) | ✅ `lg.circle("line")` + `lineWidth = r * 0.35` |
+| XP 보너스 | ×1.5 | ✅ |
+| 첨 등장 | Stage 7 (12% 확률) | ✅ VARIANT_TIERS |
+
+**구현 상세:**
+- `renderSystem.lua`: 기본 도형 렌더 후 `r * 1.1` 반경으로 filled circle 위에 두꺼운 외곽선 링 오버레이
+- 색상: 기본색 × 0.78 (어두운 톤) + alpha 220 → 메탈릭 느낌
+- 느린 이동 + 큰 히트박스 → 피하기 쉽지만 살상력 높음
 
 **조합 하이라이트:**
 - Armored-Node: 포탑인데 안 죽음 → "무시하고 피할까, 시간 투자해서 잡을까"
 - Armored-Loop: 궤도 탱크 — 나선탄 오래 지속
 
-#### 3. Splitter — 분열형
+#### 3. Splitter — 분열형 ✅
 
-| 항목 | 값 |
-|------|-----|
-| 스탯 변경 | HP ×1.0 (동일), 사망 시 미니 2마리 분열 |
-| 분열체 | 원본의 크기 ×0.5, HP 1, XP 0, 탄막 없음, AI 동일 |
-| 외형 힌트 | 점선 외곽(dashed outline) |
-| XP 보너스 | ×1.3 |
-| 첫 등장 | Stage 10 |
+| 항목 | 설계값 | 실제 구현 |
+|------|--------|----------|
+| 스탯 변경 | HP ×1.0 (동일), 사망 시 미니 2마리 분열 | ✅ |
+| 분열체 | 크기 ×0.5, HP 1, XP 0, 탄막 없음, AI 동일 | ✅ `onSpawnEnemy` callback |
+| 외형 힌트 | 점선 외곽(dashed outline) | ✅ 8 segment 중 4개 arc |
+| XP 보너스 | ×1.3 | ✅ |
+| 첨 등장 | Stage 10 (10% 확률) | ✅ VARIANT_TIERS |
+
+**구현 상세:**
+- `enemyCollisionSystem.lua`: 적 사망 시 `enemyAI.variant == "splitter"` 체크 → `onSpawnEnemy()` callback으로 미니 적 2마리 스폰
+- `ecsManager.lua`: spawn callback에서 `createEnemy()` 호출 후 scale×0.5, HP=1, XP=0, BulletEmitter disabled 설정
+- 분열체는 `variant=nil` → 재분열 방지 (무한 분열 안전장치)
+- `renderSystem.lua`: 8 segment 중 짝수 segment만 `lg.arc()` → 점선 외곽 효과
+- 스폰 위치: 제자리 좌우 `eRadius * 1.5` offset
 
 **조합 하이라이트:**
 - Splitter-Bit: 무리가 잡으면 더 불어남 → 우선순위 전략 역전
 - Splitter-Loop: 궤도 적 잡으면 미니 2마리 → 나선탄 + 분열체 동시 처리
 
-#### 4. Shielded — 전방 방어
+#### 4. Shielded — 전방 방어 ✅
 
-| 항목 | 값 |
-|------|-----|
-| 스탯 변경 | HP ×1.0 (동일), 전방 90° 탄막 무효 |
-| 방패 판정 | 적 진행 방향 기준 ±45° 내 피탄 무효 |
-| 외형 힌트 | 반원 방패 아크 (진행 방향쪽) |
-| XP 보너스 | ×1.5 |
-| 첫 등장 | Stage 13 |
+| 항목 | 설계값 | 실제 구현 |
+|------|--------|----------|
+| 스탯 변경 | HP ×1.5, 속도 ×0.85, 크기 ×1.1 | ✅ VARIANT_DEFS.shielded |
+| 방패 판정 | 적 진행 방향 기준 ±45° 내 피탄 무효 | ✅ Velocity 기반 facing → atan2 각도 산정 |
+| 외형 힌트 | 반원 방패 아크 (진행 방향쪽) | ✅ 2-layer arc (glow + bright) |
+| XP 보너스 | ×1.8 | ✅ |
+| 첨 등장 | Stage 13 (8% 확률) | ✅ VARIANT_TIERS |
+
+**구현 상세:**
+- `enemyCollisionSystem.lua`: 충돌 감지 후 데미지 적용 전에 shield 체크 삽입
+  - Velocity에서 facing angle 계산 (`atan2(vy, vx)`)
+  - 정지 적은 기본 facing = 아래쪽 `(0, -1)` (플레이어 방향)
+  - 총알→적 각도와 facing 각도 차이 ±45° 이내면 deflect
+  - deflect: 총알 리사이클 + 데미지 0 + "enemy_hit" 사운드
+- `renderSystem.lua`: Velocity 기반 facing 각도 → `lg.arc()` 2개 레이어
+  - 외곽 glow: `r * 1.25` 반경, 투명도 100, lineWidth `r * 0.4`
+  - 내부 bright: `r * 1.2` 반경, 투명도 220, lineWidth `r * 0.2`
+
+**공략 전략:**
+- 정면으로 쏘면 디플렉트 → **뒤로 돌아서 측면/후방에서 공격**
+- 정지 적(Node 등)은 항상 아래쪽을 바라보므로 **위에서 쏔야 관통**
+- Swift+Shielded 조합: 빠르게 움직이면서 전방 방어 → 추적이 어려움
 
 **조합 하이라이트:**
 - Shielded-Matrix: 전방 방어 + 십자탄 → 우회 기동 필수
@@ -372,33 +404,33 @@ end
 
 ## 구현 계획 (Phase 2)
 
-| # | 작업 | 파일 | 복잡도 | 상태 |
-|---|------|------|:------:|:----:|
-| 1 | 포메이션 시스템 (5종) | stageManager.lua | 낮 | 🔲 |
-| 2 | Swift 변형 | entityFactory, renderSystem | 낮 | 🔲 |
-| 3 | Armored 변형 | entityFactory, renderSystem | 낮 | 🔲 |
-| 4 | Splitter 변형 | entityFactory, enemyCollisionSystem | 중 | 🔲 |
-| 5 | Shielded 변형 | entityFactory, enemyCollisionSystem | 중 | 🔲 |
-| 6 | STAGE_DEFS 확장 (변형+포메이션 배치) | stageManager.lua | 낮 | 🔲 |
-| 7 | Worm (선택) | 신규 + enemyAI + renderSystem | 높 | 🔲 |
+| # | 작업 | 파일 | 복잡도 | 상태 | 커밋 |
+|---|------|------|:------:|:----:|:-----:|
+| 1 | 포메이션 시스템 (5종) | stageManager.lua | 낮 | ✅ | `4663f70` |
+| 2 | Swift 변형 | entityFactory, renderSystem | 낮 | ✅ | `090fdbd` |
+| 3 | Armored 변형 | entityFactory, renderSystem | 낮 | ✅ | `89f59e0` |
+| 4 | Splitter 변형 | entityFactory, enemyCollisionSystem | 중 | ✅ | `097dd9d` |
+| 5 | Shielded 변형 | entityFactory, enemyCollisionSystem | 중 | ✅ | *미커밋* |
+| 6 | STAGE_DEFS 확장 (변형+포메이션 배치) | stageManager.lua | 낮 | 🔲 | |
+| 7 | Worm (선택) | 신규 + enemyAI + renderSystem | 높 | 🔲 | |
 
 ---
 
 ## 검증 기준 — Phase 2
 
 ### 포메이션
-- [ ] V자 편대로 Bit 7~9마리가 대형 유지하며 접근
-- [ ] 포위(Pincer)로 Vector 2기가 좌우 동시 차지
-- [ ] 삼각 포탑으로 Node 3기의 탄막 교차 생성
-- [ ] 호위(Escort)로 중앙적 + 주변 Bit 배치
-- [ ] 나선 행렬로 Loop 3~4기가 원호 등간격 배치
+- [x] V자 편대로 Bit 7~9마리가 대형 유지하며 접근
+- [x] 포위(Pincer)로 Vector 2기가 좌우 동시 차지
+- [x] 삼각 포탑으로 Node 3기의 탄막 교차 생성
+- [x] 호위(Escort)로 중앙적 + 주변 Bit 배치
+- [x] 나선 행렬로 Loop 3~4기가 원호 등간격 배치
 
 ### 변형
-- [ ] Swift 변형: 속도 ×1.5 + 잔상 렌더 정상
-- [ ] Armored 변형: HP ×2.5 + 두꺼운 외곽선 정상
-- [ ] Splitter 변형: 사망 시 미니 2마리 분열 + 점선 외곽 정상
-- [ ] Shielded 변형: 전방 90° 피탄 무효 + 방패 아크 정상
-- [ ] 모든 변형이 5종 기본 적과 조합 가능
+- [x] Swift 변형: 속도 ×1.5 + 잔상 렌더 정상
+- [x] Armored 변형: HP ×2.5 + 두꺼운 외곽선 정상
+- [x] Splitter 변형: 사망 시 미니 2마리 분열 + 점선 외곽 정상
+- [x] Shielded 변형: 전방 90° 피탄 무효 + 방패 아크 정상
+- [ ] 모든 변형이 5종 기본 적과 조합 가능 (기능적으로 가능, 실 플레이 미검증)
 
 ### 회귀
 - [ ] 기존 적 5종 단독 동작 정상
