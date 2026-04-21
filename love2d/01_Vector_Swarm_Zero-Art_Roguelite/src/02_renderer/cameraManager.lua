@@ -7,6 +7,7 @@
 
 local camera   = require("02_renderer.camera")
 local mathUtil = require("00_common.mathUtil")
+local worldMod = require("01_core.world")
 
 local cameraManager = {}
 
@@ -25,6 +26,7 @@ local shakeOffsetX   = 0
 local shakeOffsetY   = 0
 local random = math.random
 local max = math.max
+local min = math.min
 local cos, sin, pi2 = math.cos, math.sin, math.pi * 2
 
 function cameraManager.init(orthographicSize)
@@ -70,12 +72,26 @@ function cameraManager.getGameCamera()
     return gameCamera
 end
 
--- 업데이트: 게임 모드일 때 플레이어 추적 (exponential smoothing)
+-- 업데이트: 게임 모드일 때 플레이어 추적 (exponential smoothing) + 월드 클램핑
 function cameraManager.update(dt, targetX, targetY)
     if mode == "game" and targetX and targetY then
         local cx, cy = gameCamera:pos()
         local nx = mathUtil.expDecay(cx, targetX, CAM_FOLLOW_K, dt)
         local ny = mathUtil.expDecay(cy, targetY, CAM_FOLLOW_K, dt)
+
+        -- Clamp to world bounds (camera edges never exceed world)
+        local left, bottom, right, top = worldMod.getBounds()
+        local orthoSize = gameCamera:getOrthographicSize()
+        local sw, sh = love.graphics.getDimensions()
+        local halfViewW = orthoSize * (sw / sh)
+        local halfViewH = orthoSize
+
+        local minX, maxX = left + halfViewW, right - halfViewW
+        local minY, maxY = bottom + halfViewH, top - halfViewH
+
+        if minX < maxX then nx = max(minX, min(maxX, nx)) else nx = (left + right) * 0.5 end
+        if minY < maxY then ny = max(minY, min(maxY, ny)) else ny = (bottom + top) * 0.5 end
+
         gameCamera:lookAt(nx, ny)
     end
 

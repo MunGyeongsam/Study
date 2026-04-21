@@ -139,7 +139,7 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath, onSpawnEnemy
                             if enemyAI and enemyAI.variant == "splitter" and onSpawnEnemy then
                                 for s = 1, 2 do
                                     local offset = (s - 1.5) * eRadius * 1.5
-                                    onSpawnEnemy(ex + offset, ey, enemyAI.enemyType, 0.5, nil, 0.5)
+                                    onSpawnEnemy(ex + offset, ey, enemyAI.enemyType, nil, nil, 0.5)
                                 end
                             end
 

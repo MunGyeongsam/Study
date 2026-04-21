@@ -78,10 +78,7 @@ local function deserialize(str)
     -- Use Lua load for simple cases — our format is safe (numbers, strings, booleans, tables)
     -- Convert JSON-like to Lua table literal
     local luaStr = str
-        :gsub('"([^"]-)":', "[%q]=")      -- "key": → ["key"]=
-        :gsub("%[", "{"):gsub("%]", "}")   -- [...] → {...}
-        :gsub(": ", "= ")                  -- ": " → "= "
-        :gsub("true", "true"):gsub("false", "false")
+        :gsub('"([^"]-)":', '["%1"]=')    -- "key": → ["key"]=
 
     local fn, err = load("return " .. luaStr)
     if fn then
