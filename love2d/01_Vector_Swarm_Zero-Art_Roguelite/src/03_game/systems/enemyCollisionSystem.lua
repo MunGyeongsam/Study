@@ -46,7 +46,7 @@ local function spawnBossXpBurst(ecs, entityId, ex, ey, onEnemyDeath)
     bossTag.defeated = true
 end
 
-local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
+local function createEnemyCollisionSystem(bulletPool, onEnemyDeath, onSpawnEnemy)
 
     local EnemyCollisionSystem = System.new("EnemyCollision", {"EnemyAI", "Transform", "Collider", "Health"},
         function(ecs, dt, entities)
@@ -97,14 +97,23 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath)
                             end
 
                             -- Normal enemy death: debris + XP + destroy
+                            local enemyAI = ecs:getComponent(entityId, "EnemyAI")
                             if rend then
                                 spawnDeathDebris(bulletPool, ex, ey, rend.color, eRadius)
                             end
                             if onEnemyDeath then
-                                local enemyAI = ecs:getComponent(entityId, "EnemyAI")
                                 onEnemyDeath(ecs, ex, ey, enemyAI and enemyAI.xpValue or 1)
                             end
                             if playSound then playSound("enemy_kill") end
+
+                            -- Splitter: spawn 2 mini copies on death
+                            if enemyAI and enemyAI.variant == "splitter" and onSpawnEnemy then
+                                for s = 1, 2 do
+                                    local offset = (s - 1.5) * eRadius * 1.5
+                                    onSpawnEnemy(ex + offset, ey, enemyAI.enemyType, 0.5, nil, 0.5)
+                                end
+                            end
+
                             ecs:destroyEntity(entityId)
                             goto nextEnemy
                         else

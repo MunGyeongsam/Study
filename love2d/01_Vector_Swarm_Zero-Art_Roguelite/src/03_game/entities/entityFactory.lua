@@ -69,6 +69,12 @@ local VARIANT_DEFS = {
         scaleMult  = 1.3,
         xpMult     = 1.5,
     },
+    splitter = {
+        speedMult  = 1.0,
+        hpMult     = 1.0,
+        scaleMult  = 1.0,
+        xpMult     = 1.3,
+    },
 }
 
 -- Enemy type presets (세계관 기반 6종 — Worm 제외 5종 구현)

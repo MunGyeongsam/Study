@@ -489,7 +489,7 @@ end
 local VARIANT_TIERS = {
     { stage = 4,  variant = "swift",    chance = 0.15 },
     { stage = 7,  variant = "armored",  chance = 0.12 },
-    -- future: { stage = 10, variant = "splitter", chance = 0.10 },
+    { stage = 10, variant = "splitter", chance = 0.10 },
     -- future: { stage = 13, variant = "shielded", chance = 0.08 },
 }
 

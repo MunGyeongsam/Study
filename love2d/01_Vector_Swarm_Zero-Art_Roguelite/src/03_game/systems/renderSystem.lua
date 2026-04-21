@@ -280,6 +280,19 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                     lg.setLineWidth(r * 0.35)
                     lg.circle("line", x, y, r * 1.1)
                     lg.setLineWidth(1)
+                elseif vari == "splitter" then
+                    -- Dashed outline circle
+                    local c = renderable.color
+                    setColor(c[1] * 255, c[2] * 255, c[3] * 255, 180)
+                    lg.setLineWidth(r * 0.15)
+                    local segments = 8
+                    local rr = r * 1.15
+                    for s = 0, segments - 1, 2 do
+                        local a1 = (s / segments) * pi2
+                        local a2 = ((s + 1) / segments) * pi2
+                        lg.arc("line", "open", x, y, rr, a1, a2)
+                    end
+                    lg.setLineWidth(1)
                 end
             end
         end

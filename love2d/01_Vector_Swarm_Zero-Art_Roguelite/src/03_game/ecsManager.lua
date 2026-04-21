@@ -288,7 +288,22 @@ function ECSManager._registerBasicSystems()
         -- Achievement: 킬 수 추적
         achievementSystem.onEnemyKill()
     end
-    ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath))
+    ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath, function(x, y, enemyType, difficulty, variant, scaleMult)
+        local id = ECSManager.createEnemy(x, y, enemyType, difficulty, variant)
+        if id and scaleMult then
+            local t = ECSManager.world:getComponent(id, "Transform")
+            if t then t.scale = t.scale * scaleMult end
+            local c = ECSManager.world:getComponent(id, "Collider")
+            if c then c.radius = c.radius * scaleMult end
+            local h = ECSManager.world:getComponent(id, "Health")
+            if h then h.maxHp = 1; h.hp = 1 end
+            local ai = ECSManager.world:getComponent(id, "EnemyAI")
+            if ai then ai.xpValue = 0 end
+            local be = ECSManager.world:getComponent(id, "BulletEmitter")
+            if be then be.enabled = false end
+        end
+        return id
+    end))
     -- 12. XpCollection: XP 오브 자석 수집 + 레벨업
     ECSManager.addSystem(createXpCollectionSystem(getPlayerPos))
     -- 12.5. Boss: 보스 라이프사이클 (페이즈 + 패턴 순환 + 이동)
