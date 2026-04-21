@@ -13,6 +13,7 @@ local levelUp       = require("03_game.states.levelUp")
 local upgradeTree   = require("03_game.states.upgradeTree")
 local achievementSystem = require("03_game.states.achievementSystem")
 local tutorialHints     = require("03_game.states.tutorialHints")
+local trailSystem       = require("03_game.systems.trailSystem")
 local world         = require("01_core.world")
 
 local _floor = math.floor
@@ -65,6 +66,7 @@ function PlayScene:_initGame()
     gameState.startPlaying()
     levelUp.reset()
     achievementSystem.resetSession()
+    trailSystem.reset()
     _hitStopTimer = 0
 
     -- Start Boost: 해금되면 게임 시작 시 랜덤 업그레이드 1개 자동 적용
@@ -192,6 +194,10 @@ function PlayScene:update(dt)
     end
 
     player.update(dt, {})
+
+    -- 리본 트레일 위치 기록 (매 프레임)
+    local px, py = player.getPosition()
+    if px then trailSystem.update(dt, px, py) end
 
     -- Tutorial hints (timeScale 오버라이드: ecsManager 이후 실행)
     tutorialHints.update(dt, ecsManager.getWorld())

@@ -13,7 +13,6 @@ Dash.defaults = {
     requested = false,    -- 대쉬 요청 플래그
     dirX = 0,             -- 대쉬 방향
     dirY = 0,
-    ghosts = {},          -- 잔상 배열 {x, y, alpha, timer, maxTime, radius}
 }
 
 function Dash.new(data)
@@ -25,7 +24,6 @@ function Dash.new(data)
         requested     = false,
         dirX          = 0,
         dirY          = 0,
-        ghosts        = {},
     }
 end
 

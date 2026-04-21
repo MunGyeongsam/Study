@@ -3,25 +3,13 @@
 -- 기본 원 + 외곽선 + 이동 방향 표시 + 대쉬 잔상
 
 local System = require("01_core.system")
+local trailSystem = require("03_game.systems.trailSystem")
 
 local lg = love.graphics
 local sqrt = math.sqrt
 local sin = math.sin
 local pi = math.pi
 local floor = math.floor
-
--- ─── 헬퍼: 대쉬 고스트 트레일 ─────────────────────────────────
-local function drawGhosts(ghosts)
-    for gi = 1, #ghosts do
-        local g = ghosts[gi]
-        local fade = g.timer / g.maxTime
-        setColor(0, 230, 230, fade * 150)
-        lg.circle("fill", g.x, g.y, g.radius * (0.6 + 0.4 * fade))
-        setColor(0, 255, 255, fade * 80)
-        lg.setLineWidth(g.radius * 0.15)
-        lg.circle("line", g.x, g.y, g.radius * (0.8 + 0.6 * fade))
-    end
-end
 
 -- ─── 헬퍼: 이동 방향 표시 ──────────────────────────────────────
 local function drawDirection(x, y, r, velocity)
@@ -70,10 +58,8 @@ local PlayerRenderSystem = System.new("PlayerRender", {"PlayerTag", "Transform",
             local renderable = ecs:getComponent(entityId, "Renderable")
             local dash = ecs:hasComponent(entityId, "Dash") and ecs:getComponent(entityId, "Dash") or nil
 
-            -- 대쉬 잔상은 항상 그림 (iFrame/visible 무관)
-            if dash and #dash.ghosts > 0 then
-                drawGhosts(dash.ghosts)
-            end
+            -- 리본 트레일 (trailSystem이 관리)
+            trailSystem.draw()
 
             -- 본체 가시성 판정
             if not renderable.visible then
