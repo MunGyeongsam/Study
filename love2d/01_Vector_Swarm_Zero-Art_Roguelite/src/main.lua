@@ -1,12 +1,12 @@
--- Vector Swarm - Zero Art Roguelite
--- Main game file — Scene Stack 기반 게임 루프
+﻿-- Vector Swarm - Zero Art Roguelite
+-- Main game file ??Scene Stack 기반 게임 루프
 
--- Global utilities first (전역 함수 최우선 초기화)
+-- Global utilities first (?�역 ?�수 최우??초기??
 local global = require("00_common.global")
 
 -- Load modules
 local logger = require("00_common.logger")
-local debug = require("00_common.debug")
+local debugOverlay = require("00_common.debug")
 local screenDebugDraw = require("00_common.gridDebugDraw")
 local world = require("01_core.world")
 local SceneStack = require("01_core.sceneStack")
@@ -21,7 +21,7 @@ local soundManager = require("05_sound.soundManager")
 local saveData = require("00_common.saveData")
 
 local fonts = nil
-local sceneStack = nil   -- 글로벌 씬 스택
+local sceneStack = nil   -- 글로벌 ???�택
 local showWorldGrid = false
 
 function love.load()
@@ -40,22 +40,22 @@ function love.load()
     }
     love.graphics.setFont(fonts.medium)
 
-    -- 카메라 매니저 초기화
+    -- 카메??매니?� 초기??
     local orthographicSize = 5
     cameraManager.init(orthographicSize)
 
-    -- Screen shake 글로벌 등록
+    -- Screen shake 글로벌 ?�록
     screenShake = cameraManager.shake
 
-    -- 사운드 재생 글로벌 등록
+    -- ?�운???�생 글로벌 ?�록
     playSound = function(name) soundManager.play(name) end
     playBGM   = function(name) soundManager.playBGM(name) end
     stopBGM   = function() soundManager.stopBGM() end
 
-    -- Bloom 포스트프로세싱 초기화
+    -- Bloom ?�스?�프로세??초기??
     bloom.init()
 
-    -- 사운드 매니저 초기화
+    -- ?�운??매니?� 초기??
     soundManager.init()
     
     -- Initialize core systems
@@ -64,28 +64,28 @@ function love.load()
     -- Save data 로드
     saveData.load()
     
-    -- ECS 시스템 초기화
+    -- ECS ?�스??초기??
     ecsManager.init(function() return player.getPosition() end)
     
-    -- 초기 플레이어 (debug watcher용)
+    -- 초기 ?�레?�어 (debug watcher??
     local playerId = ecsManager.createPlayer(0, -12)
     player.bind(ecsManager.getWorld(), playerId)
     player.init(0, -12)
 
     -- Debug watchers
-    debug.add("world info", function()
+    debugOverlay.add("world info", function()
         local size = world.size
         return string.format("%10s : %d x %d", "World Size", size.width, size.height) 
     end)
-    debug.add("player info", function()
+    debugOverlay.add("player info", function()
         local x, y = player.getPosition()
         return string.format("%10s : (%.1f, %.1f)", "Player Pos", x, y) 
     end)
-    debug.add("ECS stats", function()
+    debugOverlay.add("ECS stats", function()
         local stats = ecsManager.getStats()
         return string.format("%10s : %d entities", "ECS Total", stats.world.activeEntities) 
     end)
-    debug.add("ECS components", function()
+    debugOverlay.add("ECS components", function()
         local stats = ecsManager.getStats()
         local componentCounts = stats.world.componentTypes or {}
         local text = "Components: "
@@ -94,19 +94,19 @@ function love.load()
         end
         return text
     end)
-    debug.add("camera mode", function()
+    debugOverlay.add("camera mode", function()
         local cam = cameraManager.getActive()
         local cx, cy = cam:pos()
         return string.format("%10s : %s (%.1f, %.1f) zoom=%.1f",
             "Camera", cameraManager.getMode(), cx, cy, cam:getOrthographicSize())
     end)
-    debug.add("bullets", function()
+    debugOverlay.add("bullets", function()
         local stats = ecsManager.getStats()
         local b = stats.bullets
         return string.format("%10s : %d active / %d peak / %d spawned",
             "Bullets", b.active, b.peakActive, b.spawned)
     end)
-    debug.add("player HP", function()
+    debugOverlay.add("player HP", function()
         local w = ecsManager.getWorld()
         local entities = w:queryEntities({"PlayerTag", "Health"})
         if #entities > 0 then
@@ -118,13 +118,13 @@ function love.load()
         end
         return "Player HP : N/A"
     end)
-    debug.add("waves", function()
+    debugOverlay.add("waves", function()
         local stats = ecsManager.getStats()
         local s = stats.stage
         return string.format("%10s : Stage %d Wave %d/%d [%s] (%d enemies)",
             "Stage", s.stage, s.wave, s.wavesPerStage, s.state, s.enemies)
     end)
-    debug.add("dash/focus", function()
+    debugOverlay.add("dash/focus", function()
         local w = ecsManager.getWorld()
         local entities = w:queryEntities({"PlayerTag", "Dash", "Focus"})
         if #entities > 0 then
@@ -137,7 +137,7 @@ function love.load()
         end
         return "Dash/Focus : N/A"
     end)
-    debug.add("xp/level", function()
+    debugOverlay.add("xp/level", function()
         local w = ecsManager.getWorld()
         local entities = w:queryEntities({"PlayerTag", "PlayerXP"})
         if #entities > 0 then
@@ -147,7 +147,7 @@ function love.load()
         end
         return "XP : N/A"
     end)
-    debug.add("debug keys", function()
+    debugOverlay.add("debug keys", function()
         local PlayScene = require("03_game.scenes.playScene")
         return string.format("%10s : GOD[F7]:%s+WPN:%s BLOOM[F6]:%s BG[F9]:%s", "debug",
             PlayScene.getGodMode() and "ON" or "off",
@@ -155,17 +155,17 @@ function love.load()
             bloom.isEnabled() and "ON" or "off",
             background.isEnabled() and "ON" or "off")
     end)
-    debug.add("background", function()
+    debugOverlay.add("background", function()
         return string.format("%10s : c=%.2f %s %d circles [%s]",
             "BG", background.getC(), background.getStyle(), background.getCount(),
             background.isGenerating() and "generating..." or "done")
     end)
-    debug.add("scene stack", function()
+    debugOverlay.add("scene stack", function()
         local top = sceneStack:top()
         return string.format("%10s : depth=%d top=%s", "Scenes", sceneStack:size(), top and top.name or "none")
     end)
 
-    debug.toggleConsole()
+    debugOverlay.toggleConsole()
 
     cameraManager.getGameCamera():lookAt(0, -12)
     logger.info("[CAM] Positioned at player start: (0.0, -12.0)")
@@ -196,7 +196,7 @@ function love.load()
     
     background.init(1)
 
-    -- Scene Stack 초기화 → TitleScene에서 시작
+    -- Scene Stack 초기????TitleScene?�서 ?�작
     sceneStack = SceneStack.new()
     local TitleScene = require("03_game.scenes.titleScene")
     sceneStack:push(TitleScene.new(sceneStack))
@@ -207,19 +207,19 @@ function love.update(dt)
 end
 
 function love.draw()
-    -- 씬 스택 렌더링 (아래 → 위)
+    -- ???�택 ?�더�?(?�래 ????
     sceneStack:draw()
 
-    -- 디버그 UI (씬 외부, 항상 최상위)
-    debug.draw(10, 50, fonts.small)
+    -- ?�버�?UI (???��?, ??�� 최상??
+    debugOverlay.draw(10, 50, fonts.small)
     logger.drawConsole(fonts.small)
     screenDebugDraw.draw(50)
 end
 
 function love.keypressed(key)
-    -- 디버그 키는 모든 상태에서 작동
+    -- ?�버�??�는 모든 ?�태?�서 ?�동
     if key == "f1" then
-        debug.toggleConsole()
+        debugOverlay.toggleConsole()
         return
     elseif key == "`" then
         logger.toggleConsole()
@@ -238,7 +238,7 @@ function love.keypressed(key)
         return
     end
 
-    -- 나머지는 스택 최상위 씬에 위임
+    -- ?�머지???�택 최상???�에 ?�임
     sceneStack:keypressed(key)
 end
 
@@ -254,7 +254,7 @@ function love.touchreleased(id, x, y, dx, dy, pressure)
     sceneStack:touchreleased(id, x, y, dx, dy, pressure)
 end
 
--- PC: 마우스 → 터치 브릿지
+-- PC: 마우?????�치 브릿지
 function love.mousepressed(x, y, button, istouch, presses)
     if not istouch then
         love.touchpressed("mouse", x, y, 0, 0, 1)
@@ -273,7 +273,7 @@ function love.mousereleased(x, y, button, istouch, presses)
     end
 end
 
--- 마우스 휠: 디버그 카메라 줌
+-- 마우???? ?�버�?카메??�?
 function love.wheelmoved(x, y)
     cameraManager.wheelmoved(x, y)
 end
@@ -283,7 +283,36 @@ function love.quit()
     logger.close()
 end
 
--- 화면 리사이즈 콜백
+-- ===== Error Handler: crash callstack -> debug.log =====
+-- Backup Lua standard debug module (00_common.debug shadows it)
+local _traceback = debug and debug.traceback or function(m) return tostring(m) end
+local _defaultErrorHandler = love.errorhandler or love.errhand
+
+function love.errorhandler(msg)
+    local trace = _traceback(tostring(msg), 2)
+    local crashMsg = "\n========== CRASH ==========\n" .. trace .. "\n============================\n"
+
+    -- stderr + stdout
+    pcall(function()
+        io.stderr:write(crashMsg)
+        io.stderr:flush()
+    end)
+    print(crashMsg)
+
+    -- Write to debug.log if logger is alive
+    pcall(function()
+        logger.error("CRASH: " .. tostring(msg))
+        logger.error(_traceback("", 2))
+        logger.close()
+    end)
+
+    -- Fall back to LOVE default error screen (blue screen)
+    if _defaultErrorHandler then
+        return _defaultErrorHandler(msg)
+    end
+end
+
+-- Screen resize callback
 function love.resize(w, h)
     logger.info(string.format("Screen resized to %dx%d", w, h))
     uiManager.updateLayout()

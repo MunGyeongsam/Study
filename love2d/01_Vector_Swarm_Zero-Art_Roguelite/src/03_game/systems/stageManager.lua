@@ -55,6 +55,29 @@ local STAGE_DEFS = {
 
 local ALL_ENEMY_TYPES = {"bit", "node", "vector", "loop", "matrix"}
 
+-- ===== Stage Theme Pools (5A.3f Rule 1) =====
+-- 기동형: 이동으로 위협 (대쉬·반응 테스트)
+-- 화력형: 탄막으로 위협 (포커스·패턴 읽기 테스트)
+-- loop는 궤도(이동) + 나선탄(화력) = 양쪽 소속
+local MOBILITY_POOL  = {"bit", "vector", "loop"}
+local FIREPOWER_POOL = {"node", "loop", "matrix"}
+local THEME_MIX_RATIO = 0.7  -- 테마 풀 70%, 전체 풀 30%
+
+-- Count boss stages up to (and including) a given stage
+local function _countBossStagesUpTo(stage)
+    local count = 0
+    for s, _ in pairs(BOSS_STAGES) do
+        if s <= stage then count = count + 1 end
+    end
+    return count
+end
+
+-- Get non-boss ordinal for a stage (skipping boss stages)
+-- Stage 7 → 7 - 2 (bosses at 3,6) = 5th non-boss → odd → mobility
+local function _getNonBossOrdinal(stage)
+    return stage - _countBossStagesUpTo(stage)
+end
+
 -- ===== Formation Definitions =====
 -- Each formation: { name, types (preferred), count, tier (1-3), offsets(anchorX,anchorY) → {{dx,dy},...} }
 local _cos = math.cos
@@ -193,12 +216,19 @@ function StageManager:_getStageConfig()
     if STAGE_DEFS[self.stage] then
         return STAGE_DEFS[self.stage]
     end
-    -- Auto-generate for infinite stages
+    -- Auto-generate for infinite stages (6+)
+    -- Rule 1: theme-based type pool (mobility/firepower alternating)
     local s = self.stage
+    local ordinal = _getNonBossOrdinal(s)
+    local isMobility = (ordinal % 2 == 1)
+    local themePool = isMobility and MOBILITY_POOL or FIREPOWER_POOL
+
     return {
         waves     = _min(5 + _floor((s - 5) / 2), 8),
         spawnDirs = {top = 0.4, left = 0.2, right = 0.2, bottom = 0.2},
-        types     = ALL_ENEMY_TYPES,
+        types     = themePool,       -- theme pool for _pickEnemyType
+        allTypes  = ALL_ENEMY_TYPES, -- fallback for 30% mix
+        isMobility = isMobility,
     }
 end
 
@@ -415,8 +445,15 @@ function StageManager:_getSpawnPosition(direction, px, py)
 end
 
 -- Pick enemy type from stage's type pool
+-- Rule 1: themed stages use 70% theme pool, 30% all pool
 function StageManager:_pickEnemyType(config, direction)
-    local types = config.types
+    local types
+    -- Auto-generated stages have allTypes for 30% mix
+    if config.allTypes and _random() >= THEME_MIX_RATIO then
+        types = config.allTypes
+    else
+        types = config.types
+    end
     -- Bottom spawns: avoid drift-based AI (node=stationary, matrix=drift → skip)
     if direction == "bottom" then
         local safe = {}
@@ -430,9 +467,44 @@ function StageManager:_pickEnemyType(config, direction)
     return types[_random(#types)]
 end
 
+-- ===== Variant System (5A.3f Rules 2~3) =====
+
+-- Rule 2: Guaranteed first encounter — wave 1 of these stages forces one variant enemy
+local GUARANTEED_VARIANTS = {
+    [4]  = "swift",
+    [7]  = "armored",
+    [10] = "splitter",
+    [13] = "shielded",
+}
+
+-- Rule 3: Scaling variant chances (replaces fixed probability)
+-- chance = baseChance × (1 + (stage - firstStage) × 0.03), cap 25% each
+local VARIANT_TIERS = {
+    { stage = 4,  variant = "swift",    baseChance = 0.15 },
+    { stage = 7,  variant = "armored",  baseChance = 0.12 },
+    { stage = 10, variant = "splitter", baseChance = 0.10 },
+    { stage = 13, variant = "shielded", baseChance = 0.08 },
+}
+local VARIANT_CAP = 0.25  -- per-variant cap
+
+local function _pickVariant(stage)
+    for i = #VARIANT_TIERS, 1, -1 do
+        local vt = VARIANT_TIERS[i]
+        if stage >= vt.stage then
+            local scaled = vt.baseChance * (1 + (stage - vt.stage) * 0.03)
+            local chance = _min(scaled, VARIANT_CAP)
+            if _random() < chance then
+                return vt.variant
+            end
+        end
+    end
+    return nil
+end
+
 -- Spawn a formation group at anchor position
+-- Rule 4: formation enemies can have variants
 -- Returns the number of enemies spawned
-function StageManager:_spawnFormation(formation, px, py, diff)
+function StageManager:_spawnFormation(formation, px, py, diff, guaranteedVariant)
     local left, bottom, right, top = world.getBounds()
     local offsets = formation.getOffsets()
     local types = formation.types
@@ -465,11 +537,15 @@ function StageManager:_spawnFormation(formation, px, py, diff)
             enemyType = types[1]
         end
 
-        if enemyType == "bit" then
-            self.ecsManager.createEnemy(sx, sy, "bit", diff)
+        -- Variant: leader gets guaranteed variant, others roll individually
+        local variant
+        if i == 1 and guaranteedVariant then
+            variant = guaranteedVariant
         else
-            self.ecsManager.createEnemy(sx, sy, enemyType, diff)
+            variant = _pickVariant(self.stage)
         end
+
+        self.ecsManager.createEnemy(sx, sy, enemyType, diff, variant)
         spawned = spawned + 1
     end
 
@@ -482,25 +558,6 @@ end
 local function _formationChance(stage)
     if stage <= 3 then return 0 end
     return _min(0.6, 0.2 + (stage - 4) * 0.05)
-end
-
--- Pick a variant (or nil) based on stage progression
--- Returns nil for normal enemies, or a variant string
-local VARIANT_TIERS = {
-    { stage = 4,  variant = "swift",    chance = 0.15 },
-    { stage = 7,  variant = "armored",  chance = 0.12 },
-    { stage = 10, variant = "splitter", chance = 0.10 },
-    { stage = 13, variant = "shielded", chance = 0.08 },
-}
-
-local function _pickVariant(stage)
-    for i = #VARIANT_TIERS, 1, -1 do
-        local vt = VARIANT_TIERS[i]
-        if stage >= vt.stage and _random() < vt.chance then
-            return vt.variant
-        end
-    end
-    return nil
 end
 
 function StageManager:_spawnWave(config)
@@ -518,6 +575,12 @@ function StageManager:_spawnWave(config)
 
     local formationSpawned = 0
 
+    -- Rule 2: check guaranteed variant for this wave
+    local guaranteedVariant = nil
+    if self.wave == 1 then
+        guaranteedVariant = GUARANTEED_VARIANTS[self.stage]
+    end
+
     -- Try formation spawn (stage 4+)
     local available = _getAvailableFormations(self.stage)
     if available and _random() < _formationChance(self.stage) then
@@ -532,17 +595,29 @@ function StageManager:_spawnWave(config)
             if not found then typeOk = false; break end
         end
         if typeOk then
-            formationSpawned = self:_spawnFormation(formation, px, py, diff)
+            formationSpawned = self:_spawnFormation(formation, px, py, diff, guaranteedVariant)
+            if guaranteedVariant and formationSpawned > 0 then
+                guaranteedVariant = nil  -- consumed by formation leader
+            end
         end
     end
 
     -- Spawn remaining enemies randomly
     local remaining = _max(0, count - formationSpawned)
+
     for i = 1, remaining do
         local direction = self:_pickSpawnDirection(config)
         local spawnX, spawnY = self:_getSpawnPosition(direction, px, py)
         local enemyType = self:_pickEnemyType(config, direction)
-        local variant = _pickVariant(self.stage)
+
+        -- First enemy of wave gets guaranteed variant (if applicable)
+        local variant
+        if i == 1 and guaranteedVariant then
+            variant = guaranteedVariant
+            guaranteedVariant = nil  -- consumed
+        else
+            variant = _pickVariant(self.stage)
+        end
 
         if enemyType == "bit" then
             -- Bit: swarm spawn (3~5 clustered around position)
@@ -557,17 +632,24 @@ function StageManager:_spawnWave(config)
         end
     end
 
+    -- Log wave info with theme
+    local themeName = config.isMobility == true and "MOB" or (config.isMobility == false and "FP" or "HAND")
     local fmtStr = formationSpawned > 0
-        and "[STAGE] Stage %d Wave %d/%d: %d enemies (+%d formation) (HP:x%.2f Spd:x%.2f)"
-        or  "[STAGE] Stage %d Wave %d/%d: %d enemies (HP:x%.2f Spd:x%.2f)"
+        and "[STAGE] Stage %d [%s] Wave %d/%d: %d enemies (+%d formation) (HP:x%.2f Spd:x%.2f)"
+        or  "[STAGE] Stage %d [%s] Wave %d/%d: %d enemies (HP:x%.2f Spd:x%.2f)"
     if formationSpawned > 0 then
         logInfo(string.format(fmtStr,
-            self.stage, self.wave, config.waves, count, formationSpawned,
+            self.stage, themeName, self.wave, config.waves, count, formationSpawned,
             diff.enemyHpMult, diff.enemySpeedMult))
     else
         logInfo(string.format(fmtStr,
-            self.stage, self.wave, config.waves, count,
+            self.stage, themeName, self.wave, config.waves, count,
             diff.enemyHpMult, diff.enemySpeedMult))
+    end
+
+    -- Log guaranteed variant spawn
+    if self.wave == 1 and GUARANTEED_VARIANTS[self.stage] then
+        logInfo(string.format("[STAGE] Guaranteed variant: %s", GUARANTEED_VARIANTS[self.stage]))
     end
 end
 
