@@ -55,6 +55,110 @@ local STAGE_DEFS = {
 
 local ALL_ENEMY_TYPES = {"bit", "node", "vector", "loop", "matrix"}
 
+-- ===== Formation Definitions =====
+-- Each formation: { name, types (preferred), count, tier (1-3), offsets(anchorX,anchorY) → {{dx,dy},...} }
+local _cos = math.cos
+local _sin = math.sin
+local _pi  = math.pi
+
+local FORMATION_DEFS = {
+    -- 1) Wedge (V-shape): Bit swarm rushes in V formation
+    {
+        name  = "wedge",
+        types = {"bit"},
+        tier  = 1,
+        getOffsets = function()
+            local spacing = 0.35
+            local offsets = {}
+            local count = _random(7, 9)
+            offsets[1] = {dx = 0, dy = 0}  -- leader center
+            for i = 2, count do
+                local row = _floor((i) / 2)
+                local side = (i % 2 == 0) and 1 or -1
+                offsets[i] = {dx = side * row * spacing, dy = row * spacing * 0.7}
+            end
+            return offsets
+        end,
+    },
+    -- 2) Pincer: Two Vectors charge from left and right simultaneously
+    {
+        name  = "pincer",
+        types = {"vector"},
+        tier  = 2,
+        getOffsets = function()
+            return {
+                {dx = -4.0, dy = 0},     -- left
+                {dx =  4.0, dy = 0},     -- right
+            }
+        end,
+        spawnMode = "sides",  -- anchor is player Y, spread on X
+    },
+    -- 3) Triangle turrets: 3 Nodes in triangle formation
+    {
+        name  = "triangle",
+        types = {"node"},
+        tier  = 2,
+        getOffsets = function()
+            local r = 1.8  -- triangle radius
+            local offsets = {}
+            for i = 0, 2 do
+                local angle = _pi / 2 + i * (2 * _pi / 3)  -- top, bottom-left, bottom-right
+                offsets[i + 1] = {dx = _cos(angle) * r, dy = _sin(angle) * r}
+            end
+            return offsets
+        end,
+    },
+    -- 4) Escort: center tank (matrix/loop) + surrounding bit guards
+    {
+        name  = "escort",
+        types = {"matrix", "bit"},  -- first = center, rest = guards
+        tier  = 3,
+        getOffsets = function()
+            local guardCount = _random(4, 6)
+            local offsets = {{dx = 0, dy = 0}}  -- center (tank type)
+            for i = 1, guardCount do
+                local angle = (i - 1) * (2 * _pi / guardCount)
+                offsets[i + 1] = {dx = _cos(angle) * 0.8, dy = _sin(angle) * 0.8}
+            end
+            return offsets
+        end,
+    },
+    -- 5) Spiral Array: Loops arranged on arc for overlapping spiral bullets
+    {
+        name  = "spiral_array",
+        types = {"loop"},
+        tier  = 3,
+        getOffsets = function()
+            local count = _random(3, 4)
+            local r = 2.0
+            local offsets = {}
+            for i = 1, count do
+                local angle = (i - 1) * (2 * _pi / count) + _pi / 4
+                offsets[i] = {dx = _cos(angle) * r, dy = _sin(angle) * r}
+            end
+            return offsets
+        end,
+    },
+}
+
+-- Formation availability by stage tier
+-- Returns formations available for the given stage
+local function _getAvailableFormations(stage)
+    local maxTier
+    if stage <= 3 then return nil end       -- no formations stages 1-3
+    if stage <= 5 then maxTier = 1          -- wedge only
+    elseif stage <= 8 then maxTier = 2      -- + pincer, triangle
+    else maxTier = 3 end                    -- + escort, spiral_array
+
+    local available = {}
+    for _, f in ipairs(FORMATION_DEFS) do
+        if f.tier <= maxTier then
+            available[#available + 1] = f
+        end
+    end
+    return #available > 0 and available or nil
+end
+
 function StageManager.new(ecsManager, getPlayerPos)
     local mgr = setmetatable({
         ecsManager   = ecsManager,
@@ -327,6 +431,60 @@ function StageManager:_pickEnemyType(config, direction)
     return types[_random(#types)]
 end
 
+-- Spawn a formation group at anchor position
+-- Returns the number of enemies spawned
+function StageManager:_spawnFormation(formation, px, py, diff)
+    local left, bottom, right, top = world.getBounds()
+    local offsets = formation.getOffsets()
+    local types = formation.types
+
+    -- Determine anchor position
+    local anchorX, anchorY
+    if formation.spawnMode == "sides" then
+        -- Pincer: anchor at player position, offsets spread on X (horizontal charge)
+        anchorX = px
+        anchorY = py + (_random() - 0.5) * 2
+    else
+        -- Default: spawn from top area above player
+        anchorX = px + (_random() - 0.5) * 4
+        anchorY = py + 5 + _random() * 2
+    end
+
+    local spawned = 0
+    for i, off in ipairs(offsets) do
+        local sx = anchorX + off.dx
+        local sy = anchorY + off.dy
+        -- Clamp to world bounds
+        sx = _max(left + 0.5, _min(right - 0.5, sx))
+        sy = _max(bottom + 0.5, _min(top - 0.5, sy))
+
+        -- Determine type for this slot
+        local enemyType
+        if formation.name == "escort" then
+            enemyType = (i == 1) and types[1] or types[2]  -- center = tank, rest = bit
+        else
+            enemyType = types[1]
+        end
+
+        if enemyType == "bit" then
+            self.ecsManager.createEnemy(sx, sy, "bit", diff)
+        else
+            self.ecsManager.createEnemy(sx, sy, enemyType, diff)
+        end
+        spawned = spawned + 1
+    end
+
+    logInfo(string.format("[FORMATION] %s: %d enemies at (%.1f, %.1f)",
+        formation.name, spawned, anchorX, anchorY))
+    return spawned
+end
+
+-- Formation chance: increases with stage, caps at 60%
+local function _formationChance(stage)
+    if stage <= 3 then return 0 end
+    return _min(0.6, 0.2 + (stage - 4) * 0.05)
+end
+
 function StageManager:_spawnWave(config)
     self.wave = self.wave + 1
     self.totalWaves = self.totalWaves + 1
@@ -340,7 +498,29 @@ function StageManager:_spawnWave(config)
     local waveRatio = self.wave / config.waves
     count = _max(2, _floor(count * (0.5 + 0.5 * waveRatio)))
 
-    for i = 1, count do
+    local formationSpawned = 0
+
+    -- Try formation spawn (stage 4+)
+    local available = _getAvailableFormations(self.stage)
+    if available and _random() < _formationChance(self.stage) then
+        local formation = available[_random(#available)]
+        -- Check if formation types are in this stage's pool
+        local typeOk = true
+        for _, ft in ipairs(formation.types) do
+            local found = false
+            for _, ct in ipairs(config.types) do
+                if ft == ct then found = true; break end
+            end
+            if not found then typeOk = false; break end
+        end
+        if typeOk then
+            formationSpawned = self:_spawnFormation(formation, px, py, diff)
+        end
+    end
+
+    -- Spawn remaining enemies randomly
+    local remaining = _max(0, count - formationSpawned)
+    for i = 1, remaining do
         local direction = self:_pickSpawnDirection(config)
         local spawnX, spawnY = self:_getSpawnPosition(direction, px, py)
         local enemyType = self:_pickEnemyType(config, direction)
@@ -358,9 +538,18 @@ function StageManager:_spawnWave(config)
         end
     end
 
-    logInfo(string.format("[STAGE] Stage %d Wave %d/%d: %d enemies (HP:x%.2f Spd:x%.2f)",
-        self.stage, self.wave, config.waves, count,
-        diff.enemyHpMult, diff.enemySpeedMult))
+    local fmtStr = formationSpawned > 0
+        and "[STAGE] Stage %d Wave %d/%d: %d enemies (+%d formation) (HP:x%.2f Spd:x%.2f)"
+        or  "[STAGE] Stage %d Wave %d/%d: %d enemies (HP:x%.2f Spd:x%.2f)"
+    if formationSpawned > 0 then
+        logInfo(string.format(fmtStr,
+            self.stage, self.wave, config.waves, count, formationSpawned,
+            diff.enemyHpMult, diff.enemySpeedMult))
+    else
+        logInfo(string.format(fmtStr,
+            self.stage, self.wave, config.waves, count,
+            diff.enemyHpMult, diff.enemySpeedMult))
+    end
 end
 
 function StageManager:_advanceStage()
