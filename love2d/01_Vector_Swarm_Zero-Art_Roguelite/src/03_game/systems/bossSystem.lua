@@ -15,6 +15,7 @@ local _random = math.random
 local _min    = math.min
 local _max    = math.max
 local _abs    = math.abs
+local _exp    = math.exp
 
 -- Helper: apply a pattern step to the BulletEmitter component
 local function applyPattern(emitter, step)
@@ -43,13 +44,23 @@ local function createBossSystem(bulletPool, getPlayerPos)
 
     -- === INTRO: wait before activating boss ===
     -- Returns true if intro is still in progress (caller should skip other logic)
-    local function handleIntro(boss, emitter, dt)
+    -- Animates scale 0→1 (ease-out) during intro; triggers flash on completion.
+    local function handleIntro(boss, emitter, transform, dt)
         if boss.introComplete then return false end
         boss.introTimer = boss.introTimer + dt
         emitter.active = false
+
+        -- Scale-in: ease-out cubic  t' = min(1, timer/duration)
+        local t = _min(1, boss.introTimer / boss.introDuration)
+        local eased = 1 - (1 - t) * (1 - t) * (1 - t)  -- ease-out cubic
+        transform.scale = eased
+
         if boss.introTimer >= boss.introDuration then
             boss.introComplete = true
+            transform.scale = 1
             screenShake(0.12, 0.25)
+            -- Trigger screen flash (playScene listens via bossIntroFlash flag)
+            boss.introFlash = true
             local phasePatterns = boss.patterns[boss.phase]
             applyPattern(emitter, phasePatterns and phasePatterns[1])
             logInfo(string.format("[BOSS] %s intro complete, phase %d active", boss.bossType, boss.phase))
@@ -58,7 +69,8 @@ local function createBossSystem(bulletPool, getPlayerPos)
     end
 
     -- === PHASE CHECK: HP threshold triggers phase transition ===
-    local function handlePhaseCheck(ecs, entityId, boss, health, emitter)
+    -- Enhanced: triggers scale pulse, hit-stop, and color flash via flags.
+    local function handlePhaseCheck(ecs, entityId, boss, health, emitter, transform)
         boss.phaseChanged = false
         local hpRatio = health.hp / health.maxHp
         local threshold = boss.phaseThresholds[boss.phase]
@@ -69,6 +81,12 @@ local function createBossSystem(bulletPool, getPlayerPos)
             boss.patternTimer = 0
             boss.minionTimer = 0
             screenShake(0.18, 0.3)
+
+            -- Visual: scale pulse 1.3→1.0 (read by renderSystem)
+            boss.scalePulse = 1.3
+            -- Visual: phase transition flags (read by playScene)
+            boss.phaseHitStop = true
+            boss.phaseFlash = true
 
             if bulletPool then
                 bulletPool:clearLayer("enemy_bullet")
@@ -232,9 +250,18 @@ local function createBossSystem(bulletPool, getPlayerPos)
                 local ai        = ecs:getComponent(entityId, "EnemyAI")
 
                 if boss.defeated then goto nextBoss end
-                if handleIntro(boss, emitter, dt) then goto nextBoss end
+                if handleIntro(boss, emitter, transform, dt) then goto nextBoss end
 
-                handlePhaseCheck(ecs, entityId, boss, health, emitter)
+                -- Scale pulse decay (phase transition visual)
+                if boss.scalePulse and boss.scalePulse > 1.001 then
+                    boss.scalePulse = 1 + (boss.scalePulse - 1) * _exp(-12 * dt)
+                    transform.scale = boss.scalePulse
+                elseif boss.scalePulse then
+                    boss.scalePulse = nil
+                    transform.scale = 1
+                end
+
+                handlePhaseCheck(ecs, entityId, boss, health, emitter, transform)
                 handlePatternCycling(boss, emitter, dt)
                 handleMinionSpawn(ecs, entityId, boss, transform, dt)
                 handleMovement(ecs, entityId, boss, transform, ai, health, dt)

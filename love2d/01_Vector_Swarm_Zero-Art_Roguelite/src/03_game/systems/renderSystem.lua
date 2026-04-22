@@ -92,8 +92,9 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                     lg.pop()
 
                 -- ===== BOSS RENDER TYPES =====
-
+                -- Apply transform.scale to boss radius (intro scale-in, phase pulse)
                 elseif renderable.type == "boss_null" then
+                    r = r * (transform.scale or 1)
                     -- Inverted triangle + dashed outline flicker (null = unstable existence)
                     local t = getTime()
                     local flicker = floor(t * 6) % 3  -- 0,1,2 cycle
@@ -121,6 +122,7 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                     lg.pop()
 
                 elseif renderable.type == "boss_stack" then
+                    r = r * (transform.scale or 1)
                     -- 3 stacked rectangles with vertical wobble (stack push/pop)
                     local t = getTime()
                     local wobble = sin(t * 3) * r * 0.12
@@ -150,6 +152,7 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                     lg.pop()
 
                 elseif renderable.type == "boss_heap" then
+                    r = r * (transform.scale or 1)
                     -- Diamond + inscribed tree triangle (heap tree node)
                     lg.push()
                     lg.translate(x, y)
@@ -179,6 +182,7 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                     lg.pop()
 
                 elseif renderable.type == "boss_recursion" then
+                    r = r * (transform.scale or 1)
                     -- Sierpinski-style fractal triangle (self-reference, rotating)
                     local t = getTime()
                     local rot = t * 0.5  -- slow rotation
@@ -213,6 +217,7 @@ local RenderSystem = System.new("Render", {"Transform", "Renderable"},
                     lg.pop()
 
                 elseif renderable.type == "boss_overflow" then
+                    r = r * (transform.scale or 1)
                     -- Hexagon core + glitching ghost shapes of previous bosses
                     local t = getTime()
                     lg.push()

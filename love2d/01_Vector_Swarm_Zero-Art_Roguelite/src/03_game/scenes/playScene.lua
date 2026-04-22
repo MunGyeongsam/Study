@@ -17,6 +17,9 @@ local trailSystem       = require("03_game.systems.trailSystem")
 local world         = require("01_core.world")
 
 local _floor = math.floor
+local _min   = math.min
+local _max   = math.max
+local _exp   = math.exp
 
 local PlayScene = {}
 PlayScene.__index = PlayScene
@@ -31,6 +34,14 @@ local _hitStopTimer  = 0
 local _godMode       = false
 local _disableWeapon = false
 local _showWorldGrid = false
+
+-- Boss visual effect state
+local _screenFlash   = 0      -- white flash alpha (decays to 0)
+local _screenTint    = nil    -- {r,g,b, alpha} color tint (decays)
+local _whiteout      = 0      -- whiteout alpha (for boss defeat)
+local _whiteoutDecay = false  -- true = fading out phase
+local _shockwave     = nil    -- {x,y, radius, maxRadius, alpha} expanding ring
+local _phaseText     = nil    -- {text, timer, duration}
 
 --- Scene 생성
 function PlayScene.new(sceneStack)
@@ -70,6 +81,12 @@ function PlayScene:_initGame()
     achievementSystem.resetSession()
     trailSystem.reset()
     _hitStopTimer = 0
+    _screenFlash  = 0
+    _screenTint   = nil
+    _whiteout     = 0
+    _whiteoutDecay = false
+    _shockwave    = nil
+    _phaseText    = nil
 
     -- Start Boost: 해금되면 게임 시작 시 랜덤 업그레이드 1개 자동 적용
     if achievementSystem.isRewardUnlocked("start_boost") then
@@ -122,9 +139,38 @@ function PlayScene:exit()
 end
 
 function PlayScene:update(dt)
+    -- === Visual effects update (always, even during hit-stop) ===
+    if _screenFlash > 0.001 then
+        _screenFlash = _screenFlash * _exp(-15 * dt)
+        if _screenFlash < 0.001 then _screenFlash = 0 end
+    end
+    if _screenTint then
+        _screenTint[4] = _screenTint[4] * _exp(-10 * dt)
+        if _screenTint[4] < 0.01 then _screenTint = nil end
+    end
+    if _whiteout > 0.001 then
+        if _whiteoutDecay then
+            _whiteout = _whiteout * _exp(-4 * dt)
+            if _whiteout < 0.01 then _whiteout = 0 end
+        end
+    end
+    if _shockwave then
+        _shockwave.radius = _shockwave.radius + dt * _shockwave.maxRadius * 1.5
+        _shockwave.alpha = 1 - (_shockwave.radius / _shockwave.maxRadius)
+        if _shockwave.alpha <= 0 then _shockwave = nil end
+    end
+    if _phaseText then
+        _phaseText.timer = _phaseText.timer + dt
+        if _phaseText.timer >= _phaseText.duration then _phaseText = nil end
+    end
+
     -- Hit-stop freeze
     if _hitStopTimer > 0 then
         _hitStopTimer = _hitStopTimer - dt
+        -- Start whiteout decay after hit-stop ends
+        if _hitStopTimer <= 0 and _whiteout > 0 then
+            _whiteoutDecay = true
+        end
         return
     end
 
@@ -135,6 +181,20 @@ function PlayScene:update(dt)
             ecsManager.stageManager.bossRewardsApplied = true
             _hitStopTimer = 0.4
             screenShake(0.5, 0.7)
+            -- Whiteout + shockwave at boss position
+            _whiteout = 1.0
+            _whiteoutDecay = false
+            local bossId = ecsManager.stageManager.bossEntityId
+            if bossId then
+                local bw = ecsManager.getWorld()
+                local bt = bw:getComponent(bossId, "Transform")
+                if bt then
+                    -- Convert boss world pos to screen for shockwave
+                    local sx, sy = cameraManager.getActive():cameraCoords(bt.x, bt.y)
+                    local sw, sh = love.graphics.getDimensions()
+                    _shockwave = { x = sx, y = sy, radius = 0, maxRadius = _max(sw, sh) * 0.8, alpha = 1 }
+                end
+            end
             local w = ecsManager.getWorld()
             local pEnts = w:queryEntities({"PlayerTag", "Health"})
             if #pEnts > 0 then
@@ -186,6 +246,33 @@ function PlayScene:update(dt)
     -- 일반 플레이
     local scaledDt = dt * gameState.getTimeScale()
     ecsManager.update(scaledDt)
+
+    -- === Boss visual event detection ===
+    local bossId = ecsManager.stageManager and ecsManager.stageManager.bossEntityId
+    if bossId then
+        local bw = ecsManager.getWorld()
+        local boss = bw:getComponent(bossId, "BossTag")
+        if boss then
+            -- Intro flash: triggered once when intro completes
+            if boss.introFlash then
+                boss.introFlash = false
+                _screenFlash = 0.8
+            end
+            -- Phase transition: hit-stop + color flash + phase text
+            if boss.phaseHitStop then
+                boss.phaseHitStop = false
+                _hitStopTimer = 0.15
+            end
+            if boss.phaseFlash then
+                boss.phaseFlash = false
+                local rend = bw:getComponent(bossId, "Renderable")
+                if rend then
+                    _screenTint = { rend.color[1], rend.color[2], rend.color[3], 0.4 }
+                end
+                _phaseText = { text = string.format("PHASE %d", boss.phase), timer = 0, duration = 0.8 }
+            end
+        end
+    end
 
     if _godMode then
         local pid = player.getEntityId()
@@ -281,6 +368,52 @@ function PlayScene:draw()
     end)
     bloom.endCapture()
     bloom.draw()
+
+    -- === Boss screen effects (screen-space, over bloom, under UI) ===
+    local lg = love.graphics
+    local sw, sh = lg.getDimensions()
+
+    -- Shockwave ring
+    if _shockwave then
+        lg.setColor(1, 1, 1, _shockwave.alpha * 0.7)
+        lg.setLineWidth(3)
+        lg.circle("line", _shockwave.x, _shockwave.y, _shockwave.radius)
+        lg.setLineWidth(1)
+    end
+
+    -- Screen flash (white)
+    if _screenFlash > 0.01 then
+        lg.setColor(1, 1, 1, _screenFlash)
+        lg.rectangle("fill", 0, 0, sw, sh)
+    end
+
+    -- Screen tint (boss color)
+    if _screenTint then
+        lg.setColor(_screenTint[1], _screenTint[2], _screenTint[3], _screenTint[4])
+        lg.rectangle("fill", 0, 0, sw, sh)
+    end
+
+    -- Whiteout (boss defeat)
+    if _whiteout > 0.01 then
+        lg.setColor(1, 1, 1, _whiteout)
+        lg.rectangle("fill", 0, 0, sw, sh)
+    end
+
+    -- Phase text
+    if _phaseText then
+        local alpha = 1.0
+        local t = _phaseText.timer
+        if t < 0.1 then alpha = t / 0.1
+        elseif t > _phaseText.duration - 0.2 then alpha = (_phaseText.duration - t) / 0.2 end
+        lg.setColor(1, 0.3, 0.3, alpha)
+        local font = lg.getFont()
+        local text = _phaseText.text
+        local tw = font:getWidth(text)
+        local scale = 2.0
+        lg.print(text, (sw - tw * scale) / 2, sh * 0.35, 0, scale, scale)
+    end
+
+    lg.setColor(1, 1, 1, 1)
 
     -- HUD
     uiManager.draw()

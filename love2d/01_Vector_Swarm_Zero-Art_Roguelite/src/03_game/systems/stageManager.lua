@@ -779,7 +779,26 @@ function StageManager:draw()
 
     if self.state == StageManager.STATE_BOSS_INTRO then
         local alpha = self.bossEntityId and 1 or 0
-        local title = string.format("BOSS: %s", self.bossType or "???")
+        local bossName = self.bossType or "???"
+        -- Glitch effect during intro: random chars that settle into boss name
+        local introT = 0
+        if self.bossEntityId then
+            local w = self.ecsManager.getWorld()
+            local bossTag = w:getComponent(self.bossEntityId, "BossTag")
+            if bossTag then introT = bossTag.introTimer end
+        end
+        local glitchIntensity = _max(0, 1 - introT / 1.2)  -- settles by 1.2s
+        local glitchChars = {}
+        local display = "< " .. bossName .. " >"
+        for i = 1, #display do
+            local ch = display:sub(i, i)
+            if ch ~= " " and ch ~= "<" and ch ~= ">" and _random() < glitchIntensity then
+                glitchChars[i] = _char(_random(33, 126))
+            else
+                glitchChars[i] = ch
+            end
+        end
+        local title = table.concat(glitchChars)
         drawOverlay(title, {1, 0.2, 0.2}, alpha, nil, 0.3 * alpha, 0.4)
         return
     end

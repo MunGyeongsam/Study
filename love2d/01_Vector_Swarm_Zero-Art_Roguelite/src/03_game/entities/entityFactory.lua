@@ -564,7 +564,7 @@ function EntityFactory.createBoss(world, x, y, bossType)
     local entityId = world:createEntity()
 
     world:addComponent(entityId, "Transform", Transform.new({
-        x = x or 0, y = y or 5,
+        x = x or 0, y = y or 5, scale = 0,  -- scale 0: intro scale-in animation
     }))
 
     world:addComponent(entityId, "Velocity", Velocity.new({
