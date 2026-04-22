@@ -62,6 +62,8 @@ function BossTag.new(data)
         phaseTeleport    = d.phaseTeleport or nil,
         phaseColors      = d.phaseColors or nil,
         speedMult        = d.speedMult or 1,
+        bulletSpeedMult  = d.bulletSpeedMult or 1,
+        emitRateMult     = d.emitRateMult or 1,
         minionAdd        = d.minionAdd or 0,
         introTimer      = 0,
         introDuration   = d.introDuration   or def.introDuration,

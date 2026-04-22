@@ -9,7 +9,7 @@ PlayerXP.defaults = {
     xp = 0,
     level = 1,
     xpToNext = 10,       -- 다음 레벨까지 필요 XP
-    xpGrowth = 1.4,      -- 레벨당 필요 XP 증가 배율
+    xpGrowth = 1.35,     -- 레벨당 필요 XP 증가 배율
     magnetRange = 1.5,    -- XP 오브 자석 수집 범위 (월드 유닛)
     pendingLevelUp = false, -- 레벨업 대기 중 (UI 표시 필요)
 }

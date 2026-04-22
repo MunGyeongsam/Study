@@ -10,6 +10,7 @@ local background = require("02_renderer.background")
 local achievementSystem = require("03_game.states.achievementSystem")
 local stageData = require("03_game.data.stageData")
 local formationDefs = require("03_game.data.formationDefs")
+local stageStory = require("03_game.data.stageStory")
 
 local _min    = math.min
 local _max    = math.max
@@ -77,7 +78,7 @@ function StageManager:_getStageConfig()
     local themePool = isMobility and stageData.MOBILITY_POOL or stageData.FIREPOWER_POOL
 
     return {
-        waves     = _min(5 + _floor((s - 5) / 2), 8),
+        waves     = _min(5 + _floor((s - 5) / 2), 10),
         spawnDirs = {top = 0.4, left = 0.2, right = 0.2, bottom = 0.2},
         types     = themePool,       -- theme pool for _pickEnemyType
         allTypes  = stageData.ALL_ENEMY_TYPES, -- fallback for 30% mix
@@ -89,11 +90,11 @@ end
 function StageManager:getDifficulty()
     local s = self.stage
     return {
-        enemyCount      = _min(3 + (s - 1) * 2, 15),
+        enemyCount      = _min(3 + (s - 1) * 2, 20),
         enemyHpMult     = 1.0 + (s - 1) * 0.15,
         enemySpeedMult  = _min(1.0 + (s - 1) * 0.1, 2.0),
         bulletSpeedMult = _min(1.0 + (s - 1) * 0.05, 1.5),
-        spawnDelay      = _max(1.5, 3.0 - (s - 1) * 0.3),
+        spawnDelay      = _max(1.2, 2.0 - (s - 1) * 0.2),
     }
 end
 
@@ -252,13 +253,25 @@ function StageManager:_spawnBoss()
     local spawnY = (py or 0) + 4  -- spawn above player
 
     local w = self.ecsManager.getWorld()
-    local scaling = stageData.getBossScaling(self.stage)
+    local scaling = stageData.getBossScaling(self.stage) or {}
+
+    -- Boss HP scales with player level: baseHP × (1 + 0.15 × playerLv)
+    local playerLvMult = 1
+    local players = w:queryEntities({"PlayerXP"})
+    if #players > 0 then
+        local pxp = w:getComponent(players[1], "PlayerXP")
+        if pxp then
+            playerLvMult = 1 + 0.15 * (pxp.level or 1)
+        end
+    end
+    scaling.playerLvMult = playerLvMult
+
     self.bossEntityId = EntityFactory.createBoss(w, spawnX, spawnY, bossType, scaling)
     self.bossType = bossType
     self.bossScaling = scaling
 
     local label = bossType
-    if scaling then
+    if scaling and scaling.round then
         label = string.format("%s +%d", bossType, scaling.round)
     end
     logInfo(string.format("[STAGE] Boss %s spawned at Stage %d", label, self.stage))
@@ -583,8 +596,8 @@ function StageManager:debugSkipStage()
     logInfo(string.format("[DEBUG] Stage skipped → now Stage %d", self.stage))
 end
 
--- Helper: draw centered overlay text with optional subtitle
-local function drawOverlay(title, titleColor, alpha, subtitle, bgAlpha, yPos)
+-- Helper: draw centered overlay text with optional subtitle and story body
+local function drawOverlay(title, titleColor, alpha, subtitle, bgAlpha, yPos, storyLines)
     local lg = love.graphics
     local w, h = lg.getDimensions()
 
@@ -603,6 +616,18 @@ local function drawOverlay(title, titleColor, alpha, subtitle, bgAlpha, yPos)
         lg.print(subtitle, (w - sw) / 2, h * 0.5)
     end
 
+    -- Story body lines (boss popup)
+    if storyLines then
+        local lineY = h * 0.56
+        local lineH = font:getHeight() * 1.4
+        for _, line in ipairs(storyLines) do
+            lg.setColor(0.7, 0.85, 1.0, alpha * 0.9)
+            local lw = font:getWidth(line)
+            lg.print(line, (w - lw) / 2, lineY)
+            lineY = lineY + lineH
+        end
+    end
+
     lg.setColor(1, 1, 1, 1)
 end
 
@@ -617,7 +642,7 @@ function StageManager:draw()
     if self.state == StageManager.STATE_BOSS_INTRO then
         local alpha = self.bossEntityId and 1 or 0
         local bossName = self.bossType or "???"
-        if self.bossScaling then
+        if self.bossScaling and self.bossScaling.round then
             bossName = string.format("%s +%d", bossName, self.bossScaling.round)
         end
         -- Glitch effect during intro: random chars that settle into boss name
@@ -649,7 +674,7 @@ function StageManager:draw()
 
         -- Glitch text: boss name scrambles for ~1.5s, then shows "PURIFIED"
         local bossName = self.bossType or "???"
-        if self.bossScaling then
+        if self.bossScaling and self.bossScaling.round then
             bossName = string.format("%s +%d", bossName, self.bossScaling.round)
         end
         local title
@@ -671,14 +696,54 @@ function StageManager:draw()
 
         local sub = t >= 1.5 and string.format("%s — BOSS CLEAR!", bossName) or nil
         local titleColor = t < 1.5 and {1, 0.3, 0.3} or {0.2, 1, 0.5}
-        drawOverlay(title, titleColor, alpha, sub, 0.4, 0.35)
+
+        -- Boss story popup (after glitch settles)
+        local storyLines = nil
+        if t >= 1.5 then
+            local baseBoss = self.bossType or "NULL"
+            local story = stageStory.BOSS[baseBoss]
+            if story then
+                storyLines = {}
+                storyLines[1] = "— " .. story.title .. " —"
+                for line in story.body:gmatch("[^\n]+") do
+                    storyLines[#storyLines + 1] = line
+                end
+            end
+        end
+
+        drawOverlay(title, titleColor, alpha, sub, 0.4, 0.25, storyLines)
         return
     end
 
     -- Stage clear
     local alpha = _min(1, self.clearTimer / 0.3)
     local title = string.format("STAGE %d CLEAR!", self.stage)
-    local sub = string.format("Waves: %d  Stage: %d", self.totalWaves, self.stage)
+
+    -- Story text with glitch effect (UTF-8 safe: iterate by codepoint)
+    local story = stageStory.NORMAL[self.stage]
+    if not story and self.stage > 15 then
+        -- Endless: random quote
+        local quotes = stageStory.ENDLESS
+        story = { text = quotes[((self.stage - 16) % #quotes) + 1] }
+    end
+    local sub = nil
+    if story then
+        local t = self.clearTimer
+        local glitchIntensity = _max(0, 1 - t / 1.0)  -- settles by 1.0s
+        local raw = story.text
+        local chars = {}
+        for i = 1, #raw do
+            local ch = raw:sub(i, i)
+            if ch ~= " " and _random() < glitchIntensity * 0.5 then
+                chars[i] = _char(_random(33, 126))
+            else
+                chars[i] = ch
+            end
+        end
+        sub = table.concat(chars)
+    else
+        sub = string.format("Waves: %d  Stage: %d", self.totalWaves, self.stage)
+    end
     drawOverlay(title, {0.2, 1, 0.4}, alpha, sub, 0.4, 0.4)
 end
 

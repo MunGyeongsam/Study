@@ -59,6 +59,8 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath, onSpawnEnemy
             for _, entityId in ipairs(entities) do
                 local health = ecs:getComponent(entityId, "Health")
                 if not health.alive then goto nextEnemy end
+                -- Boss phase invincibility: skip damage while iTimer > 0
+                if health.iTimer and health.iTimer > 0 then goto nextEnemy end
 
                 local transform = ecs:getComponent(entityId, "Transform")
                 local collider  = ecs:getComponent(entityId, "Collider")

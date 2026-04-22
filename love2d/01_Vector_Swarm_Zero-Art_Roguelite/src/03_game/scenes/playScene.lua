@@ -341,7 +341,7 @@ function PlayScene:update(dt)
         currentZone = playerStats.currentZone or "outside",
         checkpoints = playerStats.checkpoints,
         bossActive = stageStats.bossEntityId ~= nil and (stageStats.state == "boss_intro" or stageStats.state == "boss_active"),
-        bossName = stageStats.bossType and stageStats.bossScaling
+        bossName = (stageStats.bossType and stageStats.bossScaling and stageStats.bossScaling.round)
             and string.format("%s +%d", stageStats.bossType, stageStats.bossScaling.round)
             or stageStats.bossType,
         bossHp = 0, bossMaxHp = 1, bossPhase = 1, bossMaxPhase = 1,

@@ -68,7 +68,7 @@ local VARIANT_DEFS = {
         speedMult  = 0.7,
         hpMult     = 2.5,
         scaleMult  = 1.3,
-        xpMult     = 1.5,
+        xpMult     = 1.8,
     },
     splitter = {
         speedMult  = 1.0,
@@ -80,7 +80,7 @@ local VARIANT_DEFS = {
         speedMult  = 0.85,
         hpMult     = 1.5,
         scaleMult  = 1.1,
-        xpMult     = 1.8,
+        xpMult     = 1.5,
         shieldArc  = 1.5708,  -- pi/2 = 90 degrees (±45° from facing)
     },
 }
@@ -297,7 +297,7 @@ function EntityFactory.createXpOrb(world, x, y, value)
 
     world:addComponent(entityId, "Renderable", Renderable.new({
         type = "circle", radius = 0.05,
-        color = {0.2, 1.0, 0.4, 1},  -- 초록색 XP 오브
+        color = {1.0, 0.85, 0.2, 1},  -- 금색 XP 오브 (탄환과 구분)
     }))
 
     world:addComponent(entityId, "LifeSpan", LifeSpan.new({
@@ -318,8 +318,11 @@ function EntityFactory.createBoss(world, x, y, bossType, scaling)
     -- Endless scaling: HP and speed multipliers
     local hpMult    = scaling and scaling.hpMult or 1
     local speedMult = scaling and scaling.speedMult or 1
+    local bulletSpeedMult = scaling and scaling.bulletSpeedMult or 1
+    local emitRateMult    = scaling and scaling.emitRateMult or 1
     local redShift  = scaling and scaling.redShift or 0
-    local scaledHp  = _floor(preset.hp * hpMult)
+    local playerLvMult = scaling and scaling.playerLvMult or 1
+    local scaledHp  = _floor(preset.hp * hpMult * playerLvMult)
 
     world:addComponent(entityId, "Transform", Transform.new({
         x = x or 0, y = y or 5, scale = 0,  -- scale 0: intro scale-in animation
@@ -370,7 +373,7 @@ function EntityFactory.createBoss(world, x, y, bossType, scaling)
     world:addComponent(entityId, "BulletEmitter", BulletEmitter.new({
         pattern        = firstPattern.pattern or "circle",
         emitRate       = firstPattern.emitRate or 0.5,
-        bulletSpeed    = (firstPattern.bulletSpeed or 2.0) * speedMult,
+        bulletSpeed    = (firstPattern.bulletSpeed or 2.0) * bulletSpeedMult,
         bulletCount    = firstPattern.bulletCount or 8,
         bulletLifetime = firstPattern.bulletLifetime or 4,
         bulletRadius   = firstPattern.bulletRadius or 0.04,
@@ -393,11 +396,13 @@ function EntityFactory.createBoss(world, x, y, bossType, scaling)
         phaseTeleport    = preset.phaseTeleport or nil,
         phaseColors      = preset.phaseColors or nil,
         speedMult        = speedMult,
+        bulletSpeedMult  = scaling and scaling.bulletSpeedMult or 1,
+        emitRateMult     = scaling and scaling.emitRateMult or 1,
         minionAdd        = scaling and scaling.minionAdd or 0,
     }))
 
     local label = bossType or "NULL"
-    if scaling then
+    if scaling and scaling.round then
         label = string.format("%s +%d", label, scaling.round)
     end
     logInfo(string.format("[ENTITY] Boss created: %d (%s) HP:%d", entityId, label, scaledHp))

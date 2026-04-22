@@ -18,14 +18,15 @@ local _abs    = math.abs
 local _exp    = math.exp
 
 -- Helper: apply a pattern step to the BulletEmitter component
-local function applyPattern(emitter, step, speedMult)
+local function applyPattern(emitter, step, speedMult, emitRateMult)
     if not step then return end
     speedMult = speedMult or 1
+    emitRateMult = emitRateMult or 1
     if step.pattern == "none" then
         emitter.active = false
     else
         emitter.pattern        = step.pattern
-        emitter.emitRate       = step.emitRate or emitter.emitRate
+        emitter.emitRate       = (step.emitRate or emitter.emitRate) * emitRateMult
         emitter.bulletSpeed    = (step.bulletSpeed or emitter.bulletSpeed) * speedMult
         emitter.bulletCount    = step.bulletCount or emitter.bulletCount
         emitter.bulletLifetime = step.bulletLifetime or emitter.bulletLifetime
@@ -63,7 +64,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
             -- Trigger screen flash (playScene listens via bossIntroFlash flag)
             boss.introFlash = true
             local phasePatterns = boss.patterns[boss.phase]
-            applyPattern(emitter, phasePatterns and phasePatterns[1], boss.speedMult)
+            applyPattern(emitter, phasePatterns and phasePatterns[1], boss.bulletSpeedMult, boss.emitRateMult)
             logInfo(string.format("[BOSS] %s intro complete, phase %d active", boss.bossType, boss.phase))
         end
         return true
@@ -92,7 +93,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
             if bulletPool then
                 bulletPool:clearLayer("enemy_bullet")
             end
-            health.iTimer = 0.5
+            health.iTimer = 2.0  -- 2s phase transition invincibility (pattern showcase)
 
             -- Clear existing minions on phase transition
             if boss.minion then
@@ -122,7 +123,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
             end
 
             local phasePatterns = boss.patterns[boss.phase]
-            applyPattern(emitter, phasePatterns and phasePatterns[1], boss.speedMult)
+            applyPattern(emitter, phasePatterns and phasePatterns[1], boss.bulletSpeedMult, boss.emitRateMult)
 
             logInfo(string.format("[BOSS] %s phase %d → %d (HP: %.0f%%)",
                 boss.bossType, boss.phase - 1, boss.phase, hpRatio * 100))
@@ -144,7 +145,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
             end
 
             local nextStep = phasePatterns[boss.patternIndex]
-            applyPattern(emitter, nextStep, boss.speedMult)
+            applyPattern(emitter, nextStep, boss.bulletSpeedMult, boss.emitRateMult)
             if nextStep then
                 emitter.timer = 0
                 emitter.angle = 0
@@ -254,6 +255,22 @@ local function createBossSystem(bulletPool, getPlayerPos)
 
                 if boss.defeated then goto nextBoss end
                 if handleIntro(boss, emitter, transform, dt) then goto nextBoss end
+
+                -- Boss iTimer countdown (phase transition invincibility)
+                if health.iTimer > 0 then
+                    health.iTimer = health.iTimer - dt
+                    if health.iTimer < 0 then health.iTimer = 0 end
+                    -- Visual: blink during invincibility
+                    local renderable = ecs:getComponent(entityId, "Renderable")
+                    if renderable then
+                        renderable.visible = (_floor(health.iTimer * 8) % 2 == 0)
+                    end
+                else
+                    local renderable = ecs:getComponent(entityId, "Renderable")
+                    if renderable and not renderable.visible then
+                        renderable.visible = true
+                    end
+                end
 
                 -- Scale pulse decay (phase transition visual)
                 if boss.scalePulse and boss.scalePulse > 1.001 then

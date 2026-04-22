@@ -83,6 +83,8 @@ function M.getBossScaling(stage)
         speedMult = 1.0 + round * 0.1,
         minionAdd = round,
         redShift  = _min(round * 0.15, 0.6),
+        bulletSpeedMult = 1.0 + round * 0.1,
+        emitRateMult    = _min(1.0 + round * 0.15, 2.0),
         round     = round,
     }
 end

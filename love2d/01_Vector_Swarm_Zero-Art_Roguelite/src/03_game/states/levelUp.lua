@@ -34,12 +34,13 @@ local UPGRADE_POOL = {
     {
         id = "bullet_count",
         name = "Multi Shot",
-        desc = "Fire additional bullet",
+        desc = "Fire 2 additional bullets",
         category = "weapon",
-        baseValue = 1,
+        baseValue = 2,
+        maxPicks = 2,  -- 최대 2회 (1→3→5발) 이후 풀에서 제외
         apply = function(ecs, playerId, factor)
             local w = ecs:getComponent(playerId, "PlayerWeapon")
-            if w then w.bulletCount = w.bulletCount + 1 end  -- 고정 +1 (감쇠 없음, 대신 출현 자체가 드묾)
+            if w then w.bulletCount = w.bulletCount + 2 end  -- 고정 +2 (항상 홀수 유지, 감쇠 없음)
         end,
     },
     {
@@ -51,8 +52,7 @@ local UPGRADE_POOL = {
         apply = function(ecs, playerId, factor)
             local w = ecs:getComponent(playerId, "PlayerWeapon")
             if w then
-                local bonus = _max(1, _floor(1 * factor + 0.5))
-                w.bulletDamage = w.bulletDamage + bonus
+                w.bulletDamage = w.bulletDamage + 1  -- 고정 +1 (감쇠 면제)
             end
         end,
     },
@@ -138,6 +138,7 @@ local UPGRADE_POOL = {
                 local bonus = f.maxEnergy * 0.25 * factor
                 f.maxEnergy = f.maxEnergy + bonus
                 f.energy = f.energy + bonus
+                f.rechargeRate = f.rechargeRate + f.rechargeRate * 0.15 * factor
             end
         end,
     },
@@ -168,11 +169,13 @@ local titleFont = nil
 local optionFont = nil
 local descFont = nil
 
--- 랜덤으로 3개 옵션 선택 (중복 없이)
+-- 랜덤으로 3개 옵션 선택 (중복 없이, maxPicks 도달 시 제외)
 local function pickRandomOptions(count)
     local pool = {}
-    for i, v in ipairs(UPGRADE_POOL) do
-        pool[i] = v
+    for _, v in ipairs(UPGRADE_POOL) do
+        if not v.maxPicks or (pickCounts[v.id] or 0) < v.maxPicks then
+            pool[#pool + 1] = v
+        end
     end
     -- Fisher-Yates shuffle
     for i = #pool, 2, -1 do
@@ -199,11 +202,10 @@ function LevelUp.show(ecs, playerId)
     for _, opt in ipairs(state.options) do
         local count = pickCounts[opt.id] or 0
         local factor = getDiminishingFactor(count)
-        if opt.id == "bullet_count" or opt.id == "max_hp" then
+        if opt.id == "bullet_count" then
+            opt.displayName = opt.name .. " +2"
+        elseif opt.id == "max_hp" or opt.id == "bullet_damage" then
             opt.displayName = opt.name .. " +1"
-        elseif opt.id == "bullet_damage" then
-            local bonus = _max(1, _floor(1 * factor + 0.5))
-            opt.displayName = opt.name .. string.format(" +%d", bonus)
         else
             local pct = _floor(opt.baseValue * factor * 100 + 0.5)
             if opt.id == "dash_cooldown" then

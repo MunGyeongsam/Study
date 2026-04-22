@@ -8,6 +8,7 @@ local sqrt = math.sqrt
 local atan2 = math.atan2
 local cos = math.cos
 local sin = math.sin
+local _min = math.min
 local pi2 = math.pi * 2
 
 local function createPlayerWeaponSystem(bulletPool, isWeaponDisabled)
@@ -71,11 +72,11 @@ local function createPlayerWeaponSystem(bulletPool, isWeaponDisabled)
                 if count <= 1 then
                     bulletPool:spawn(px, py, dirX * speed, dirY * speed, opts)
                 else
-                    -- Spread pattern
-                    local spread = 0.2
+                    -- Spread pattern: 중앙 탄환 항상 보장, count에 비례 확대 (cap 0.35 rad)
+                    local spread = _min(0.15 * (count - 1), 0.35)
                     local baseAngle = atan2(dirY, dirX)
                     for i = 0, count - 1 do
-                        local offset = -spread / 2 + (i / (count - 1)) * spread
+                        local offset = (count > 1) and (-spread / 2 + (i / (count - 1)) * spread) or 0
                         local a = baseAngle + offset
                         bulletPool:spawn(px, py, cos(a) * speed, sin(a) * speed, opts)
                     end

@@ -130,7 +130,7 @@ local UPGRADES = {
         desc     = "Fragment drop rate +5% per level",
         branch   = "utility",
         maxLevel = 3,
-        cost     = {20, 40, 70},
+        cost     = {10, 25, 40},
         apply    = nil,  -- handled in ecsManager onEnemyDeath
     },
 }
