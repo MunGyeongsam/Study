@@ -8,7 +8,7 @@
 --   saveData.purchaseUpgrade(id)       -- 강화 구매
 --   saveData.save()                    -- 게임 오버 시 호출
 
-local _floor = math.floor
+-- (math caches available via globals)
 
 local saveData = {}
 

@@ -1,11 +1,11 @@
 -- Top HUD
 -- 상단 영역 UI (점수, 설정, 상태 정보)
 
-local logger     = require("00_common.logger")
 local mobileLayout = require("04_ui.mobileLayout")
 local mathUtil   = require("00_common.mathUtil")
 
-local _max = math.max
+local _max   = math.max
+local _floor = math.floor
 
 local topHud = {}
 
@@ -37,7 +37,7 @@ local elements = {
 
 -- 초기화
 function topHud.init()
-    logger.info("Top HUD initialized")
+    logInfo("[HUD] Top HUD initialized")
     topHud.updateLayout()
 end
 
@@ -85,7 +85,7 @@ function topHud.draw()
     local stageNum = gameData.stage or 1
     local stageText
     if stageNum > 15 then
-        local endlessRound = math.floor((stageNum - 16) / 15) + 1
+        local endlessRound = _floor((stageNum - 16) / 15) + 1
         stageText = string.format("ENDLESS +%d  Stage %d  Wave %d/%d",
             endlessRound, stageNum, gameData.wave or 0, gameData.wavesPerStage or 5)
     else
@@ -191,7 +191,7 @@ function topHud.touchpressed(id, x, y, dx, dy, pressure)
     
     -- 설정 버튼 클릭 확인
     if topHud.isPointInButton(x, y, elements.settingsButton) then
-        logger.info("Settings button pressed")
+        logInfo("[HUD] Settings button pressed")
         topHud.onSettingsPressed()
         return true
     end
@@ -261,7 +261,7 @@ end
 -- 설정 버튼 액션
 function topHud.onSettingsPressed()
     -- TODO: 설정 메뉴 열기
-    logger.info("Settings menu would open here")
+    logInfo("[HUD] Settings menu would open here")
 end
 
 return topHud

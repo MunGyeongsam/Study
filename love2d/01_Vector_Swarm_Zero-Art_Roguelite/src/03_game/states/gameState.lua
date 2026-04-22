@@ -32,18 +32,6 @@ local state = {
     fragments   = 0,        -- 이번 런에서 획득한 Data Fragment
 }
 
-function GameState.init()
-    state.current     = GameState.PLAYING
-    state.score       = 0
-    state.gameOverTimer = 0
-    state.timeScale    = 1.0
-    state.stage        = 1
-    state.wave         = 0
-    state.waveReached  = 0
-    state.fragments    = 0
-    if playBGM then playBGM("stage") end
-end
-
 function GameState.update(dt, playerHealth)
     if state.current == GameState.PLAYING then
         state.score = state.score + dt

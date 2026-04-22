@@ -4,6 +4,8 @@
 
 local saveData = require("00_common.saveData")
 
+local _min = math.min
+
 local achievementSystem = {}
 
 -- ─── Achievement Definitions ─────────────────────────────────────
@@ -87,15 +89,15 @@ function achievementSystem.getAll()
 
         -- Calculate progress
         if def.condition == "stage_clear" then
-            entry.progress = math.min(stats.bestStage or 0, def.target)
+            entry.progress = _min(stats.bestStage or 0, def.target)
         elseif def.condition == "total_kills" then
-            entry.progress = math.min(stats.totalKills or 0, def.target)
+            entry.progress = _min(stats.totalKills or 0, def.target)
         elseif def.condition == "total_fragments" then
-            entry.progress = math.min(stats.totalFragments or 0, def.target)
+            entry.progress = _min(stats.totalFragments or 0, def.target)
         elseif def.condition == "all_bosses" then
             local count = 0
             for _ in pairs(bossesDefeated) do count = count + 1 end
-            entry.progress = math.min(count, def.target)
+            entry.progress = _min(count, def.target)
         elseif def.condition == "game_clear" then
             entry.progress = (stats.gameClear == true) and 1 or 0
         end
