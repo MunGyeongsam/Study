@@ -2,7 +2,7 @@
 
 > 작성일: 2026-04-21
 > 최종 수정: 2026-04-22
-> 상태: **설계 확정** — Phase 6A~6B 구현 대기
+> 상태: **설계 확정** — Phase 6B(DNA 변이 엔진) 우선 구현 → 6A(CS 특수 적) 후순위
 > 관련 문서: [09_ENEMY_DIVERSITY_DESIGN.md](09_ENEMY_DIVERSITY_DESIGN.md) (현행 적 시스템), [99_GLOSSARY.md](99_GLOSSARY.md) (용어집)
 
 ---
@@ -111,7 +111,10 @@ Stage 16+     창발 현상 (Emergence)         Neural, Fractal, Cellular, Quant
 -- 예: Tree 적의 DNA 정의
 Tree = {
     -- 고정 (CS 정체성 = 절대 안 바뀜)
-    body     = "fractal_branch",    -- 프랙탈 분기 외형
+    body = {  -- 레이어 배열: 아래→위 순서로 렌더
+        { shape="diamond", mode="fill", scale=0.6, rot=0 },
+        { shape="diamond", mode="line", scale=1.0, rot=45 },
+    },
     onDeath  = "split",             -- 죽으면 분열 (트리의 본질)
 
     -- 변이 가능 (Endless에서 1~2개 교체)
@@ -121,20 +124,92 @@ Tree = {
 }
 
 -- Stage 18 변이 예시:
--- "Armored Tree" = Tree + modifier:armored (두꺼운 가지, 느리지만 안 죽음)
+-- "Armored Tree" = Tree + modifier:armored (두꺼운 외곽선, 느리지만 안 죽음)
 -- "Chasing Tree" = Tree + movement:chase (쫓아오는 나무!)
 -- "Helix Tree"   = Tree + attack:helix (이중 나선 탄막 트리)
 ```
 
-### 3.3 스케일링 수치
+### 3.3 Body 유전자 — 레이어 조합 시스템
+
+> **핵심 아이디어**: 기존 도형 12종 × fill/line × scale × rotation을 **레이어 배열**로 조합.
+> 수학 곡선 없이도 수백 가지 구별 가능한 외형이 자동 생성된다.
+> 나중에 수학 곡선이나 수작업 외형으로 **교체/보완** 가능.
+
+#### 도형 풀 (12종)
+
+| # | ID | 시각 | 출처 |
+|---|-----|------|------|
+| 1 | `circle` | ● | 기존 |
+| 2 | `diamond` | ◆ | 기존 |
+| 3 | `arrow` | ▶ | 기존 |
+| 4 | `spiral_ring` | ◎ | 기존 |
+| 5 | `hexagon` | ⬡ | 기존 |
+| 6 | `rectangle` | ■ | 기존 |
+| 7 | `triangle` | ▲ | 신규 |
+| 8 | `star` | ★ | 신규 |
+| 9 | `cross` | ✚ | 신규 |
+| 10 | `tear` | 💧 | 신규 |
+| 11 | `bowtie` | ⏳ | 신규 |
+| 12 | `gear` | ⚙ | 신규 |
+
+#### 레이어 파라미터
+
+```lua
+-- 레이어 1개 = { shape, mode, scale, rot }
+{
+    shape = "diamond",   -- 12종 중 택 1
+    mode  = "line",      -- "fill" / "line"
+    scale = 1.0,         -- 0.3 ~ 1.5 (기본 반지름 대비)
+    rot   = 45,          -- 회전 (도)
+}
+```
+
+#### 조합 규칙
+
+1. 레이어 1~3개 (Endless round에 따라 증가)
+2. **fill 레이어는 최대 1개** (겹치면 안 보임)
+3. fill 레이어가 있으면 **가장 아래** (첫 번째)
+4. 바깥 레이어 scale > 안쪽 레이어 scale
+5. 같은 shape 연속 시 mode 또는 rot 달라야 함
+
+#### 조합 예시
+
+| 레이어 | 결과 | 느낌 |
+|--------|------|------|
+| `[circle-fill-1.0]` | ● | 기존 bit |
+| `[diamond-fill-0.6-45°] + [diamond-line-1.0-0°]` | ◇◆ | 이중 다이아몬드 |
+| `[hexagon-fill-0.5] + [hexagon-line-1.0-30°]` | ✡ | 다비드의 별 |
+| `[circle-fill-0.7] + [hexagon-line-1.2]` | ●⬡ | 코어+외피 |
+| `[triangle-fill-0.6] + [triangle-line-1.0-180°]` | ✡ | 겹친 삼각형 |
+| `[star-fill-0.8] + [circle-line-1.2]` | ★○ | 별+보호막 |
+| `[gear-line-1.0] + [circle-fill-0.4]` | ⚙● | 기계 코어 |
+| `[arrow-fill-0.8] + [circle-line-1.1] + [circle-line-0.4]` | ▶◎ | 조준 표적 |
+
+#### 렌더링 (런타임)
+
+```lua
+-- renderable.type이 table이면 레이어 렌더
+-- string이면 기존 경로 (하위 호환 100%)
+for _, layer in ipairs(body) do
+    drawShape(layer.shape, x, y, r * layer.scale, layer.mode, layer.rot)
+end
+```
+
+> **확장 경로**: 도형 풀에 수학 곡선(`astroid`, `deltoid` 등)을 추가하거나,
+> CS 적의 body를 수작업 레이어 조합으로 교체하면 된다.
+
+### 3.4 스케일링 수치
 
 | 항목 | 수치 |
 |------|:----:|
-| CS 적 프리셋 (수작업) | 15 |
-| 변이 슬롯 (Movement, Attack, Modifier) | 3 |
-| 각 슬롯의 선택지 | 6~15 |
-| 동시 변이 수 (1~2개) | ×2 |
-| **Stage 16+ 자동 생성 가능 조합** | **~5,400+** |
+| 도형 풀 (기존 6 + 신규 6) | 12 |
+| Body 파라미터 (mode × scale × rot) | ×24+ |
+| Body 레이어 (1~3개) | ×조합 |
+| Movement 풀 | 12 |
+| Attack 풀 | 15 |
+| Modifier 풀 | 6 |
+| OnDeath 풀 | 5 |
+| **Stage 16+ 자동 생성 가능 조합** | **수만+** |
 | 전부 의미있는 조합 | ✅ (CS 정체성이 기본 잡아줌) |
 
 ---
@@ -316,12 +391,11 @@ local history = {}  -- [1]=현재, [2]=1프레임전, [3]=2프레임전...
 | `poison` (독 장판) | 지속 데미지 = 짜증. 탄막 게임은 순간 피격이 핵심 |
 | `buff_allies` (적 버프) | 효과가 안 보여서 인지 불가 |
 
-### 5.5 Body (외형) — 사전 계산 수학 곡선 시스템
+### 5.5 Body (외형) — 레이어 조합 + 수학 곡선 확장
 
-> **핵심 전략: 런타임 0 비용.**
-> 모든 곡선을 `shapeDefs.lua`에 **사전 계산된 정점 배열**로 저장.
-> 렌더링 시에는 `love.graphics.polygon("line", verts)` 한 줄로 그린다.
-> 적 1000마리 × 60fps에서도 sin/cos 연산 제로.
+> **1차 구현 (Phase 6B)**: §3.3의 **레이어 조합 시스템** — 기존+신규 도형 12종 조합.
+> **2차 확장 (Phase 6A)**: 아래 수학 곡선을 도형 풀에 추가하여 CS 특수 적 외형으로 활용.
+> 수학 곡선은 `shapeDefs.lua`에 사전 계산된 정점 배열로 저장, 런타임 sin/cos 제로.
 
 #### 구현 구조
 
@@ -614,7 +688,28 @@ love.graphics.pop()
 
 ## 7. 구현 계획
 
-### Phase 6A: CS 적 — 자료 구조 (1차 구현)
+> **구현 순서: 6B → 6A → 6C → 6D**
+> DNA 변이 엔진(6B)으로 외형 다양성을 먼저 확보한 뒤,
+> CS 특수 적(6A)의 고유 메카닉을 점진 추가.
+
+### Phase 6B: DNA 변이 엔진 (Stage 16+ Endless) — **1차 구현**
+
+> **전략**: 기존 Stage 1~15 코드는 일절 안 건드림. Stage 16+에서만 DNA 엔진 가동.
+> Body 유전자 = 기존 도형 12종의 레이어 조합으로 외형 다양성 확보.
+> 나중에 수학 곡선이나 CS 특수 적 외형으로 교체/보완 가능.
+
+| # | 작업 | 내용 | 파일 |
+|---|------|------|------|
+| 6B.0 | DNA 구조 + 유전자 풀 | `dnaDefs.lua` — 5개 유전자 풀, 기존 적 5종 프리셋, Body 레이어 풀, 조합 규칙, 금지 필터 | `dnaDefs.lua` (신규) |
+| 6B.1 | Body 레이어 렌더러 + 신규 도형 6종 | `renderSystem.lua` 레이어 배열 지원 + `basicShapes.lua` 도형 6종 추가 (triangle/star/cross/tear/bowtie/gear) | `renderSystem.lua`, `basicShapes.lua` |
+| 6B.2 | 변이 엔진 | 시드 기반 결정적 DNA 생성 — body 레이어 자동 조합 + 나머지 4유전자 선택 + 스탯 자동 산출 | `dnaDefs.lua` 확장 |
+| 6B.3 | 스폰 연동 | `entityFactory.createDnaEnemy(dna)` 새 경로 + `stageManager` Stage 16+에서 호출 | `entityFactory.lua`, `stageManager.lua` |
+| 6B.4 | 테스트 + 튜닝 | F8 스킵으로 Stage 16~20 검증, 외형 구별 + 밸런스 | 미세 조정 |
+
+### Phase 6A: CS 적 — 자료 구조 (6B 이후)
+
+> 6B의 DNA 인프라 위에 CS 특수 적의 **고유 메카닉** 추가.
+> Body는 수학 곡선(`shapeDefs.lua`)으로 교체/보완.
 
 | # | 작업 | 내용 |
 |---|------|------|
@@ -622,15 +717,6 @@ love.graphics.pop()
 | 6A.1 | **Linked List** | 체인 렌더링 + 절단 메카닉, Stage 6~7 등장 |
 | 6A.2 | **Tree** | 프랙탈 분기 렌더 + 분열 메카닉, Stage 8~9 등장 |
 | 6A.3 | **Hash** | 순간이동 사이클 + 착지마커, Stage 10~11 등장 |
-
-### Phase 6B: 변이 엔진 (Stage 16+ Endless)
-
-| # | 작업 | 내용 |
-|---|------|------|
-| 6B.1 | DNA 구조 정의 | 고정 유전자 / 변이 가능 슬롯 분리 |
-| 6B.2 | 변이 생성기 | 시드 기반 결정적 생성 + 금지 조합 필터 |
-| 6B.3 | 스탯 자동 산출 | DNA → HP/Speed/Radius/XP (Experience Points) 변환 공식 |
-| 6B.4 | stageManager 연동 | Stage 16+ 에서 변이 적 스폰 |
 
 ### Phase 6C: CS 적 — 알고리즘 (후순위)
 
@@ -651,15 +737,16 @@ love.graphics.pop()
 
 | # | 질문 | 관련 | 우선순위 |
 |---|------|------|:--------:|
-| 1 | Linked List 세그먼트 수? (5? 8? 가변?) | 6A.1 | 높 |
-| 2 | Tree 분열 세대 제한? (2세대까지? 3세대?) | 6A.2 | 높 |
-| 3 | Hash 착지 최소 거리 2.0이 적절한가? | 6A.3 | 중 |
-| 4 | Queue/Stack은 1차 구현 범위에 포함? | 6A | 중 |
-| 5 | 변이 시 이름 생성 규칙? ("Armored Tree" 등) | 6B | 낮 |
-| 6 | 금지 조합 목록? (shielded + stationary 등) | 6B | 높 |
-| 7 | 스탯 자동 산출 공식? (트레이드오프) | 6B | 높 |
-| 8 | gravity_well → 고정 중력점 방식으로 변경? | Attack | 높 |
-| 9 | 종 도감(카탈로그) 시스템? | 메타 성장 | 낮 |
+| 1 | Body 레이어 풀 — 14px에서 구별 안 되는 도형 조합은? | 6B.1 | 높 |
+| 2 | Body sides 범위 3~8? 3~12? (원과 구별 한계) | 6B.0 | 높 |
+| 3 | 동시 변이 유전자 수 — Round 1: 1개, Round 3+: 2개? | 6B.2 | 높 |
+| 4 | 금지 조합 목록? (shielded + stationary 등) | 6B.2 | 높 |
+| 5 | 스탯 자동 산출 공식? (트레이드오프) | 6B.2 | 높 |
+| 6 | Endless 라운드별 레이어 수 증가? (R1: 1~2, R3+: 2~3) | 6B.2 | 중 |
+| 7 | Linked List 세그먼트 수? (5? 8? 가변?) | 6A.1 | 중 |
+| 8 | Tree 분열 세대 제한? (2세대까지? 3세대?) | 6A.2 | 중 |
+| 9 | Hash 착지 최소 거리 2.0이 적절한가? | 6A.3 | 낮 |
+| 10 | 변이 시 이름 생성 규칙? ("Armored Tree" 등) | 6B | 낮 |
 
 ---
 
