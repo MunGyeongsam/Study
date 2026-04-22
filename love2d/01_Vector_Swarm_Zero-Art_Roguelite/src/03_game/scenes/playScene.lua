@@ -62,6 +62,7 @@ function PlayScene.getHitStopTimer() return _hitStopTimer end
 --- 게임 새로 시작 (타이틀 → 플레이, 리스타트 공용)
 function PlayScene:_initGame()
     self._gameOverPushed = false
+    self._victoryPushed  = false
     ecsManager.restart()
     local saveData = require("00_common.saveData")
     local charId = saveData.getSelectedCharacter()
@@ -108,6 +109,10 @@ function PlayScene:_saveRunResult()
     local score = gameState.getScore()
     local stageInfo = gameState.getStageInfo()
     saveData.recordRun(score, stageInfo)
+    -- Record Endless stage if past stage 15
+    if stageInfo > 15 then
+        saveData.recordEndlessStage(stageInfo)
+    end
     achievementSystem.onRunEnd()
     saveData.save()
 end
@@ -243,6 +248,25 @@ function PlayScene:update(dt)
         return
     end
 
+    -- Victory
+    if gameState.isVictory() and not self._victoryPushed then
+        self._victoryPushed = true
+        -- Enhanced whiteout for victory
+        _whiteout = 1.0
+        _whiteoutDecay = false
+        _hitStopTimer = 0.6
+        local VictoryScene = require("03_game.scenes.victoryScene")
+        local stats = {
+            score     = gameState.getScore(),
+            stage     = ecsManager.stageManager.stage - 1,  -- OVERFLOW was stage 15
+            kills     = achievementSystem.getSessionKills(),
+            fragments = gameState.getFragments(),
+        }
+        self._sceneStack:push(VictoryScene.new(self._sceneStack, self, stats))
+        return
+    end
+    if gameState.isVictory() then return end
+
     -- 일반 플레이
     local scaledDt = dt * gameState.getTimeScale()
     ecsManager.update(scaledDt)
@@ -317,7 +341,9 @@ function PlayScene:update(dt)
         currentZone = playerStats.currentZone or "outside",
         checkpoints = playerStats.checkpoints,
         bossActive = stageStats.bossEntityId ~= nil and (stageStats.state == "boss_intro" or stageStats.state == "boss_active"),
-        bossName = stageStats.bossType,
+        bossName = stageStats.bossType and stageStats.bossScaling
+            and string.format("%s +%d", stageStats.bossType, stageStats.bossScaling.round)
+            or stageStats.bossType,
         bossHp = 0, bossMaxHp = 1, bossPhase = 1, bossMaxPhase = 1,
     })
 
@@ -452,8 +478,10 @@ function PlayScene:keypressed(key)
         logInfo(string.format("[DEBUG] God mode: %s (weapon: %s)", _godMode and "ON" or "OFF", _disableWeapon and "OFF" or "ON"))
         return true
     elseif key == "f8" then
-        local sm = ecsManager.getStageManager and ecsManager.getStageManager()
-        if sm then sm:debugSkipStage() end
+        if not gameState.isVictory() then
+            local sm = ecsManager.getStageManager and ecsManager.getStageManager()
+            if sm then sm:debugSkipStage() end
+        end
         return true
     end
 

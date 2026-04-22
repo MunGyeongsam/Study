@@ -214,10 +214,10 @@ Phase 5  ░░░░░░░░░░░  콘텐츠 확장 & 엔드게임 (예
 ### 5B. 엔드게임 — Victory + Endless
 | # | 작업 | 상태 | 비고 |
 |---|------|------|------|
-| 5B.1 | Victory 상태 + Victory Scene (OVERFLOW 처치 후) | 🔲 | 통계 + Continue/Return 선택 |
-| 5B.2 | Endless 모드 (Stage 16+ 보스 루프, 매 3스테이지) | 🔲 | HUD "ENDLESS +N" 표기, 기록 추적 |
-| 5B.3 | 첫 클리어 도전과제 ("SYSTEM.EXIT(0)") | 🔲 | achievementSystem 확장 |
-| 5B.4 | Endless 전용 배경 톤 변경 | 🔲 | 빨간 경고색 등 분위기 전환 |
+| 5B.1 | Victory 상태 + Victory Scene (OVERFLOW 처치 후) | ✅ | 글리치 텍스트 + 통계 + C/ESC 선택 |
+| 5B.2 | Endless 모드 (Stage 16+ 보스 루프, 매 3스테이지) | ✅ | D플랜: 5보스 순환 × HP1.5^R, Spd1.1^R, 미니언+R |
+| 5B.3 | 첫 클리어 도전과제 ("SYSTEM.EXIT(0)") | ✅ | achievementSystem.onVictory() |
+| 5B.4 | Endless 전용 배경 톤 변경 | ✅ | 다크레드 (0.45, 0.08, 0.08) |
 
 ### 5C. 커스텀 스테이지 — "내가 만든 스테이지"
 | # | 작업 | 상태 | 비고 |

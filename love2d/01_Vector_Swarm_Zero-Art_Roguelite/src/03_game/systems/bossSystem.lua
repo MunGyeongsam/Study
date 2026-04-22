@@ -18,14 +18,15 @@ local _abs    = math.abs
 local _exp    = math.exp
 
 -- Helper: apply a pattern step to the BulletEmitter component
-local function applyPattern(emitter, step)
+local function applyPattern(emitter, step, speedMult)
     if not step then return end
+    speedMult = speedMult or 1
     if step.pattern == "none" then
         emitter.active = false
     else
         emitter.pattern        = step.pattern
         emitter.emitRate       = step.emitRate or emitter.emitRate
-        emitter.bulletSpeed    = step.bulletSpeed or emitter.bulletSpeed
+        emitter.bulletSpeed    = (step.bulletSpeed or emitter.bulletSpeed) * speedMult
         emitter.bulletCount    = step.bulletCount or emitter.bulletCount
         emitter.bulletLifetime = step.bulletLifetime or emitter.bulletLifetime
         emitter.bulletRadius   = step.bulletRadius or emitter.bulletRadius
@@ -62,7 +63,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
             -- Trigger screen flash (playScene listens via bossIntroFlash flag)
             boss.introFlash = true
             local phasePatterns = boss.patterns[boss.phase]
-            applyPattern(emitter, phasePatterns and phasePatterns[1])
+            applyPattern(emitter, phasePatterns and phasePatterns[1], boss.speedMult)
             logInfo(string.format("[BOSS] %s intro complete, phase %d active", boss.bossType, boss.phase))
         end
         return true
@@ -121,7 +122,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
             end
 
             local phasePatterns = boss.patterns[boss.phase]
-            applyPattern(emitter, phasePatterns and phasePatterns[1])
+            applyPattern(emitter, phasePatterns and phasePatterns[1], boss.speedMult)
 
             logInfo(string.format("[BOSS] %s phase %d → %d (HP: %.0f%%)",
                 boss.bossType, boss.phase - 1, boss.phase, hpRatio * 100))
@@ -143,7 +144,7 @@ local function createBossSystem(bulletPool, getPlayerPos)
             end
 
             local nextStep = phasePatterns[boss.patternIndex]
-            applyPattern(emitter, nextStep)
+            applyPattern(emitter, nextStep, boss.speedMult)
             if nextStep then
                 emitter.timer = 0
                 emitter.angle = 0
@@ -157,6 +158,8 @@ local function createBossSystem(bulletPool, getPlayerPos)
         local config = boss.minion[boss.phase]
         if not config or config.max == 0 then return end
 
+        local effectiveMax = config.max + (boss.minionAdd or 0)
+
         boss.minionTimer = boss.minionTimer + dt
         if boss.minionTimer < config.interval then return end
         boss.minionTimer = boss.minionTimer - config.interval
@@ -164,10 +167,10 @@ local function createBossSystem(bulletPool, getPlayerPos)
         -- Count non-boss enemies
         local allEnemies = ecs:queryEntities({"EnemyAI"})
         local minionCount = #allEnemies - 1  -- subtract boss itself
-        if minionCount >= config.max then return end
+        if minionCount >= effectiveMax then return end
 
         -- Spawn minions up to max
-        local toSpawn = config.max - minionCount
+        local toSpawn = effectiveMax - minionCount
         local world = ecs
         for i = 1, toSpawn do
             local angle = (i / toSpawn) * _pi * 2

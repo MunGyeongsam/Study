@@ -559,16 +559,22 @@ local BOSS_TYPES = {
         },
     },
 }
-function EntityFactory.createBoss(world, x, y, bossType)
+function EntityFactory.createBoss(world, x, y, bossType, scaling)
     local preset = BOSS_TYPES[bossType] or BOSS_TYPES.NULL
     local entityId = world:createEntity()
+
+    -- Endless scaling: HP and speed multipliers
+    local hpMult    = scaling and scaling.hpMult or 1
+    local speedMult = scaling and scaling.speedMult or 1
+    local redShift  = scaling and scaling.redShift or 0
+    local scaledHp  = _floor(preset.hp * hpMult)
 
     world:addComponent(entityId, "Transform", Transform.new({
         x = x or 0, y = y or 5, scale = 0,  -- scale 0: intro scale-in animation
     }))
 
     world:addComponent(entityId, "Velocity", Velocity.new({
-        vx = 0, vy = 0, speed = preset.ai.speed or 0.4, maxSpeed = 2, damping = 1.0,
+        vx = 0, vy = 0, speed = (preset.ai.speed or 0.4) * speedMult, maxSpeed = 2 * speedMult, damping = 1.0,
     }))
 
     world:addComponent(entityId, "Collider", Collider.new({
@@ -576,9 +582,21 @@ function EntityFactory.createBoss(world, x, y, bossType)
         mask = {"player", "playerBullet"},
     }))
 
+    -- Endless color shift: blend toward red
+    local baseColor = preset.color
+    local bossColor = baseColor
+    if redShift > 0 then
+        bossColor = {
+            baseColor[1] + (1.0 - baseColor[1]) * redShift,
+            baseColor[2] * (1 - redShift),
+            baseColor[3] * (1 - redShift),
+            baseColor[4] or 1,
+        }
+    end
+
     world:addComponent(entityId, "Renderable", Renderable.new({
         type = preset.renderType or "circle", radius = preset.radius,
-        color = preset.color,
+        color = bossColor,
     }))
 
     world:addComponent(entityId, "EnemyAI", EnemyAI.new({
@@ -592,7 +610,7 @@ function EntityFactory.createBoss(world, x, y, bossType)
     }))
 
     world:addComponent(entityId, "Health", Health.new({
-        hp = preset.hp, maxHp = preset.hp, iFrames = 0,
+        hp = scaledHp, maxHp = scaledHp, iFrames = 0,
     }))
 
     -- Start with emitter inactive — BossSystem controls pattern switching
@@ -600,7 +618,7 @@ function EntityFactory.createBoss(world, x, y, bossType)
     world:addComponent(entityId, "BulletEmitter", BulletEmitter.new({
         pattern        = firstPattern.pattern or "circle",
         emitRate       = firstPattern.emitRate or 0.5,
-        bulletSpeed    = firstPattern.bulletSpeed or 2.0,
+        bulletSpeed    = (firstPattern.bulletSpeed or 2.0) * speedMult,
         bulletCount    = firstPattern.bulletCount or 8,
         bulletLifetime = firstPattern.bulletLifetime or 4,
         bulletRadius   = firstPattern.bulletRadius or 0.04,
@@ -622,9 +640,15 @@ function EntityFactory.createBoss(world, x, y, bossType)
         minion           = preset.minion or nil,
         phaseTeleport    = preset.phaseTeleport or nil,
         phaseColors      = preset.phaseColors or nil,
+        speedMult        = speedMult,
+        minionAdd        = scaling and scaling.minionAdd or 0,
     }))
 
-    logInfo(string.format("[ENTITY] Boss created: %d (%s) HP:%d", entityId, bossType or "NULL", preset.hp))
+    local label = bossType or "NULL"
+    if scaling then
+        label = string.format("%s +%d", label, scaling.round)
+    end
+    logInfo(string.format("[ENTITY] Boss created: %d (%s) HP:%d", entityId, label, scaledHp))
     return entityId
 end
 

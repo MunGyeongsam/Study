@@ -11,6 +11,7 @@ GameState.TITLE     = "title"
 GameState.PLAYING   = "playing"
 GameState.PAUSED    = "paused"
 GameState.GAME_OVER = "game_over"
+GameState.VICTORY   = "victory"
 
 -- Cached fonts (created once on first draw)
 local titleFont = nil
@@ -133,6 +134,26 @@ end
 
 function GameState.isGameOver()
     return state.current == GameState.GAME_OVER
+end
+
+function GameState.isVictory()
+    return state.current == GameState.VICTORY
+end
+
+function GameState.triggerVictory()
+    if state.current ~= GameState.PLAYING then return end
+    state.current = GameState.VICTORY
+    state.timeScale = 1.0
+    if state.score > state.bestScore then
+        state.bestScore = state.score
+    end
+    logInfo(string.format("[GAME] VICTORY! Score: %.1fs, Stage %d", state.score, state.stage))
+end
+
+function GameState.continueToEndless()
+    if state.current ~= GameState.VICTORY then return end
+    state.current = GameState.PLAYING
+    logInfo("[GAME] Continuing to Endless mode")
 end
 
 function GameState.getScore()

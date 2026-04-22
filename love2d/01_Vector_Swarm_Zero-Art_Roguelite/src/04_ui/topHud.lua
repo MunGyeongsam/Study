@@ -82,8 +82,16 @@ function topHud.draw()
     lg.print(scoreText, 10, 10)
     
     -- 스테이지/웨이브 표시
-    local stageText = string.format("Stage %d  Wave %d/%d",
-        gameData.stage or 1, gameData.wave or 0, gameData.wavesPerStage or 5)
+    local stageNum = gameData.stage or 1
+    local stageText
+    if stageNum > 15 then
+        local endlessRound = math.floor((stageNum - 16) / 15) + 1
+        stageText = string.format("ENDLESS +%d  Stage %d  Wave %d/%d",
+            endlessRound, stageNum, gameData.wave or 0, gameData.wavesPerStage or 5)
+    else
+        stageText = string.format("Stage %d  Wave %d/%d",
+            stageNum, gameData.wave or 0, gameData.wavesPerStage or 5)
+    end
     lg.print(stageText, 10, 25)
     
     -- 라이프 표시

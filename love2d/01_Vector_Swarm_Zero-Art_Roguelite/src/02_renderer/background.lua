@@ -23,10 +23,11 @@ local BASE_ALPHA        = 0.12    -- base opacity for circles
 -- ─── Stage Color Themes ──────────────────────────────────────────
 -- {r, g, b} base tint for circles per stage range
 local STAGE_THEMES = {
-    { maxStage = 2, color = {0.15, 0.35, 0.4 } },  -- cyan: cold data
-    { maxStage = 5, color = {0.25, 0.15, 0.4 } },  -- purple: rising danger
-    { maxStage = 8, color = {0.4,  0.15, 0.2 } },  -- red: high tension
-    {                color = {0.35, 0.35, 0.35} },  -- white/grey: endgame
+    { maxStage = 2,  color = {0.15, 0.35, 0.4 } },  -- cyan: cold data
+    { maxStage = 5,  color = {0.25, 0.15, 0.4 } },  -- purple: rising danger
+    { maxStage = 8,  color = {0.4,  0.15, 0.2 } },  -- red: high tension
+    { maxStage = 15, color = {0.35, 0.35, 0.35} },  -- white/grey: endgame
+    {                color = {0.45, 0.08, 0.08} },  -- dark red: endless warning
 }
 
 local LERP_DURATION = 0.8  -- seconds for color transition

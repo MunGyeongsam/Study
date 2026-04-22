@@ -29,6 +29,8 @@ local function defaultData()
         achievements   = {},         -- { ["stage3_clear"]=true, ... }
         selectedCharacter = "default",  -- 선택된 캐릭터 ID
         tutorialDone   = false,       -- 첫 플레이 튜토리얼 완료 여부
+        gameClear      = false,       -- 첫 클리어 달성 여부
+        bestEndlessStage = 0,         -- Endless 최고 도달 스테이지
     }
 end
 
@@ -198,6 +200,8 @@ function saveData.getStats()
         achievements     = data.achievements,
         selectedCharacter = data.selectedCharacter,
         tutorialDone     = data.tutorialDone,
+        gameClear        = data.gameClear,
+        bestEndlessStage = data.bestEndlessStage,
     }
 end
 
@@ -228,6 +232,22 @@ end
 -- 튜토리얼 완료
 function saveData.setTutorialDone(val)
     data.tutorialDone = val
+end
+
+-- 클리어 기록
+function saveData.recordVictory()
+    data.gameClear = true
+end
+
+function saveData.isGameCleared()
+    return data.gameClear == true
+end
+
+-- Endless 최고 스테이지 기록
+function saveData.recordEndlessStage(stage)
+    if stage > data.bestEndlessStage then
+        data.bestEndlessStage = stage
+    end
 end
 
 -- 디버그: 세이브 리셋

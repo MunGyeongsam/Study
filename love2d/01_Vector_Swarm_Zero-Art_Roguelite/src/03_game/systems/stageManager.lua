@@ -38,6 +38,46 @@ local BOSS_STAGES = {
     [15] = "OVERFLOW",
 }
 
+-- Boss type sequence for Endless cycling
+local BOSS_SEQUENCE = { "NULL", "STACK", "HEAP", "RECURSION", "OVERFLOW" }
+
+-- Get boss type for any stage (hand-designed + Endless cycling)
+local function _getBossType(stage)
+    if BOSS_STAGES[stage] then
+        return BOSS_STAGES[stage]
+    end
+    -- Endless: every 3 stages after 15 (18, 21, 24, ...)
+    if stage > 15 and (stage - 15) % 3 == 0 then
+        local index = ((stage - 18) / 3) % #BOSS_SEQUENCE + 1
+        return BOSS_SEQUENCE[_floor(index)]
+    end
+    return nil
+end
+
+-- Get Endless round number (0 = not endless, 1+ = round)
+local function _getEndlessRound(stage)
+    if stage <= 15 then return 0 end
+    return _floor((stage - 16) / 15) + 1
+end
+
+-- Boss scaling multipliers for Endless
+local function _getBossScaling(stage)
+    local round = _getEndlessRound(stage)
+    if round <= 0 then return nil end
+    local hpMult    = 1.5 ^ round
+    local speedMult = 1.0 + round * 0.1
+    local minionAdd = round
+    -- Color hue shift: more red each round
+    local redShift  = _min(round * 0.15, 0.6)
+    return {
+        hpMult    = hpMult,
+        speedMult = speedMult,
+        minionAdd = minionAdd,
+        redShift  = redShift,
+        round     = round,
+    }
+end
+
 -- ===== Stage Definitions (hand-designed) =====
 -- Stages beyond this table are auto-generated via _generateStageConfig().
 local STAGE_DEFS = {
@@ -207,6 +247,10 @@ function StageManager.new(ecsManager, getPlayerPos)
         -- Boss tracking
         bossEntityId = nil,
         bossType     = nil,
+        bossScaling  = nil,
+
+        -- Victory
+        victoryTriggered = false,
     }, StageManager)
     return mgr
 end
@@ -252,7 +296,7 @@ function StageManager:update(dt)
 
     if st == StageManager.STATE_WAVE_INTRO then
         -- Check if this is a boss stage
-        if BOSS_STAGES[self.stage] then
+        if _getBossType(self.stage) then
             self:_spawnBoss()
             self.state = StageManager.STATE_BOSS_INTRO
             if playBGM then playBGM("boss") end
@@ -376,6 +420,7 @@ function StageManager:update(dt)
             end
             self.bossEntityId = nil
             self.bossType = nil
+            self.bossScaling = nil
             -- Enter collecting phase (XP vacuum) before advancing
             self.state = StageManager.STATE_COLLECTING
             self.collectTimer = 0
@@ -390,7 +435,7 @@ end
 
 -- Spawn boss entity for current stage
 function StageManager:_spawnBoss()
-    local bossType = BOSS_STAGES[self.stage]
+    local bossType = _getBossType(self.stage)
     if not bossType then return end
 
     local px, py = self.getPlayerPos()
@@ -398,10 +443,16 @@ function StageManager:_spawnBoss()
     local spawnY = (py or 0) + 4  -- spawn above player
 
     local w = self.ecsManager.getWorld()
-    self.bossEntityId = EntityFactory.createBoss(w, spawnX, spawnY, bossType)
+    local scaling = _getBossScaling(self.stage)
+    self.bossEntityId = EntityFactory.createBoss(w, spawnX, spawnY, bossType, scaling)
     self.bossType = bossType
+    self.bossScaling = scaling
 
-    logInfo(string.format("[STAGE] Boss %s spawned at Stage %d", bossType, self.stage))
+    local label = bossType
+    if scaling then
+        label = string.format("%s +%d", bossType, scaling.round)
+    end
+    logInfo(string.format("[STAGE] Boss %s spawned at Stage %d", label, self.stage))
 end
 
 -- Pick a spawn direction based on stage config probability table
@@ -658,6 +709,14 @@ function StageManager:_advanceStage()
     self.wave = 0
     self.state = StageManager.STATE_NEXT_STAGE
 
+    -- Victory trigger: Stage 15 (OVERFLOW) just cleared → stage becomes 16
+    if self.stage == 16 and not self.victoryTriggered then
+        self.victoryTriggered = true
+        gameState.triggerVictory()
+        logInfo("[STAGE] Victory triggered! OVERFLOW defeated.")
+        return  -- pause progression until Victory Scene handles continue
+    end
+
     -- Player reset to bottom (0, -12)
     self:_resetPlayerToBottom()
 
@@ -714,8 +773,17 @@ function StageManager:_resetPlayerToBottom()
     end
 end
 
+-- Continue to Endless after Victory (called from VictoryScene)
+function StageManager:continueEndless()
+    self:_resetPlayerToBottom()
+    background.setStage(self.stage)
+    self.state = StageManager.STATE_NEXT_STAGE
+    logInfo(string.format("[STAGE] Endless continues at Stage %d", self.stage))
+end
+
 -- Debug: skip current stage instantly (F8)
 function StageManager:debugSkipStage()
+    if gameState.isVictory() then return end
     local w = self.ecsManager.getWorld()
     if not w then return end
 
@@ -738,7 +806,7 @@ function StageManager:debugSkipStage()
     -- Force advance
     self:_advanceStage()
     -- BGM: next stage could be boss or normal
-    if BOSS_STAGES[self.stage] then
+    if _getBossType(self.stage) then
         if playBGM then playBGM("boss") end
     else
         if playBGM then playBGM("stage") end
@@ -780,6 +848,9 @@ function StageManager:draw()
     if self.state == StageManager.STATE_BOSS_INTRO then
         local alpha = self.bossEntityId and 1 or 0
         local bossName = self.bossType or "???"
+        if self.bossScaling then
+            bossName = string.format("%s +%d", bossName, self.bossScaling.round)
+        end
         -- Glitch effect during intro: random chars that settle into boss name
         local introT = 0
         if self.bossEntityId then
@@ -809,6 +880,9 @@ function StageManager:draw()
 
         -- Glitch text: boss name scrambles for ~1.5s, then shows "PURIFIED"
         local bossName = self.bossType or "???"
+        if self.bossScaling then
+            bossName = string.format("%s +%d", bossName, self.bossScaling.round)
+        end
         local title
         if t < 1.5 then
             -- Random glitch characters
@@ -841,6 +915,7 @@ end
 
 function StageManager:getStats()
     local config = self:_getStageConfig()
+    local endlessRound = _getEndlessRound(self.stage)
     return {
         stage      = self.stage,
         wave       = self.wave,
@@ -848,9 +923,12 @@ function StageManager:getStats()
         state      = self.state,
         totalWaves = self.totalWaves,
         enemies    = self:_countEnemies(),
-        isBossStage = BOSS_STAGES[self.stage] ~= nil,
+        isBossStage = _getBossType(self.stage) ~= nil,
         bossType    = self.bossType,
         bossEntityId = self.bossEntityId,
+        isEndless    = endlessRound > 0,
+        endlessRound = endlessRound,
+        bossScaling  = self.bossScaling,
     }
 end
 

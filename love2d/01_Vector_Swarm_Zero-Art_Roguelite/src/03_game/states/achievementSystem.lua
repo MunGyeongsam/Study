@@ -49,6 +49,14 @@ local ACHIEVEMENTS = {
         target      = 500,
         reward      = { type = "passive", id = "start_boost", name = "Start Boost" },
     },
+    {
+        id          = "system_exit_0",
+        name        = "SYSTEM.EXIT(0)",
+        desc        = "Clear the game for the first time",
+        condition   = "game_clear",
+        target      = 1,
+        reward      = { type = "passive", id = "endless_unlock", name = "Endless Mode" },
+    },
 }
 
 -- Pending unlocks from this session (reset each run)
@@ -88,6 +96,8 @@ function achievementSystem.getAll()
             local count = 0
             for _ in pairs(bossesDefeated) do count = count + 1 end
             entry.progress = math.min(count, def.target)
+        elseif def.condition == "game_clear" then
+            entry.progress = (stats.gameClear == true) and 1 or 0
         end
 
         result[#result + 1] = entry
@@ -139,6 +149,12 @@ function achievementSystem.onStageClear(stage)
     logInfo(string.format("[ACHIEVE] Stage %d cleared", stage))
 end
 
+--- Called on first victory (OVERFLOW defeated)
+function achievementSystem.onVictory()
+    saveData.recordVictory()
+    logInfo("[ACHIEVE] Victory recorded!")
+end
+
 --- Flush session kills to persistent storage + check all achievements
 --- Call this on game over / return to title
 function achievementSystem.onRunEnd()
@@ -168,6 +184,8 @@ function achievementSystem.onRunEnd()
                 local count = 0
                 for _ in pairs(bossesDefeated) do count = count + 1 end
                 met = count >= def.target
+            elseif def.condition == "game_clear" then
+                met = stats.gameClear == true
             end
 
             if met then
