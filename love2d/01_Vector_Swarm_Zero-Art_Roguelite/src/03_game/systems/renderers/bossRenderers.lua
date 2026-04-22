@@ -1,6 +1,25 @@
--- Boss Renderers
--- 보스 전용 렌더 5종: NULL, STACK, HEAP, RECURSION, OVERFLOW
--- fn(x, y, r, renderable, transform) — r은 원본, 내부에서 scale 적용
+-- ============================================================================
+-- Boss Renderers — 보스 전용 렌더 5종
+-- ============================================================================
+--
+-- ◆ 이 파일의 역할
+--   보스 엔티티의 고유 비주얼을 그린다.
+--   renderSystem.lua의 dispatch 테이블에 자동 등록된다.
+--
+-- ◆ 새 보스 렌더 추가 방법
+--   1. M.boss_이름 = function(x, y, r, renderable, transform) ... end 추가
+--   2. bossDefs.lua에서 renderType = "boss_이름" 으로 매칭
+--   3. renderSystem.lua 수정 불필요 (자동 등록)
+--
+-- ◆ 함수 시그니처
+--   fn(x, y, r, renderable, transform)
+--   주의: r은 원본 radius. 보스 인트로/펄스 스케일링을 위해
+--   함수 내부에서 r = r * (transform.scale or 1) 적용 필수.
+--   setColor()는 호출자가 적용하지만, 보스는 내부에서 재설정 가능.
+--
+-- ◆ 의존 관계
+--   love.graphics, love.timer만 사용. renderSystem.lua가 require 한다.
+-- ============================================================================
 
 local lg = love.graphics
 local cos = math.cos

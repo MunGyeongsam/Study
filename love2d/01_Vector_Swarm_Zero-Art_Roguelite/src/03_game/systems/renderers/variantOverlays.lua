@@ -1,6 +1,26 @@
--- Variant Overlay Renderers
--- 변형 4종 비주얼: swift, armored, splitter, shielded
--- fn(x, y, r, renderable, ecs, entityId)
+-- ============================================================================
+-- Variant Overlay Renderers — 변형 적 오버레이 4종
+-- ============================================================================
+--
+-- ◆ 이 파일의 역할
+--   기본 도형 위에 추가로 그려지는 변형(variant) 비주얼 효과.
+--   renderSystem.lua에서 기본 도형 렌더 후 호출된다.
+--
+-- ◆ 새 변형 오버레이 추가 방법
+--   1. M.변형이름 = function(x, y, r, renderable, ecs, entityId) ... end 추가
+--   2. 함수 이름이 곧 Renderable.variant 값 (dispatch key)
+--   3. stageData.lua → VARIANT_TIERS + GUARANTEED_VARIANTS에 등록
+--   4. entityFactory.lua에서 변형 스탯 보너스 정의
+--   5. renderSystem.lua 수정 불필요 (자동 등록)
+--
+-- ◆ 함수 시그니처
+--   fn(x, y, r, renderable, ecs, entityId)
+--   기본 도형과 달리 ecs와 entityId를 받음 (Velocity 조회 등에 필요)
+--   setColor()는 호출자가 적용한 상태이나, 오버레이는 자체 색상 사용.
+--
+-- ◆ 의존 관계
+--   love.graphics + ECS 조회(읽기 전용). renderSystem.lua가 require 한다.
+-- ============================================================================
 
 local lg = love.graphics
 local sqrt = math.sqrt

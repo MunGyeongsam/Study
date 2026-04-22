@@ -1,6 +1,25 @@
--- Basic Shape Renderers
--- 기본 도형 6종: circle, rectangle, diamond, arrow, spiral_ring, hexagon
--- fn(x, y, r, renderable, transform)
+-- ============================================================================
+-- Basic Shape Renderers — 기본 적 도형 6종
+-- ============================================================================
+--
+-- ◆ 이 파일의 역할
+--   ECS Renderable.type에 대응하는 기본 도형 렌더 함수.
+--   renderSystem.lua의 dispatch 테이블에 자동 등록된다.
+--
+-- ◆ 새 도형 추가 방법
+--   1. M.새이름 = function(x, y, r, renderable, transform) ... end 추가
+--   2. 함수 이름이 곧 Renderable.type 값 (dispatch key)
+--   3. entityFactory.lua에서 해당 적의 renderType을 새 이름으로 설정
+--   4. renderSystem.lua 수정 불필요 (자동 등록)
+--
+-- ◆ 함수 시그니처
+--   fn(x, y, r, renderable, transform)
+--   x,y = 월드 좌표, r = renderable.radius
+--   setColor()는 호출자(renderSystem)가 이미 적용한 상태
+--
+-- ◆ 의존 관계
+--   love.graphics만 사용. renderSystem.lua가 require 한다.
+-- ============================================================================
 
 local lg = love.graphics
 local cos = math.cos

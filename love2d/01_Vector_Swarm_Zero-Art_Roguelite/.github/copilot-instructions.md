@@ -61,6 +61,10 @@ src/
 │   │   ├── health.lua, dash.lua, focus.lua, enemyAI.lua
 │   │   ├── bulletEmitter.lua, playerWeapon.lua, playerXP.lua
 │   │   ├── xpOrb.lua, bossTag.lua
+│   ├── data/         # Pure data tables (no logic, no require)
+│   │   ├── bossDefs.lua       # Boss presets (stats, patterns, AI)
+│   │   ├── stageData.lua      # Stage defs, enemy pools, variant tables, boss mapping
+│   │   └── formationDefs.lua  # Formation patterns (wedge, pincer, etc.)
 │   ├── systems/      # ECS systems (17 files)
 │   │   ├── inputSystem.lua, movementSystem.lua, boundarySystem.lua
 │   │   ├── lifespanSystem.lua, renderSystem.lua, playerRenderSystem.lua
@@ -69,6 +73,10 @@ src/
 │   │   ├── playerWeaponSystem.lua, enemyCollisionSystem.lua
 │   │   ├── xpCollectionSystem.lua, bossSystem.lua
 │   │   ├── stageManager.lua, enemySpawner.lua
+│   │   └── renderers/        # Strategy Pattern render modules
+│   │       ├── basicShapes.lua    # 6 basic enemy shapes (auto-registered)
+│   │       ├── bossRenderers.lua  # 5 boss visuals (auto-registered)
+│   │       └── variantOverlays.lua # 4 variant overlays (auto-registered)
 │   ├── entities/     # Entity factories & façades
 │   │   ├── entityFactory.lua  # createPlayer(), createEnemy(), createBoss(), createXpOrb()
 │   │   └── player.lua         # ECS façade (bind, update, getPosition)
@@ -221,6 +229,35 @@ docs:     문서 업데이트
 refactor: 코드 리팩토링
 perf:     성능 최적화
 ```
+
+---
+
+## Data-Driven Modification Patterns (수정 가이드)
+
+확장이 잦은 작업을 유형별로 정리. 각 데이터/렌더러 파일 헤더에도 동일 가이드가 있다.
+
+### 새 적(Enemy) 타입 추가
+1. `03_game/data/stageData.lua` → `ALL_ENEMY_TYPES` + 해당 풀(`MOBILITY_POOL` 또는 `FIREPOWER_POOL`)에 등록
+2. `03_game/entities/entityFactory.lua` → `createEnemy()` 에 타입별 스탯 추가
+3. `03_game/systems/renderers/basicShapes.lua` → `M.타입이름 = function(x, y, r, renderable, transform)` 추가
+4. `renderSystem.lua` 수정 불필요 (dispatch 자동 등록)
+
+### 새 보스(Boss) 추가
+1. `03_game/data/bossDefs.lua` → `BOSS_TYPES["NAME"] = { ... }` 추가
+2. `03_game/data/stageData.lua` → `BOSS_STAGES[스테이지] = "NAME"` + `BOSS_SEQUENCE`에 추가
+3. `03_game/systems/renderers/bossRenderers.lua` → `M.boss_name = function(...)` 추가
+4. `renderSystem.lua`, `bossSystem.lua` 수정 불필요 (자동 등록 / 패턴 기반)
+
+### 새 변형(Variant) 추가
+1. `03_game/data/stageData.lua` → `GUARANTEED_VARIANTS[스테이지]` + `VARIANT_TIERS`에 등록
+2. `03_game/entities/entityFactory.lua` → 변형 스탯 보너스 정의
+3. `03_game/systems/renderers/variantOverlays.lua` → `M.변형이름 = function(x, y, r, renderable, ecs, entityId)` 추가
+4. `renderSystem.lua` 수정 불필요 (자동 등록)
+
+### 새 포메이션(Formation) 추가
+1. `03_game/data/formationDefs.lua` → `M.DEFS` 배열에 `{name, types, tier, getOffsets()}` 추가
+2. tier 값으로 등장 시작 스테이지 제어 (1=Stage4+, 2=Stage6+, 3=Stage9+)
+3. `stageManager.lua` 수정 불필요
 
 ---
 

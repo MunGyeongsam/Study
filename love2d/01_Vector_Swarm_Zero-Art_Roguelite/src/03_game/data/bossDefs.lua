@@ -1,6 +1,28 @@
--- Boss Type Definitions
--- 보스 프리셋 데이터 (순수 데이터 — 로직 없음)
--- entityFactory.createBoss()에서 참조
+-- ============================================================================
+-- Boss Type Definitions — 보스 프리셋 데이터 (순수 데이터 — 로직 없음)
+-- ============================================================================
+--
+-- ◆ 이 파일의 역할
+--   보스별 스탯·패턴·AI 행동을 정의한다. entityFactory.createBoss()가 참조.
+--   여기 숫자를 바꾸면 보스 난이도/패턴이 바뀐다.
+--
+-- ◆ 새 보스 추가 방법
+--   1. 이 파일에 BOSS_TYPES["NAME"] = { ... } 추가 (아래 구조 참고)
+--   2. stageData.lua → BOSS_STAGES + BOSS_SEQUENCE에 등록
+--   3. bossRenderers.lua에 boss_name 렌더 함수 추가
+--   4. bossSystem.lua에서 페이즈/AI 로직이 자동 적용됨 (패턴 기반)
+--
+-- ◆ 보스 구조 필드
+--   color, radius, renderType   : 외형
+--   hp, xpValue, maxPhase       : 전투 스탯
+--   phaseThresholds             : HP% 기준 페이즈 전환 (예: {0.5} → 50%에서 2페이즈)
+--   ai                          : 이동 행동 (behavior, speed, driftVx 등)
+--   patterns[phase]             : 탄막 시퀀스 배열 (pattern, emitRate, bulletSpeed 등)
+--
+-- ◆ 의존 관계
+--   순수 데이터. 어떤 모듈도 require 하지 않는다.
+--   entityFactory.lua가 이 파일을 require 한다.
+-- ============================================================================
 
 local BOSS_TYPES = {
     NULL = {
