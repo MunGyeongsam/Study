@@ -8,6 +8,8 @@ local EntityFactory = require("03_game.entities.entityFactory")
 local gameState = require("03_game.states.gameState")
 local background = require("02_renderer.background")
 local achievementSystem = require("03_game.states.achievementSystem")
+local stageData = require("03_game.data.stageData")
+local formationDefs = require("03_game.data.formationDefs")
 
 local _min    = math.min
 local _max    = math.max
@@ -28,199 +30,6 @@ StageManager.STATE_NEXT_STAGE  = "next_stage"
 StageManager.STATE_BOSS_INTRO  = "boss_intro"
 StageManager.STATE_BOSS_ACTIVE = "boss_active"
 StageManager.STATE_BOSS_CLEAR  = "boss_clear"
-
--- ===== Boss stage mapping =====
-local BOSS_STAGES = {
-    [3]  = "NULL",
-    [6]  = "STACK",
-    [9]  = "HEAP",
-    [12] = "RECURSION",
-    [15] = "OVERFLOW",
-}
-
--- Boss type sequence for Endless cycling
-local BOSS_SEQUENCE = { "NULL", "STACK", "HEAP", "RECURSION", "OVERFLOW" }
-
--- Get boss type for any stage (hand-designed + Endless cycling)
-local function _getBossType(stage)
-    if BOSS_STAGES[stage] then
-        return BOSS_STAGES[stage]
-    end
-    -- Endless: every 3 stages after 15 (18, 21, 24, ...)
-    if stage > 15 and (stage - 15) % 3 == 0 then
-        local index = ((stage - 18) / 3) % #BOSS_SEQUENCE + 1
-        return BOSS_SEQUENCE[_floor(index)]
-    end
-    return nil
-end
-
--- Get Endless round number (0 = not endless, 1+ = round)
-local function _getEndlessRound(stage)
-    if stage <= 15 then return 0 end
-    return _floor((stage - 16) / 15) + 1
-end
-
--- Boss scaling multipliers for Endless
-local function _getBossScaling(stage)
-    local round = _getEndlessRound(stage)
-    if round <= 0 then return nil end
-    local hpMult    = 1.5 ^ round
-    local speedMult = 1.0 + round * 0.1
-    local minionAdd = round
-    -- Color hue shift: more red each round
-    local redShift  = _min(round * 0.15, 0.6)
-    return {
-        hpMult    = hpMult,
-        speedMult = speedMult,
-        minionAdd = minionAdd,
-        redShift  = redShift,
-        round     = round,
-    }
-end
-
--- ===== Stage Definitions (hand-designed) =====
--- Stages beyond this table are auto-generated via _generateStageConfig().
-local STAGE_DEFS = {
-    [1] = { waves = 3, spawnDirs = {top=1.0},
-            types = {"bit", "node"} },
-    [2] = { waves = 4, spawnDirs = {top=0.8, left=0.1, right=0.1},
-            types = {"bit", "node", "vector"} },
-    [3] = { waves = 5, spawnDirs = {top=0.6, left=0.15, right=0.15, bottom=0.1},
-            types = {"bit", "node", "vector"} },
-    [4] = { waves = 5, spawnDirs = {top=0.5, left=0.2, right=0.2, bottom=0.1},
-            types = {"bit", "node", "vector", "loop"} },
-    [5] = { waves = 6, spawnDirs = {top=0.4, left=0.2, right=0.2, bottom=0.2},
-            types = {"node", "vector", "loop", "matrix"} },
-}
-
-local ALL_ENEMY_TYPES = {"bit", "node", "vector", "loop", "matrix"}
-
--- ===== Stage Theme Pools (5A.3f Rule 1) =====
--- 기동형: 이동으로 위협 (대쉬·반응 테스트)
--- 화력형: 탄막으로 위협 (포커스·패턴 읽기 테스트)
--- loop는 궤도(이동) + 나선탄(화력) = 양쪽 소속
-local MOBILITY_POOL  = {"bit", "vector", "loop"}
-local FIREPOWER_POOL = {"node", "loop", "matrix"}
-local THEME_MIX_RATIO = 0.7  -- 테마 풀 70%, 전체 풀 30%
-
--- Count boss stages up to (and including) a given stage
-local function _countBossStagesUpTo(stage)
-    local count = 0
-    for s, _ in pairs(BOSS_STAGES) do
-        if s <= stage then count = count + 1 end
-    end
-    return count
-end
-
--- Get non-boss ordinal for a stage (skipping boss stages)
--- Stage 7 → 7 - 2 (bosses at 3,6) = 5th non-boss → odd → mobility
-local function _getNonBossOrdinal(stage)
-    return stage - _countBossStagesUpTo(stage)
-end
-
--- ===== Formation Definitions =====
--- Each formation: { name, types (preferred), count, tier (1-3), offsets(anchorX,anchorY) → {{dx,dy},...} }
-local _cos = math.cos
-local _sin = math.sin
-local _pi  = math.pi
-
-local FORMATION_DEFS = {
-    -- 1) Wedge (V-shape): Bit swarm rushes in V formation
-    {
-        name  = "wedge",
-        types = {"bit"},
-        tier  = 1,
-        getOffsets = function()
-            local spacing = 0.35
-            local offsets = {}
-            local count = _random(7, 9)
-            offsets[1] = {dx = 0, dy = 0}  -- leader center
-            for i = 2, count do
-                local row = _floor((i) / 2)
-                local side = (i % 2 == 0) and 1 or -1
-                offsets[i] = {dx = side * row * spacing, dy = row * spacing * 0.7}
-            end
-            return offsets
-        end,
-    },
-    -- 2) Pincer: Two Vectors charge from left and right simultaneously
-    {
-        name  = "pincer",
-        types = {"vector"},
-        tier  = 2,
-        getOffsets = function()
-            return {
-                {dx = -4.0, dy = 0},     -- left
-                {dx =  4.0, dy = 0},     -- right
-            }
-        end,
-        spawnMode = "sides",  -- anchor is player Y, spread on X
-    },
-    -- 3) Triangle turrets: 3 Nodes in triangle formation
-    {
-        name  = "triangle",
-        types = {"node"},
-        tier  = 2,
-        getOffsets = function()
-            local r = 1.8  -- triangle radius
-            local offsets = {}
-            for i = 0, 2 do
-                local angle = _pi / 2 + i * (2 * _pi / 3)  -- top, bottom-left, bottom-right
-                offsets[i + 1] = {dx = _cos(angle) * r, dy = _sin(angle) * r}
-            end
-            return offsets
-        end,
-    },
-    -- 4) Escort: center tank (matrix/loop) + surrounding bit guards
-    {
-        name  = "escort",
-        types = {"matrix", "bit"},  -- first = center, rest = guards
-        tier  = 3,
-        getOffsets = function()
-            local guardCount = _random(4, 6)
-            local offsets = {{dx = 0, dy = 0}}  -- center (tank type)
-            for i = 1, guardCount do
-                local angle = (i - 1) * (2 * _pi / guardCount)
-                offsets[i + 1] = {dx = _cos(angle) * 0.8, dy = _sin(angle) * 0.8}
-            end
-            return offsets
-        end,
-    },
-    -- 5) Spiral Array: Loops arranged on arc for overlapping spiral bullets
-    {
-        name  = "spiral_array",
-        types = {"loop"},
-        tier  = 3,
-        getOffsets = function()
-            local count = _random(3, 4)
-            local r = 2.0
-            local offsets = {}
-            for i = 1, count do
-                local angle = (i - 1) * (2 * _pi / count) + _pi / 4
-                offsets[i] = {dx = _cos(angle) * r, dy = _sin(angle) * r}
-            end
-            return offsets
-        end,
-    },
-}
-
--- Formation availability by stage tier
--- Returns formations available for the given stage
-local function _getAvailableFormations(stage)
-    local maxTier
-    if stage <= 3 then return nil end       -- no formations stages 1-3
-    if stage <= 5 then maxTier = 1          -- wedge only
-    elseif stage <= 8 then maxTier = 2      -- + pincer, triangle
-    else maxTier = 3 end                    -- + escort, spiral_array
-
-    local available = {}
-    for _, f in ipairs(FORMATION_DEFS) do
-        if f.tier <= maxTier then
-            available[#available + 1] = f
-        end
-    end
-    return #available > 0 and available or nil
-end
 
 function StageManager.new(ecsManager, getPlayerPos)
     local mgr = setmetatable({
@@ -257,21 +66,21 @@ end
 
 -- Get stage config: hand-designed or auto-generated
 function StageManager:_getStageConfig()
-    if STAGE_DEFS[self.stage] then
-        return STAGE_DEFS[self.stage]
+    if stageData.STAGE_DEFS[self.stage] then
+        return stageData.STAGE_DEFS[self.stage]
     end
     -- Auto-generate for infinite stages (6+)
     -- Rule 1: theme-based type pool (mobility/firepower alternating)
     local s = self.stage
-    local ordinal = _getNonBossOrdinal(s)
+    local ordinal = stageData.getNonBossOrdinal(s)
     local isMobility = (ordinal % 2 == 1)
-    local themePool = isMobility and MOBILITY_POOL or FIREPOWER_POOL
+    local themePool = isMobility and stageData.MOBILITY_POOL or stageData.FIREPOWER_POOL
 
     return {
         waves     = _min(5 + _floor((s - 5) / 2), 8),
         spawnDirs = {top = 0.4, left = 0.2, right = 0.2, bottom = 0.2},
         types     = themePool,       -- theme pool for _pickEnemyType
-        allTypes  = ALL_ENEMY_TYPES, -- fallback for 30% mix
+        allTypes  = stageData.ALL_ENEMY_TYPES, -- fallback for 30% mix
         isMobility = isMobility,
     }
 end
@@ -296,7 +105,7 @@ function StageManager:update(dt)
 
     if st == StageManager.STATE_WAVE_INTRO then
         -- Check if this is a boss stage
-        if _getBossType(self.stage) then
+        if stageData.getBossType(self.stage) then
             self:_spawnBoss()
             self.state = StageManager.STATE_BOSS_INTRO
             if playBGM then playBGM("boss") end
@@ -435,7 +244,7 @@ end
 
 -- Spawn boss entity for current stage
 function StageManager:_spawnBoss()
-    local bossType = _getBossType(self.stage)
+    local bossType = stageData.getBossType(self.stage)
     if not bossType then return end
 
     local px, py = self.getPlayerPos()
@@ -443,7 +252,7 @@ function StageManager:_spawnBoss()
     local spawnY = (py or 0) + 4  -- spawn above player
 
     local w = self.ecsManager.getWorld()
-    local scaling = _getBossScaling(self.stage)
+    local scaling = stageData.getBossScaling(self.stage)
     self.bossEntityId = EntityFactory.createBoss(w, spawnX, spawnY, bossType, scaling)
     self.bossType = bossType
     self.bossScaling = scaling
@@ -500,7 +309,7 @@ end
 function StageManager:_pickEnemyType(config, direction)
     local types
     -- Auto-generated stages have allTypes for 30% mix
-    if config.allTypes and _random() >= THEME_MIX_RATIO then
+    if config.allTypes and _random() >= stageData.THEME_MIX_RATIO then
         types = config.allTypes
     else
         types = config.types
@@ -516,40 +325,6 @@ function StageManager:_pickEnemyType(config, direction)
         if #safe > 0 then types = safe end
     end
     return types[_random(#types)]
-end
-
--- ===== Variant System (5A.3f Rules 2~3) =====
-
--- Rule 2: Guaranteed first encounter — wave 1 of these stages forces one variant enemy
-local GUARANTEED_VARIANTS = {
-    [4]  = "swift",
-    [7]  = "armored",
-    [10] = "splitter",
-    [13] = "shielded",
-}
-
--- Rule 3: Scaling variant chances (replaces fixed probability)
--- chance = baseChance × (1 + (stage - firstStage) × 0.03), cap 25% each
-local VARIANT_TIERS = {
-    { stage = 4,  variant = "swift",    baseChance = 0.15 },
-    { stage = 7,  variant = "armored",  baseChance = 0.12 },
-    { stage = 10, variant = "splitter", baseChance = 0.10 },
-    { stage = 13, variant = "shielded", baseChance = 0.08 },
-}
-local VARIANT_CAP = 0.25  -- per-variant cap
-
-local function _pickVariant(stage)
-    for i = #VARIANT_TIERS, 1, -1 do
-        local vt = VARIANT_TIERS[i]
-        if stage >= vt.stage then
-            local scaled = vt.baseChance * (1 + (stage - vt.stage) * 0.03)
-            local chance = _min(scaled, VARIANT_CAP)
-            if _random() < chance then
-                return vt.variant
-            end
-        end
-    end
-    return nil
 end
 
 -- Spawn a formation group at anchor position
@@ -593,7 +368,7 @@ function StageManager:_spawnFormation(formation, px, py, diff, guaranteedVariant
         if i == 1 and guaranteedVariant then
             variant = guaranteedVariant
         else
-            variant = _pickVariant(self.stage)
+            variant = stageData.pickVariant(self.stage)
         end
 
         self.ecsManager.createEnemy(sx, sy, enemyType, diff, variant)
@@ -603,12 +378,6 @@ function StageManager:_spawnFormation(formation, px, py, diff, guaranteedVariant
     logInfo(string.format("[FORMATION] %s: %d enemies at (%.1f, %.1f)",
         formation.name, spawned, anchorX, anchorY))
     return spawned
-end
-
--- Formation chance: increases with stage, caps at 60%
-local function _formationChance(stage)
-    if stage <= 3 then return 0 end
-    return _min(0.6, 0.2 + (stage - 4) * 0.05)
 end
 
 function StageManager:_spawnWave(config)
@@ -629,12 +398,12 @@ function StageManager:_spawnWave(config)
     -- Rule 2: check guaranteed variant for this wave
     local guaranteedVariant = nil
     if self.wave == 1 then
-        guaranteedVariant = GUARANTEED_VARIANTS[self.stage]
+        guaranteedVariant = stageData.GUARANTEED_VARIANTS[self.stage]
     end
 
     -- Try formation spawn (stage 4+)
-    local available = _getAvailableFormations(self.stage)
-    if available and _random() < _formationChance(self.stage) then
+    local available = formationDefs.getAvailable(self.stage)
+    if available and _random() < formationDefs.getChance(self.stage) then
         local formation = available[_random(#available)]
         -- Check if formation types are in this stage's pool
         local typeOk = true
@@ -667,7 +436,7 @@ function StageManager:_spawnWave(config)
             variant = guaranteedVariant
             guaranteedVariant = nil  -- consumed
         else
-            variant = _pickVariant(self.stage)
+            variant = stageData.pickVariant(self.stage)
         end
 
         if enemyType == "bit" then
@@ -699,8 +468,8 @@ function StageManager:_spawnWave(config)
     end
 
     -- Log guaranteed variant spawn
-    if self.wave == 1 and GUARANTEED_VARIANTS[self.stage] then
-        logInfo(string.format("[STAGE] Guaranteed variant: %s", GUARANTEED_VARIANTS[self.stage]))
+    if self.wave == 1 and stageData.GUARANTEED_VARIANTS[self.stage] then
+        logInfo(string.format("[STAGE] Guaranteed variant: %s", stageData.GUARANTEED_VARIANTS[self.stage]))
     end
 end
 
@@ -806,7 +575,7 @@ function StageManager:debugSkipStage()
     -- Force advance
     self:_advanceStage()
     -- BGM: next stage could be boss or normal
-    if _getBossType(self.stage) then
+    if stageData.getBossType(self.stage) then
         if playBGM then playBGM("boss") end
     else
         if playBGM then playBGM("stage") end
@@ -915,7 +684,7 @@ end
 
 function StageManager:getStats()
     local config = self:_getStageConfig()
-    local endlessRound = _getEndlessRound(self.stage)
+    local endlessRound = stageData.getEndlessRound(self.stage)
     return {
         stage      = self.stage,
         wave       = self.wave,
@@ -923,7 +692,7 @@ function StageManager:getStats()
         state      = self.state,
         totalWaves = self.totalWaves,
         enemies    = self:_countEnemies(),
-        isBossStage = _getBossType(self.stage) ~= nil,
+        isBossStage = stageData.getBossType(self.stage) ~= nil,
         bossType    = self.bossType,
         bossEntityId = self.bossEntityId,
         isEndless    = endlessRound > 0,
