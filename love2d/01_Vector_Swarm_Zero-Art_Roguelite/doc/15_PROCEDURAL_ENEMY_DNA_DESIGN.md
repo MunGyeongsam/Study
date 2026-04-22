@@ -316,25 +316,283 @@ local history = {}  -- [1]=현재, [2]=1프레임전, [3]=2프레임전...
 | `poison` (독 장판) | 지속 데미지 = 짜증. 탄막 게임은 순간 피격이 핵심 |
 | `buff_allies` (적 버프) | 효과가 안 보여서 인지 불가 |
 
-### 5.5 Body (외형) — 수학 곡선 레퍼런스
+### 5.5 Body (외형) — 사전 계산 수학 곡선 시스템
 
-> CS 적의 외형은 CS 개념이 결정하지만, 새 CS 적 설계 시 참고할 수학 곡선 풀.
+> **핵심 전략: 런타임 0 비용.**
+> 모든 곡선을 `shapeDefs.lua`에 **사전 계산된 정점 배열**로 저장.
+> 렌더링 시에는 `love.graphics.polygon("line", verts)` 한 줄로 그린다.
+> 적 1000마리 × 60fps에서도 sin/cos 연산 제로.
 
-| ID | 형상 | 수학적 배경 | 수식 | 구현 |
-|-----|------|------------|------|------|
-| `reuleaux` | 곡선 삼각형 | Reuleaux triangle (정폭도형) | 3개 호의 교집합 | `lg.arc()` × 3 |
-| `lissajous` | 8자/매듭 | Lissajous curve | `x=sin(at), y=sin(bt+δ)` | line strip |
-| `rose` | 꽃잎 곡선 | Rose curve | `r = cos(nθ)` | polygon |
-| `cardioid` | 심장 곡선 | Cardioid | `r = 1 + cos(θ)` | polygon |
-| `astroid` | 별 곡선 | Astroid (hypocycloid 4) | `x=cos³θ, y=sin³θ` | polygon |
-| `lemniscate` | ∞ 곡선 | Lemniscate of Bernoulli | `r² = cos(2θ)` | polygon |
-| `deltoid` | 삼각 곡선 | Deltoid (hypocycloid 3) | 매개변수 방정식 | polygon |
-| `vesica` | 렌즈/눈 | Vesica Piscis | `lg.arc()` × 2 | arc 2개 |
-| `trefoil` | 세잎 매듭 | Trefoil curve | 극좌표 매개변수 | polygon |
-| `superellipse` | 둥근 사각 | Lamé curve | `\|x\|ⁿ+\|y\|ⁿ=1` | polygon |
+#### 구현 구조
 
-> CS 적 설계 시 위 풀에서 개념에 어울리는 곡선을 선택.
-> 예: Tree → fractal branch (Y분기), Hash → Voronoi scatter, Encrypt → 동심 회전 링
+```lua
+-- src/03_game/data/shapeDefs.lua (사전 계산 정점 테이블)
+local M = {}
+
+-- 단위 크기(반지름 1.0) 기준, {x1,y1, x2,y2, ...} 플랫 배열
+-- 렌더 시: love.graphics.scale(radius) 적용 후 polygon()
+
+M.reuleaux = { --[[ 48개 좌표 ]] }
+M.astroid  = { --[[ 32개 좌표 ]] }
+M.koch_branch = { --[[ 재귀 2단계 Y분기 ]] }
+-- ...
+
+return M
+```
+
+```lua
+-- renderSystem에서 사용 (런타임 비용 = polygon draw 1회)
+local verts = shapeDefs[renderable.shape]
+love.graphics.push()
+love.graphics.translate(sx, sy)
+love.graphics.rotate(transform.angle)
+love.graphics.scale(r, r)  -- r = radius × pixelsPerUnit
+love.graphics.polygon("line", verts)
+love.graphics.pop()
+```
+
+#### 정점 생성 공식 (shapeDefs.lua 빌드 시 1회 실행)
+
+##### 기존 5종 (구현 완료 — basicShapes.lua)
+
+| # | ID | 형상 | 렌더 방식 | CS 적 |
+|---|-----|------|----------|-------|
+| 1 | `circle` | ● | `lg.circle()` | Bit |
+| 2 | `diamond` | ◆ | 정점 4개 정사각형 45° 회전 | Node |
+| 3 | `arrow` | ▶ | 삼각형 + 꼬리선 | Vector |
+| 4 | `spiral_ring` | ◎ | `lg.circle()` × 2 | Loop |
+| 5 | `hexagon` | ⬡ | 정점 6개 정육각형 | Matrix |
+
+##### 신규 곡선 — Tier 1: 닫힌 곡선 (정점 배열 직접 생성)
+
+**① Reuleaux Triangle (뢸로 삼각형)**
+
+```
+     ╱╲
+    ╱  ╲       정삼각형의 각 꼭짓점을 중심으로
+   (    )      반대편 변 길이를 반지름으로 호를 그림
+    ╲  ╱       → "맨홀 뚜껑" 형태 (정폭도형)
+     ╲╱
+```
+
+- 수식: 정삼각형 꼭짓점 A,B,C 각각에서 `arc(center=A, r=|BC|, from=B, to=C)`
+- 정점: 호 3개 × 16점 = **48 정점**
+- CS 적 매핑: **Encrypt** — 에니그마 로터의 기어 느낌. 회전하면 곡선이 살아있는 듯
+- 생성 코드:
+  ```lua
+  for i = 0, 2 do
+      local cx, cy = cos(i*2π/3), sin(i*2π/3)  -- 꼭짓점
+      for t = 0, 15 do
+          local angle = (i*2π/3 + π) + (t/15) * (2π/3)  -- 120° 호
+          verts[#verts+1] = cx + R * cos(angle)
+          verts[#verts+1] = cy + R * sin(angle)
+      end
+  end
+  ```
+
+**② Astroid (별 곡선 — 4첨성)**
+
+```
+      *
+    ·   ·
+   ·     ·      안쪽으로 오목한 4꼭지 별.
+    ·   ·       일반 별과 달리 꼭짓점이 뾰족하고
+      *         변이 안으로 휜다.
+```
+
+- 수식: `x = cos³(θ)`, `y = sin³(θ)`
+- 정점: θ를 0~2π로 **32 등분 = 32 정점**
+- CS 적 매핑: **Compress** — 수축/팽창하는 별. 안쪽으로 쪼그라든 느낌 = 압축
+- 생성 코드:
+  ```lua
+  for i = 0, 31 do
+      local t = i / 32 * 2 * math.pi
+      verts[#verts+1] = math.cos(t)^3
+      verts[#verts+1] = math.sin(t)^3
+  end
+  ```
+
+**③ Deltoid (삼각 곡선 — 3첨성)**
+
+```
+      △
+     ╱ ╲        astroid의 3꼭지 버전.
+    ╱   ╲       변이 안쪽으로 살짝 휜
+    ‾‾‾‾‾       부드러운 삼각형.
+```
+
+- 수식: `x = 2cos(θ)+cos(2θ)`, `y = 2sin(θ)-sin(2θ)` (hypocycloid k=3)
+- 정점: **36 정점**
+- CS 적 매핑: **Tree** — 3갈래 분기의 원형. 부드러운 삼각 = 유기적 나무 느낌
+- 생성 코드:
+  ```lua
+  for i = 0, 35 do
+      local t = i / 36 * 2 * math.pi
+      verts[#verts+1] = 2*math.cos(t) + math.cos(2*t)
+      verts[#verts+1] = 2*math.sin(t) - math.sin(2*t)
+  end
+  -- 반지름 3 기준이므로 1/3로 정규화
+  ```
+
+**④ Cardioid (심장 곡선)**
+
+```
+      ♡
+     ╱ ╲        위가 오목하고 아래가 뾰족한 물방울.
+    (   )       "방향"이 있는 곡선 → 이동 방향 표시에 적합.
+     ╲ ╱
+      V
+```
+
+- 수식: `r = 1 + cos(θ)` (극좌표)
+- 정점: **40 정점**
+- CS 적 매핑: **Search** — "어디로 갈까?" 탐색하는 적. 뾰족한 끝이 이동 방향을 가리킴
+- 생성 코드:
+  ```lua
+  for i = 0, 39 do
+      local t = i / 40 * 2 * math.pi
+      local r = 1 + math.cos(t)
+      verts[#verts+1] = r * math.cos(t)
+      verts[#verts+1] = r * math.sin(t)
+  end
+  -- 반지름 2 기준이므로 1/2로 정규화
+  ```
+
+**⑤ Rose Curve (꽃잎 곡선)**
+
+```
+    ·  *  ·
+   · * * * ·     n=3이면 3잎, n=5이면 5잎.
+    ·  *  ·      n에 따라 무한 변형 가능.
+```
+
+- 수식: `r = cos(nθ)` (n=3이면 3잎, n=5이면 5잎)
+- 정점: **48~60 정점** (잎 수에 비례)
+- CS 적 매핑: **Neural** — 뉴런의 수상돌기 느낌. 잎 수로 연결 노드 수 표현
+- 생성 코드:
+  ```lua
+  local n = 3  -- 잎 수
+  for i = 0, 47 do
+      local t = i / 48 * 2 * math.pi
+      local r = math.cos(n * t)
+      verts[#verts+1] = r * math.cos(t)
+      verts[#verts+1] = r * math.sin(t)
+  end
+  ```
+
+**⑥ Superellipse (둥근 사각 — Lamé curve)**
+
+```
+    ╭──────╮
+    │      │     n=2이면 원, n=4이면 둥근 사각,
+    │      │     n→∞이면 정사각형.
+    ╰──────╯     n으로 "디지털 느낌" 조절 가능.
+```
+
+- 수식: `|x|ⁿ + |y|ⁿ = 1` (n=4 추천)
+- 정점: **32 정점**
+- CS 적 매핑: **Stack** — 적층 블록의 개별 층. 각진 직사각형보다 살짝 부드러움
+- 생성 코드:
+  ```lua
+  local n = 4
+  for i = 0, 31 do
+      local t = i / 32 * 2 * math.pi
+      local c, s = math.cos(t), math.sin(t)
+      local sign_c = c >= 0 and 1 or -1
+      local sign_s = s >= 0 and 1 or -1
+      verts[#verts+1] = sign_c * math.abs(c)^(2/n)
+      verts[#verts+1] = sign_s * math.abs(s)^(2/n)
+  end
+  ```
+
+**⑦ Lemniscate (∞ 곡선 — 무한대)**
+
+```
+     ╲    ╱
+      ╳──╳       무한대 기호. 중심에서 교차.
+     ╱    ╲      "끝없는 반복"을 시각적으로 표현.
+```
+
+- 수식: `r² = cos(2θ)` (극좌표, θ에 따라 r이 허수가 되는 구간은 건너뜀)
+- 정점: **40 정점** (두 루프 각각 20점)
+- CS 적 매핑: **Loop** 변이 후보 — 현재 이중원보다 더 "무한 반복" 느낌
+- 생성 코드:
+  ```lua
+  -- 상반부 루프 (0 ~ π/4, 7π/4 ~ 2π)
+  -- 하반부 루프 (3π/4 ~ 5π/4)
+  for i = 0, 19 do
+      local t = -math.pi/4 + i/20 * math.pi/2
+      local r = math.sqrt(math.cos(2*t))
+      verts[#verts+1] = r * math.cos(t)
+      verts[#verts+1] = r * math.sin(t)
+  end
+  -- 하반부도 동일하게 반전
+  ```
+
+**⑧ Vesica Piscis (렌즈/눈)**
+
+```
+      ╱╲
+     (  )        두 원의 교집합 = 렌즈 형태.
+      ╲╱         "감시하는 눈" — 알고리즘이 탐색하는 느낌.
+```
+
+- 수식: 두 원(중심 거리 = 반지름)의 교차 영역
+- 정점: 호 2개 × 20점 = **40 정점**
+- CS 적 매핑: **Search** 대안 — DFS/BFS의 "탐색 시야"
+
+**⑨ Koch Edge (코흐 눈송이 가지)**
+
+```
+     /\           선분 → 삼각 돌기 → 재귀.
+    /  \          재귀 2단계면 13 정점.
+   /    \         Tree 적의 가지 형태로 직접 사용.
+  ──    ──
+```
+
+- 수식: 선분을 3등분 → 중간 1/3을 정삼각형 돌기로 치환 (재귀)
+- 정점: **재귀 1단계 = 5정점, 2단계 = 17정점**
+- CS 적 매핑: **Tree** 가지 세그먼트 — Linked List 세그먼트 외형으로도 활용
+
+**⑩ Epicycloid (외전원 곡선)**
+
+```
+     * * *
+    *     *      원이 다른 원 바깥을 굴러가는 궤적.
+     * * *       k=3이면 3잎 꽃, k=5이면 5잎.
+```
+
+- 수식: `x=(R+r)cos(θ)-r·cos((R+r)θ/r)`, `y=(R+r)sin(θ)-r·sin((R+r)θ/r)`
+- 정점: **48 정점**
+- CS 적 매핑: **Encrypt** — 에니그마 로터 기어. 동심 회전 링의 궤적
+- 탄막 궤적으로도 활용: 탄이 epicycloid 경로를 따라 이동
+
+##### 신규 곡선 — Tier 2: 탄막/이동 궤적 전용
+
+| ID | 수식 | 적용 | 비고 |
+|-----|------|------|------|
+| `lissajous` | `x=sin(at), y=sin(bt+δ)` | figure8 이동 패턴 | a:b 비율로 궤적 변형 |
+| `fibonacci_spiral` | `θ += 137.5°, r += step` | fibonacci 탄막 | 황금각 발사 |
+| `clifford_attractor` | `xₙ₊₁=sin(ayₙ)+c·cos(axₙ)` | Endless 배경 파티클 | 사전 계산 → 경로 배열 |
+| `l_system` | 재귀 문자열 치환 | Tree 분기 경로 | `F→F[+F][-F]` 형태 |
+
+##### CS 적 ↔ 곡선 최종 매핑
+
+| CS 적 | 기본 외형 | 곡선 근거 | 왜 이 곡선인가 |
+|-------|----------|----------|---------------|
+| Linked List | 선분 연결 체인 | 직선 + circle 노드 | 연결 리스트 = 노드와 포인터(선) |
+| Tree | **Deltoid** (몸통) + Koch (가지) | 3갈래 분기 곡선 | 이진 트리의 프랙탈적 분기 구조 |
+| Hash | 점선 격자 + **Reuleaux** | 기어 모양 | 해시 함수의 "돌리면 뭐가 나올지 모르는" 느낌 |
+| Queue | 점선 줄 + **Vesica** (개별 노드) | 렌즈 형태 | 대기열의 "순서를 기다리는 눈" |
+| Stack | **Superellipse** (적층 블록) | 둥근 사각 | 데이터 블록이 쌓인 형태 |
+| Sort | **Astroid** (막대 끝) | 오목별 | 교환 시 별처럼 반짝이는 연출 |
+| Search | **Cardioid** | 방향 있는 물방울 | 탐색 방향을 뾰족한 끝으로 표시 |
+| Encrypt | **Epicycloid** + Reuleaux | 기어/로터 | 에니그마 암호기의 회전 기어 |
+| Compress | **Astroid** (수축/팽창) | 오목별 스케일 변화 | 압축 = 줄어드는 느낌 |
+| Parse | Koch 중첩 괄호 | 재귀 구조 | `{[()]}` 중첩 = 프랙탈 |
+
+> **구현 순서**: Phase 6A.0에서 `shapeDefs.lua` 생성기를 먼저 만들고,
+> 각 CS 적 구현 시 해당 곡선을 등록하는 방식으로 점진 확장.
 
 ---
 
@@ -360,7 +618,7 @@ local history = {}  -- [1]=현재, [2]=1프레임전, [3]=2프레임전...
 
 | # | 작업 | 내용 |
 |---|------|------|
-| 6A.0 | 인프라 | 히스토리 버퍼 시스템, 새 적 타입 등록 흐름 |
+| 6A.0 | 인프라 | `shapeDefs.lua` 사전 계산 정점 생성기, 히스토리 버퍼, 새 적 타입 등록 흐름 |
 | 6A.1 | **Linked List** | 체인 렌더링 + 절단 메카닉, Stage 6~7 등장 |
 | 6A.2 | **Tree** | 프랙탈 분기 렌더 + 분열 메카닉, Stage 8~9 등장 |
 | 6A.3 | **Hash** | 순간이동 사이클 + 착지마커, Stage 10~11 등장 |
