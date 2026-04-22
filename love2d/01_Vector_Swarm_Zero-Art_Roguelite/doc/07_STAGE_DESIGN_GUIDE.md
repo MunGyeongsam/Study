@@ -14,6 +14,10 @@
 - **확장 슬롯**: 보스, 변형, 포메이션, 테마 등 필드 추가만 하면 됨
 
 ### 현재 구조 (Phase 5A)
+
+> **데이터 분리**: 스테이지 정의는 `stageData.lua`, 포메이션은 `formationDefs.lua`에 순수 데이터로 분리.
+> 스폰 로직은 `stageManager.lua`에서 `stageData`/`formationDefs`를 require하여 사용.
+
 ```
 Stage 1~5  → 손작업 STAGE_DEFS (적 풀, 스폰 방향 고정)
 Stage 3,6,9,12,15 → 보스 스테이지 (보스 1체 처치 = 클리어)
@@ -229,7 +233,8 @@ FIREPOWER_POOL = {"node", "loop", "matrix"}  -- 탄막으로 위협
 
 ### Phase 3A: 보스 스테이지 (구현 완료 ✅)
 
-`stageManager`에서 `isBossStage` 플래그로 보스 스테이지를 감지하며, 웨이브 대신 보스 1체만 등장:
+`stageManager`에서 `isBossStage` 플래그로 보스 스테이지를 감지하며, 웨이브 대신 보스 1체만 등장.
+보스 매핑은 `stageData.lua`의 `BOSS_STAGES`에 정의, 보스 프리셋은 `bossDefs.lua`에 정의:
 
 | 보스 | 스테이지 | HP | Phase | 특징 |
 |------|:---:|:---:|:---:|------|

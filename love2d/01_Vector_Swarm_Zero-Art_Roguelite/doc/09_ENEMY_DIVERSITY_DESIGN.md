@@ -198,13 +198,13 @@
 
 | # | 작업 | 파일 | 복잡도 |
 |---|------|------|:------:|
-| 1 | 벡터 렌더링 시스템 확장 (다각형 셰이프) | renderSystem.lua | 중 |
+| 1 | 벡터 렌더링 시스템 확장 (다각형 셰이프) | basicShapes.lua | 중 |
 | 2 | Node (stationary AI + diamond 렌더) | enemyAI, entityFactory | 소 |
 | 3 | Loop (spiral 리네이밍 + 나선 렌더) | entityFactory | 소 |
 | 4 | Vector (charge AI + 화살표 렌더) | enemyAI, entityFactory | 중 |
 | 5 | Bit (swarm AI + 무리 스폰) | enemyAI, entityFactory, stageManager | 중 |
 | 6 | Matrix (grid 탄막 + 육각형 렌더) | bulletEmitterSystem, entityFactory | 중 |
-| 7 | STAGE_DEFS 업데이트 | stageManager | 소 |
+| 7 | STAGE_DEFS 업데이트 | stageData.lua | 소 |
 | 8 | 기존 basic/aimed/wave 제거 정리 | entityFactory | 소 |
 
 ### 구현 현황
@@ -278,7 +278,7 @@
 | 첨 등장 | Stage 4 (15% 확률) | ✅ VARIANT_TIERS |
 
 **구현 상세:**
-- `renderSystem.lua`: Velocity 컴포넌트에서 `(vx, vy)` 읽어 이동 반대 방향으로 ghost trail 3개 렌더
+- `variantOverlays.lua`: Velocity 컴포넌트에서 `(vx, vy)` 읽어 이동 반대 방향으로 ghost trail 3개 렌더
 - 각 trail: `r * 1.2` 간격, 투명도 0.45 → 0.30 → 0.15 감소
 - 정지 상태(`spd < 0.01`)에선 trail 비활성화 (불필요한 렌더링 방지)
 
@@ -296,7 +296,7 @@
 | 첨 등장 | Stage 7 (12% 확률) | ✅ VARIANT_TIERS |
 
 **구현 상세:**
-- `renderSystem.lua`: 기본 도형 렌더 후 `r * 1.1` 반경으로 filled circle 위에 두꺼운 외곽선 링 오버레이
+- `variantOverlays.lua`: 기본 도형 렌더 후 `r * 1.1` 반경으로 filled circle 위에 두꺼운 외곽선 링 오버레이
 - 색상: 기본색 × 0.78 (어두운 톤) + alpha 220 → 메탈릭 느낌
 - 느린 이동 + 큰 히트박스 → 피하기 쉽지만 살상력 높음
 
@@ -318,7 +318,7 @@
 - `enemyCollisionSystem.lua`: 적 사망 시 `enemyAI.variant == "splitter"` 체크 → `onSpawnEnemy()` callback으로 미니 적 2마리 스폰
 - `ecsManager.lua`: spawn callback에서 `createEnemy()` 호출 후 scale×0.5, HP=1, XP=0, BulletEmitter disabled 설정
 - 분열체는 `variant=nil` → 재분열 방지 (무한 분열 안전장치)
-- `renderSystem.lua`: 8 segment 중 짝수 segment만 `lg.arc()` → 점선 외곽 효과
+- `variantOverlays.lua`: 8 segment 중 짝수 segment만 `lg.arc()` → 점선 외곽 효과
 - 스폰 위치: 제자리 좌우 `eRadius * 1.5` offset
 
 **조합 하이라이트:**
@@ -341,7 +341,7 @@
   - 정지 적은 기본 facing = 아래쪽 `(0, -1)` (플레이어 방향)
   - 총알→적 각도와 facing 각도 차이 ±45° 이내면 deflect
   - deflect: 총알 리사이클 + 데미지 0 + "enemy_hit" 사운드
-- `renderSystem.lua`: Velocity 기반 facing 각도 → `lg.arc()` 2개 레이어
+- `variantOverlays.lua`: Velocity 기반 facing 각도 → `lg.arc()` 2개 레이어
   - 외곽 glow: `r * 1.25` 반경, 투명도 100, lineWidth `r * 0.4`
   - 내부 bright: `r * 1.2` 반경, 투명도 220, lineWidth `r * 0.2`
 
@@ -359,7 +359,7 @@
 ## 포메이션(Formation) 시스템
 
 ### 설계 원칙
-- stageManager의 `_spawnWave()`에서 **좌표 배열만 계산**하여 기존 `createEnemy()` 호출
+- formationDefs.lua의 `M.DEFS`에 포메이션 정의, stageManager의 `_spawnWave()`에서 **좌표 배열만 계산**하여 기존 `createEnemy()` 호출
 - 새 컴포넌트/시스템 불필요
 - 포메이션 난이도 등급(1~3)으로 스테이지 곡선 반영
 
@@ -413,9 +413,9 @@ end
 
 | # | 작업 | 파일 | 복잡도 | 상태 | 커밋 |
 |---|------|------|:------:|:----:|:-----:|
-| 1 | 포메이션 시스템 (5종) | stageManager.lua | 낮 | ✅ | `4663f70` |
-| 2 | Swift 변형 | entityFactory, renderSystem | 낮 | ✅ | `090fdbd` |
-| 3 | Armored 변형 | entityFactory, renderSystem | 낮 | ✅ | `89f59e0` |
+| 1 | 포메이션 시스템 (5종) | formationDefs.lua + stageManager.lua | 낮 | ✅ | `4663f70` |
+| 2 | Swift 변형 | entityFactory, variantOverlays | 낮 | ✅ | `090fdbd` |
+| 3 | Armored 변형 | entityFactory, variantOverlays | 낮 | ✅ | `89f59e0` |
 | 4 | Splitter 변형 | entityFactory, enemyCollisionSystem | 중 | ✅ | `097dd9d` |
 | 5 | Shielded 변형 | entityFactory, enemyCollisionSystem | 중 | ✅ | *미커밋* |
 | 6 | STAGE_DEFS 확장 (변형+포메이션 배치) | stageManager.lua | 낮 | 🔲 | |

@@ -211,7 +211,8 @@ requires: [Transform, EnemyAI, Health, BossTag, BulletEmitter]
 
 | 파일 | 변경 내용 |
 |------|----------|
-| `entityFactory.lua` | `createBoss(world, bossType)` 함수 추가 + `BOSS_TYPES` 프리셋 테이블 |
+| `bossDefs.lua` | `BOSS_TYPES` 프리셋 테이블 (스탯, 패턴, AI) |
+| `entityFactory.lua` | `createBoss(world, bossType, scaling)` 팩토리 함수 |
 | `stageManager.lua` | `isBossStage` 감지 → 웨이브 대신 보스 스폰, 보스 처치 = 스테이지 클리어 |
 | `bulletEmitterSystem.lua` | 보스 전용 패턴 추가 (boss_circle, boss_spiral, boss_aimed, boss_wave) |
 | `enemyCollisionSystem.lua` | BossTag 엔티티 처치 시 대량 XP + 보스 처치 이벤트 발행 |
@@ -552,7 +553,7 @@ Stage 3 도달 시점 플레이어 레벨 추정:
 | # | Task | 산출물 | 의존성 | 예상 |
 |:---:|------|--------|:------:|:----:|
 | 3A.1 | BossTag 컴포넌트 | `components/bossTag.lua` | 없음 | 소 |
-| 3A.2 | createBoss() 팩토리 + BOSS_TYPES | `entityFactory.lua` 수정 | 3A.1 | 중 |
+| 3A.2 | createBoss() 팩토리 + BOSS_TYPES | `bossDefs.lua` + `entityFactory.lua` | 3A.1 | 중 |
 | 3A.3 | BossSystem (페이즈 + 이동 + 패턴순환) | `systems/bossSystem.lua` | 3A.1, 3A.2 | 대 |
 | 3A.4 | 보스 탄막 패턴 | `bulletEmitterSystem.lua` 수정 | 3A.2 | 중 |
 | 3A.5 | StageManager 보스 통합 | `stageManager.lua` 수정 | 3A.2, 3A.3 | 중 |
@@ -565,10 +566,10 @@ Stage 3 도달 시점 플레이어 레벨 추정:
 
 | # | Task | 산출물 | 의존성 |
 |:---:|------|--------|:------:|
-| 3A.9 | STACK 보스 프리셋 + 동심원 패턴 | entityFactory + bulletEmitter | 3A.8 |
-| 3A.10 | HEAP 보스 프리셋 + 랜덤burst 패턴 | entityFactory + bulletEmitter | 3A.8 |
-| 3A.11 | RECURSION 보스 + 미니언 소환 | entityFactory + bossSystem | 3A.8 |
-| 3A.12 | OVERFLOW 보스 + 전패턴 통합 | entityFactory + bossSystem | 3A.9~11 |
+| 3A.9 | STACK 보스 프리셋 + 동심원 패턴 | bossDefs + bulletEmitter | 3A.8 |
+| 3A.10 | HEAP 보스 프리셋 + 랜덤burst 패턴 | bossDefs + bulletEmitter | 3A.8 |
+| 3A.11 | RECURSION 보스 + 미니언 소환 | bossDefs + bossSystem | 3A.8 |
+| 3A.12 | OVERFLOW 보스 + 전패턴 통합 | bossDefs + bossSystem | 3A.9~11 |
 
 ---
 

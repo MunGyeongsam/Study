@@ -1,6 +1,6 @@
 # 04. 기술 아키텍처 — Vector Swarm
 
-> 마지막 갱신: 2026-04-19 (Phase 3A 완료 기준)
+> 마지막 갱신: 2026-04-22 (Phase 5B 완료, 리팩토링 후)
 > 이 문서는 현재 코드베이스의 **실제 구현**을 기준으로 작성되었습니다.
 
 ---
@@ -21,41 +21,75 @@ src/
 ├── conf.lua               # LÖVE 창 설정 (432×960, 9:20 세로)
 │
 ├── 00_common/             # 유틸리티 — 게임 의존성 없음
-│   ├── global.lua           # 전역 함수 (log, clamp, lerp, setColor, …)
+│   ├── global.lua           # 전역 함수 (log, setColor, resetColor, clamp, lerp, …)
 │   ├── logger.lua           # 4레벨 로깅 + 인게임 콘솔 (` 키)
 │   ├── debug.lua            # 디버그 watch panel (F1)
 │   ├── gridDebugDraw.lua    # 스크린 그리드 오버레이 (F4)
-│   ├── kutil.lua            # 기타 유틸리티
-│   └── math/
-│       ├── vector.lua       # 2D 벡터 연산
-│       └── matrix.lua       # 행렬 연산
+│   ├── mathUtil.lua         # 수학 유틸리티 (angle, vector 등)
+│   └── saveData.lua         # love.filesystem JSON save/load
 │
-├── 01_core/               # 엔진 레이어
-│   ├── world.lua            # 월드 경계(120×250), 존 7개, 파워업/체크포인트
+├── 01_core/               # 엔진 레이어 (순수 엔진, 게임 무관)
+│   ├── world.lua            # 월드 경계(20×30), 존 정의
 │   ├── ecs.lua              # ECS 코어 (엔티티/컴포넌트, componentIndex 캐시)
 │   ├── system.lua           # 시스템 베이스 클래스 (성능 모니터링)
-│   └── ecsManager.lua       # ECS 오케스트레이터 (시스템 등록, update/draw 분리)
+│   └── sceneStack.lua       # Scene Stack 엔진 (push/pop/replace/clear)
 │
-├── 02_renderer/           # 카메라 & 렌더링
+├── 02_renderer/           # 카메라 & 렌더링 & 후처리
 │   ├── camera.lua           # Unity 스타일 orthographic 카메라
-│   └── cameraManager.lua    # game/debug 카메라 모드 (F5 토글)
+│   ├── cameraManager.lua    # game/debug 카메라 모드 (F5 토글)
+│   ├── bloom.lua            # Bloom 후처리 (threshold + Gaussian blur)
+│   └── background.lua       # Random Space Filling 배경 (Paul Bourke)
 │
 ├── 03_game/               # 게임 로직
+│   ├── ecsManager.lua       # ECS 오케스트레이터 (시스템 등록, update/draw 분리)
 │   ├── components/ (17종)   # 순수 데이터 ECS 컴포넌트
-│   ├── systems/ (17종)      # ECS 시스템 + BulletPool + StageManager
+│   ├── data/                # 순수 데이터 테이블 (로직 없음)
+│   │   ├── bossDefs.lua       # 보스 프리셋 (스탯, 패턴, AI)
+│   │   ├── stageData.lua      # 스테이지 정의, 적 풀, 변형 테이블, 보스 매핑
+│   │   └── formationDefs.lua  # 포메이션 패턴 (wedge, pincer 등 5종)
+│   ├── systems/             # ECS 시스템 (17개)
+│   │   ├── inputSystem, movementSystem, boundarySystem, lifespanSystem
+│   │   ├── renderSystem, playerRenderSystem, bulletEmitterSystem
+│   │   ├── bulletPool, collisionSystem, dashSystem, focusSystem
+│   │   ├── enemyAISystem, playerWeaponSystem, enemyCollisionSystem
+│   │   ├── xpCollectionSystem, bossSystem, stageManager
+│   │   └── renderers/        # Strategy Pattern 렌더 모듈
+│   │       ├── basicShapes.lua    # 기본 적 도형 6종 (자동 등록)
+│   │       ├── bossRenderers.lua  # 보스 비주얼 5종 (자동 등록)
+│   │       └── variantOverlays.lua # 변형 오버레이 4종 (자동 등록)
 │   ├── entities/            # 엔티티 팩토리 + Player 파사드
 │   │   ├── entityFactory.lua  # createPlayer(), createEnemy(), createBoss(), createXpOrb()
 │   │   └── player.lua         # ECS 파사드 (bind/update/getPosition)
+│   ├── scenes/              # Scene Stack 씬 (8종)
+│   │   ├── playScene.lua      # 게임 루프 씬 (ECS + 렌더 + 카메라)
+│   │   ├── titleScene.lua     # 타이틀 메뉴 씬
+│   │   ├── pauseScene.lua     # 일시정지 오버레이 (drawBelow)
+│   │   ├── levelUpScene.lua   # 레벨업 오버레이 (auto-pop)
+│   │   ├── upgradeScene.lua   # 업그레이드 트리 오버레이
+│   │   ├── gameOverScene.lua  # 게임오버 결과 씬
+│   │   ├── creditsScene.lua   # 크레딧 오버레이
+│   │   └── achievementScene.lua # 도전과제 목록 오버레이
 │   ├── patterns/            # 탄막 패턴 (예정)
-│   └── states/
-│       ├── gameState.lua      # 게임 상태 (playing/game_over) + timeScale
-│       └── levelUp.lua        # 레벨업 3택 1 카드 UI
+│   └── states/              # 게임 상태 (7종)
+│       ├── gameState.lua      # 상태 머신 (playing/game_over/level_up/victory)
+│       ├── levelUp.lua        # 레벨업 3택 UI + 감쇠 스택
+│       ├── achievementSystem.lua # 도전과제 추적 + 해금
+│       ├── upgradeTree.lua    # 영구 강화 트리 (Data Fragments)
+│       ├── titleMenu.lua      # 타이틀 스크린 메뉴
+│       ├── pauseMenu.lua      # 일시정지 오버레이
+│       └── tutorialHints.lua  # 첫 플레이 힌트 (슬로모 + 글리치 텍스트)
 │
-└── 04_ui/                 # HUD, 모바일 레이아웃
-    ├── uiManager.lua        # UI 총괄 (터치 소비 우선)
-    ├── topHud.lua           # 상단 HUD
-    ├── bottomControls.lua   # 하단 버튼 컨트롤
-    └── mobileLayout.lua     # 모바일 레이아웃 (영역 분할)
+├── 04_ui/                 # HUD, 모바일 레이아웃
+│   ├── uiManager.lua        # UI 총괄 (터치 소비 우선)
+│   ├── topHud.lua           # 상단 HUD (HP, 스테이지, 보스HP바)
+│   ├── bottomControls.lua   # 하단 버튼 컨트롤
+│   ├── mobileLayout.lua     # 모바일 레이아웃 (영역 분할)
+│   └── minimap.lua          # 월드 미니맵 오버레이
+│
+└── 05_sound/              # Zero-Art 절차적 오디오
+    ├── synth.lua            # 오실레이터 엔진 (5 파형, ADSR, freq sweep)
+    ├── soundManager.lua     # 하이브리드 로더 (ext_res → 코드 생성 fallback)
+    └── sfxDefs.lua          # SFX 레시피 (6 효과음)
 ```
 
 ---
@@ -121,11 +155,11 @@ local MySystem = System.new("MySystem", {"Transform", "Velocity"},
 )
 ```
 
-### 4.3. ECS 매니저 (`ecsManager.lua`)
+### 4.3. ECS 매니저 (`03_game/ecsManager.lua`)
 ```lua
-local ecsManager = require("01_core.ecsManager")
+local ecsManager = require("03_game.ecsManager")
 
-ecsManager.init(getPlayerPos)     -- 월드 + 14시스템 등록
+ecsManager.init(getPlayerPos)     -- 월드 + 15시스템 등록
 ecsManager.update(dt)             -- 로직 시스템만 실행
 ecsManager.draw()                 -- 렌더 시스템만 실행
 ecsManager.getWorld()             -- ECS 월드 참조
@@ -264,14 +298,17 @@ EntityFactory.createPlayer(ecs, x, y)
 --   Focus(energy=100), PlayerXP
 
 EntityFactory.createEnemy(ecs, x, y, enemyType)
--- 프리셋: basic(hp=3, xp=2), spiral(hp=5, xp=5), aimed(hp=2, xp=3), wave(hp=4, xp=3)
+-- 적 5종: bit(원형), node(다이아), vector(화살표), loop(이중링), matrix(육각형)
+-- 스탯/AI 프리셋은 entityFactory 내부, 렌더는 basicShapes.lua 자동 dispatch
 
 EntityFactory.createXpOrb(ecs, x, y, value)
 -- XP 오브 엔티티 (자석 수집)
 
-EntityFactory.createBoss(ecs, x, y, bossType)
+EntityFactory.createBoss(ecs, x, y, bossType, scaling)
 -- 보스 엔티티 (BossTag + 페이즈 + 탄막 순환)
 -- bossType: "NULL"(S3), "STACK"(S6), "HEAP"(S9), "RECURSION"(S12), "OVERFLOW"(S15)
+-- 보스 프리셋 데이터는 bossDefs.lua, 렌더는 bossRenderers.lua
+-- scaling: Endless 모드용 (HP/속도/미니언 배율)
 ```
 
 ### Player 파사드 (`03_game/entities/player.lua`)
@@ -296,9 +333,12 @@ gameState.init()                  -- 상태 초기화
 gameState.update(dt, health)      -- 상태 갱신 (HP 체크 → game_over 전환)
 gameState.isPlaying()             -- playing 상태인지
 gameState.isGameOver()            -- game_over 상태인지
+gameState.isVictory()             -- victory 상태인지
 gameState.getScore()              -- 점수 (생존시간)
 gameState.getTimeScale()          -- 시간 배율 (포커스=0.4, 레벨업=0, 기본=1.0)
 gameState.setTimeScale(scale)     -- 시간 배율 설정
+gameState.addFragments(n)         -- Data Fragment 추가
+gameState.triggerVictory()        -- Victory 상태 전환
 ```
 
 ### levelUp.lua
@@ -307,6 +347,35 @@ gameState.setTimeScale(scale)     -- 시간 배율 설정
 - 패시브 5종: 최대HP, 이동속도, 대쉬쿨, 자석범위, 최대에너지
 - 감쇠 스택: 같은 업그레이드 반복 선택 시 `0.7^n` 감쇠 (예외: Multi Shot, Max HP)
 - 키 1/2/3 또는 터치로 선택
+
+### 기타 states
+| 모듈 | 역할 |
+|------|------|
+| achievementSystem.lua | 도전과제 추적 (처치 수, 보스 격파, 스테이지 클리어, 빅토리) |
+| upgradeTree.lua | 영구 강화 트리 (Data Fragments 소비, saveData 연동) |
+| titleMenu.lua | 타이틀 화면 메뉴 (PLAY / UPGRADES / CREDITS) |
+| pauseMenu.lua | 게임 내 일시정지 오버레이 |
+| tutorialHints.lua | 첫 플레이 4단계 힌트 (슬로모 + 글리치 텍스트) |
+
+---
+
+## 9.5. Scene Stack (`01_core/sceneStack.lua`)
+
+게임 상태 전환을 Scene Stack 패턴으로 관리:
+
+```lua
+local SceneStack = require("01_core.sceneStack")
+local stack = SceneStack.new()
+
+stack:push(scene)           -- 씬 위에 쌓기
+stack:pop()                 -- 최상위 씬 제거
+stack:replace(scene)        -- 최상위 교체
+stack:clear()               -- 전체 초기화
+```
+
+- 각 Scene은 `enter`, `exit`, `update(dt)`, `draw()`, `keypressed(key)` 콜백
+- `transparent = true` → 아래 씬도 draw (오버레이용)
+- `drawBelow = true` → 하위 씬의 draw만 실행 (update는 안 함)
 
 ---
 
@@ -390,18 +459,12 @@ logger.close()                     -- love.quit에서 호출
 
 ---
 
-## 13. 수학 라이브러리 (`00_common/math/`)
+## 13. 수학 유틸리티 (`00_common/mathUtil.lua`)
 
 ```lua
--- 벡터
-local Vector = require("00_common.math.vector")
-local v = Vector(3, 4)
-v:len()  v:normalized()  v:dot(v2)  v:rotated(angle)
-v1 + v2  v1 * scalar
-
--- 행렬
-local Matrix = require("00_common.math.matrix")
-Matrix.translate(x, y)  Matrix.rotate(angle)
+local mathUtil = require("00_common.mathUtil")
+-- angle, vector, distance 등 게임용 수학 함수
+-- 기본적인 clamp, lerp, distance, normalize는 global.lua에 정의
 ```
 
 ---
@@ -415,6 +478,52 @@ Matrix.translate(x, y)  Matrix.rotate(angle)
 - `local` 선언은 핫패스 밖에서
 - `string.format` 선호 (루프 내 `..` 연결 지양)
 - `math.sin/cos` → 필요 시 LUT 캐시
+
+---
+
+## 15. 데이터 주도 아키텍처 (`03_game/data/`)
+
+모놀리식 파일에서 순수 데이터를 분리하여 확장성과 가독성 향상.
+
+### 데이터 모듈 규칙
+- `data/` 폴더의 파일은 **순수 데이터 테이블**만 포함 (로직 없음, 최소한의 헬퍼 함수만)
+- 게임 로직 파일이 `require("03_game.data.xxx")`로 참조
+- 각 파일 헤더에 Copilot용 수정 가이드 포함
+
+### 현재 데이터 모듈
+| 모듈 | 분리 원본 | 내용 |
+|------|----------|------|
+| `bossDefs.lua` | `entityFactory.lua` | 보스 5종 프리셋 (HP, 속도, 패턴, AI) |
+| `stageData.lua` | `stageManager.lua` | STAGE_DEFS, 적 풀, 변형 티어, 보스 매핑 |
+| `formationDefs.lua` | `stageManager.lua` | 포메이션 5종 정의 + 등장 확률 |
+
+---
+
+## 16. Strategy Pattern 렌더 (`03_game/systems/renderers/`)
+
+렌더링을 dispatch table + 자동 등록으로 분리. `renderSystem.lua`는 54줄의 순수 dispatch.
+
+### 작동 원리
+```lua
+-- renderSystem.lua 초기화 시
+local basicShapes    = require("03_game.systems.renderers.basicShapes")
+local bossRenderers  = require("03_game.systems.renderers.bossRenderers")
+local variantOverlays = require("03_game.systems.renderers.variantOverlays")
+
+-- 각 모듈의 함수를 dispatch 테이블에 자동 등록
+for k, fn in pairs(basicShapes) do dispatch[k] = fn end
+for k, fn in pairs(bossRenderers) do dispatch[k] = fn end
+```
+
+### 렌더러 모듈 시그니처
+| 모듈 | 함수 시그니처 | 파일 수 |
+|------|-------------|--------|
+| `basicShapes.lua` | `fn(x, y, r, renderable, transform)` | 6종 |
+| `bossRenderers.lua` | `fn(x, y, r, renderable, transform)` | 5종 |
+| `variantOverlays.lua` | `fn(x, y, r, renderable, ecs, entityId)` | 4종 |
+
+### 새 적/보스/변형 추가 시
+해당 렌더러 파일에 함수만 추가하면 자동 등록. `renderSystem.lua` 수정 불필요.
 
 ---
 
