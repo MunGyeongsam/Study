@@ -283,6 +283,118 @@ function EntityFactory.createEnemy(world, x, y, enemyType, difficulty, variant)
     return entityId
 end
 
+-- ─── DNA 기반 적 엔티티 생성 (Stage 16+ Endless) ─────────────────
+-- dna = dnaDefs.generateDna(round) 결과물
+function EntityFactory.createDnaEnemy(world, x, y, dna, difficulty)
+    local diff = difficulty or {}
+    local bspdMult = diff.bulletSpeedMult or 1.0
+
+    local stats = dna.stats
+    local modifier = dna.modifier or "none"
+    local vdef = VARIANT_DEFS[modifier]
+
+    local entityId = world:createEntity()
+    local radius = stats.radius
+
+    world:addComponent(entityId, "Transform", Transform.new({
+        x = x or 0, y = y or 5,
+    }))
+    world:addComponent(entityId, "Velocity", Velocity.new({
+        vx = 0, vy = 0, speed = stats.speed, maxSpeed = ENEMY_MAX_SPEED, damping = 1.0,
+    }))
+    world:addComponent(entityId, "Collider", Collider.new({
+        radius = radius, layer = "enemy",
+        mask = {"player", "playerBullet"},
+    }))
+    -- Body = 레이어 배열 (table) → renderSystem이 레이어별 렌더
+    world:addComponent(entityId, "Renderable", Renderable.new({
+        type = dna.body,  -- table: [{shape,mode,scale,rot}, ...]
+        radius = radius,
+        color = dna.color,
+        variant = modifier ~= "none" and modifier or nil,
+    }))
+    world:addComponent(entityId, "LifeSpan", LifeSpan.new({
+        time = 15, destroyOffScreen = true,
+    }))
+
+    -- AI: movement 유전자 → behavior 매핑
+    local aiParams = {
+        behavior  = dna.movement,
+        speed     = stats.speed,
+        xpValue   = stats.xp,
+        variant   = modifier ~= "none" and modifier or nil,
+    }
+    -- Movement별 추가 파라미터
+    if dna.movement == "drift" then
+        aiParams.driftVx = 0
+        aiParams.driftVy = -stats.speed
+    elseif dna.movement == "orbit" then
+        aiParams.orbitRadius = 1.5
+        aiParams.orbitSpeed  = stats.speed
+    elseif dna.movement == "chase" then
+        aiParams.chaseSpeed = stats.speed
+    elseif dna.movement == "swarm" then
+        aiParams.swarmSpeed = stats.speed
+    elseif dna.movement == "charge" then
+        aiParams.chargeSpeed  = stats.speed * 3
+        aiParams.chargeWarnTime = 0.8
+    elseif dna.movement == "stationary" then
+        aiParams.spinSpeed = 1.0
+    end
+    world:addComponent(entityId, "EnemyAI", EnemyAI.new(aiParams))
+
+    -- Attack: attack 유전자 → bulletEmitter
+    if dna.attack ~= "none" then
+        -- 기본 탄막 파라미터 (패턴별 미세 조정)
+        local emitRate = 1.5
+        local bulletSpeed = 1.5 * bspdMult
+        local bulletCount = 4
+        local bulletLifetime = 4.0
+        local bulletRadius = 0.04
+        local bulletColor = {1, 0.3, 0.3, 1}
+
+        if dna.attack == "aimed" then
+            bulletCount = 1; bulletSpeed = 2.0 * bspdMult
+        elseif dna.attack == "spiral" then
+            bulletCount = 4; emitRate = 2.0
+        elseif dna.attack == "cross" then
+            bulletCount = 4; emitRate = 1.2
+        elseif dna.attack == "ring_pulse" then
+            bulletCount = 8; emitRate = 1.0
+        elseif dna.attack == "wave" then
+            bulletCount = 3; emitRate = 1.5
+        elseif dna.attack == "orbit_shot" then
+            bulletCount = 3; emitRate = 1.0; bulletLifetime = 6.0
+        elseif dna.attack == "return_shot" then
+            bulletCount = 2; emitRate = 0.8; bulletLifetime = 5.0
+        end
+
+        world:addComponent(entityId, "BulletEmitter", BulletEmitter.new({
+            pattern        = dna.attack,
+            emitRate       = emitRate,
+            bulletSpeed    = bulletSpeed,
+            bulletCount    = bulletCount,
+            bulletLifetime = bulletLifetime,
+            bulletRadius   = bulletRadius,
+            bulletColor    = bulletColor,
+        }))
+    end
+
+    world:addComponent(entityId, "Health", Health.new({
+        hp = stats.hp, maxHp = stats.hp, iFrames = 0,
+    }))
+
+    if dna.movement == "orbit" then
+        local aiComp = world:getComponent(entityId, "EnemyAI")
+        aiComp.orbitCenterX = x or 0
+        aiComp.orbitCenterY = y or 5
+    end
+
+    logInfo(string.format("[ENTITY] DNA enemy created: %d (base:%s mv:%s atk:%s mod:%s body:%d layers)",
+        entityId, dna.baseType, dna.movement, dna.attack, dna.modifier, #dna.body))
+    return entityId
+end
+
 -- XP 오브 엔티티 생성
 function EntityFactory.createXpOrb(world, x, y, value)
     local entityId = world:createEntity()

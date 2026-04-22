@@ -1,5 +1,5 @@
 -- ============================================================================
--- Basic Shape Renderers — 기본 적 도형 6종
+-- Basic Shape Renderers — 기본 적 도형 12종
 -- ============================================================================
 --
 -- ◆ 이 파일의 역할
@@ -17,6 +17,11 @@
 --   x,y = 월드 좌표, r = renderable.radius
 --   setColor()는 호출자(renderSystem)가 이미 적용한 상태
 --
+-- ◆ DNA 레이어 렌더 시그니처 (renderSystem에서 직접 호출)
+--   fn_draw(x, y, r, mode)
+--   mode = "fill" | "line"
+--   shapes_draw 테이블에 등록. dispatch 테이블과 별도.
+--
 -- ◆ 의존 관계
 --   love.graphics만 사용. renderSystem.lua가 require 한다.
 -- ============================================================================
@@ -24,6 +29,7 @@
 local lg = love.graphics
 local cos = math.cos
 local sin = math.sin
+local pi = math.pi
 local pi2 = math.pi * 2
 local halfPi = math.pi / 2
 
@@ -33,6 +39,86 @@ for i = 0, 5 do
     local a = (i / 6) * pi2 - halfPi
     hexVerts[i * 2 + 1] = cos(a)
     hexVerts[i * 2 + 2] = sin(a)
+end
+
+-- Pre-built triangle vertices (unit radius, point up)
+local triVerts = {}
+for i = 0, 2 do
+    local a = (i / 3) * pi2 - halfPi
+    triVerts[i * 2 + 1] = cos(a)
+    triVerts[i * 2 + 2] = sin(a)
+end
+
+-- Pre-built star vertices (5-point, unit radius)
+local starVerts = {}
+local starOuter = 1.0
+local starInner = 0.4
+for i = 0, 9 do
+    local a = (i / 10) * pi2 - halfPi
+    local r = (i % 2 == 0) and starOuter or starInner
+    starVerts[i * 2 + 1] = r * cos(a)
+    starVerts[i * 2 + 2] = r * sin(a)
+end
+
+-- Pre-built cross vertices (unit radius, 12-point path)
+local crossW = 0.35  -- arm width ratio
+local crossVerts = {
+     crossW, -1,     crossW,  -crossW,   1, -crossW,
+     1,       crossW, crossW,   crossW,  crossW,  1,
+    -crossW,  1,    -crossW,   crossW,  -1,  crossW,
+    -1,      -crossW,-crossW,  -crossW, -crossW, -1,
+}
+
+-- Pre-built tear vertices (convex teardrop: semicircle top + point bottom)
+local tearVerts = {}
+local tearSemiN = 10
+for i = 0, tearSemiN do
+    local a = pi - (i / tearSemiN) * pi  -- pi→0 (left→top→right)
+    tearVerts[#tearVerts + 1] = cos(a) * 0.6
+    tearVerts[#tearVerts + 1] = sin(a) * 0.6
+end
+tearVerts[#tearVerts + 1] = 0
+tearVerts[#tearVerts + 1] = -1.0
+-- 12 vertices, convex → polygon("fill") works directly
+
+-- Pre-built bowtie vertices (unit radius, 2 triangles touching center)
+local bowtieVerts = {
+    -1, -0.6,   0, 0,  -1,  0.6,  -- left triangle
+     1,  0.6,   0, 0,   1, -0.6,  -- right triangle
+}
+
+-- Pre-built gear vertices (8-tooth, unit radius)
+local gearVerts = {}
+local gearTeeth = 8
+local gearOuter = 1.0
+local gearInner = 0.7
+for i = 0, gearTeeth * 4 - 1 do
+    local a = (i / (gearTeeth * 4)) * pi2 - halfPi
+    local step = i % 4
+    local r
+    if step == 0 or step == 1 then
+        r = gearOuter
+    else
+        r = gearInner
+    end
+    gearVerts[i * 2 + 1] = r * cos(a)
+    gearVerts[i * 2 + 2] = r * sin(a)
+end
+
+-- Vertex counts for concave shapes (star-convex → triangle fan from center)
+local starN  = 10
+local crossN = 12
+local gearN  = gearTeeth * 4  -- 32
+
+--- Fill a star-convex polygon using triangle fan from origin (0,0)
+--- Must be called inside lg.push/translate/scale context
+local function _fillFanPoly(verts, nVerts)
+    for i = 0, nVerts - 1 do
+        local j = (i + 1) % nVerts
+        lg.polygon("fill", 0, 0,
+            verts[i*2+1], verts[i*2+2],
+            verts[j*2+1], verts[j*2+2])
+    end
 end
 
 local M = {}
@@ -87,6 +173,183 @@ function M.hexagon(x, y, r, renderable, transform)
         hexVerts[9], hexVerts[10],
         hexVerts[11], hexVerts[12])
     lg.pop()
+end
+
+-- ─── 신규 도형 6종 (DNA Body 레이어용) ──────────────────────────
+
+function M.triangle(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    lg.polygon("fill", triVerts[1], triVerts[2],
+        triVerts[3], triVerts[4], triVerts[5], triVerts[6])
+    lg.pop()
+end
+
+function M.star(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    _fillFanPoly(starVerts, starN)
+    lg.pop()
+end
+
+function M.cross(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    _fillFanPoly(crossVerts, crossN)
+    lg.pop()
+end
+
+function M.tear(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    lg.polygon("fill", unpack(tearVerts))
+    lg.pop()
+end
+
+function M.bowtie(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    -- 2 triangles (polygon can't do concave, draw separately)
+    lg.polygon("fill", -1, -0.6, 0, 0, -1, 0.6)
+    lg.polygon("fill",  1,  0.6, 0, 0,  1, -0.6)
+    lg.pop()
+end
+
+function M.gear(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    _fillFanPoly(gearVerts, gearN)
+    lg.pop()
+end
+
+-- ─── DNA 레이어 렌더용 함수 테이블 ──────────────────────────────
+-- shapes_draw[shape](x, y, r, mode) — mode = "fill" | "line"
+-- 기존 dispatch 함수와 별도: mode 파라미터로 fill/line 제어
+
+M.shapes_draw = {}
+
+M.shapes_draw.circle = function(x, y, r, mode)
+    if mode == "line" then
+        lg.setLineWidth(r * 0.2)
+        lg.circle("line", x, y, r)
+        lg.setLineWidth(1)
+    else
+        lg.circle("fill", x, y, r)
+    end
+end
+
+M.shapes_draw.diamond = function(x, y, r, mode)
+    if mode == "line" then
+        lg.setLineWidth(r * 0.2)
+        lg.polygon("line", x-r, y, x, y+r, x+r, y, x, y-r)
+        lg.setLineWidth(1)
+    else
+        lg.polygon("fill", x-r, y, x, y+r, x+r, y, x, y-r)
+    end
+end
+
+M.shapes_draw.arrow = function(x, y, r, mode)
+    if mode == "line" then
+        lg.setLineWidth(r * 0.2)
+        lg.polygon("line", x+r*1.2, y, x-r*0.6, y+r*0.6, x-r*0.6, y-r*0.6)
+        lg.setLineWidth(1)
+    else
+        lg.polygon("fill", x+r*1.2, y, x-r*0.6, y+r*0.6, x-r*0.6, y-r*0.6)
+    end
+end
+
+M.shapes_draw.spiral_ring = function(x, y, r, mode)
+    lg.setLineWidth(r * 0.2)
+    lg.circle("line", x, y, r)
+    lg.circle("line", x, y, r * 0.5)
+    lg.setLineWidth(1)
+end
+
+--- Convex polygon draw (hexagon, triangle, tear)
+local function _drawPolygonVerts(x, y, r, verts, mode)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    if mode == "line" then
+        lg.setLineWidth(1 / r * 0.15)
+        lg.polygon("line", unpack(verts))
+        lg.setLineWidth(1)
+    else
+        lg.polygon("fill", unpack(verts))
+    end
+    lg.pop()
+end
+
+--- Concave polygon draw (star, cross, gear) — fan fill from center
+local function _drawConcaveVerts(x, y, r, verts, nVerts, mode)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    if mode == "line" then
+        lg.setLineWidth(1 / r * 0.15)
+        lg.polygon("line", unpack(verts))
+        lg.setLineWidth(1)
+    else
+        _fillFanPoly(verts, nVerts)
+    end
+    lg.pop()
+end
+
+M.shapes_draw.hexagon = function(x, y, r, mode)
+    _drawPolygonVerts(x, y, r, hexVerts, mode)
+end
+
+M.shapes_draw.rectangle = function(x, y, r, mode)
+    local w, h = r * 1.4, r * 1.0
+    if mode == "line" then
+        lg.setLineWidth(r * 0.2)
+        lg.rectangle("line", x - w/2, y - h/2, w, h)
+        lg.setLineWidth(1)
+    else
+        lg.rectangle("fill", x - w/2, y - h/2, w, h)
+    end
+end
+
+M.shapes_draw.triangle = function(x, y, r, mode)
+    _drawPolygonVerts(x, y, r, triVerts, mode)
+end
+
+M.shapes_draw.star = function(x, y, r, mode)
+    _drawConcaveVerts(x, y, r, starVerts, starN, mode)
+end
+
+M.shapes_draw.cross = function(x, y, r, mode)
+    _drawConcaveVerts(x, y, r, crossVerts, crossN, mode)
+end
+
+M.shapes_draw.tear = function(x, y, r, mode)
+    _drawPolygonVerts(x, y, r, tearVerts, mode)
+end
+
+M.shapes_draw.bowtie = function(x, y, r, mode)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    if mode == "line" then
+        lg.setLineWidth(1 / r * 0.15)
+        lg.polygon("line", -1, -0.6, 0, 0, -1, 0.6)
+        lg.polygon("line",  1,  0.6, 0, 0,  1, -0.6)
+        lg.setLineWidth(1)
+    else
+        lg.polygon("fill", -1, -0.6, 0, 0, -1, 0.6)
+        lg.polygon("fill",  1,  0.6, 0, 0,  1, -0.6)
+    end
+    lg.pop()
+end
+
+M.shapes_draw.gear = function(x, y, r, mode)
+    _drawConcaveVerts(x, y, r, gearVerts, gearN, mode)
 end
 
 return M

@@ -174,6 +174,15 @@ function ECSManager.createEnemy(x, y, enemyType, difficulty, variant)
     return EntityFactory.createEnemy(ECSManager.world, x, y, enemyType, difficulty, variant)
 end
 
+-- DNA 기반 적 엔티티 생성 (Stage 16+ Endless)
+function ECSManager.createDnaEnemy(x, y, dna, difficulty)
+    if not ECSManager.world then
+        logError("ECS: World not initialized")
+        return nil
+    end
+    return EntityFactory.createDnaEnemy(ECSManager.world, x, y, dna, difficulty)
+end
+
 -- ECS 통계 반환
 function ECSManager.getStats()
     if not ECSManager.world then

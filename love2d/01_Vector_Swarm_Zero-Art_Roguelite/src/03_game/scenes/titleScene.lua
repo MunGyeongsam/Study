@@ -58,6 +58,10 @@ function TitleScene:keypressed(key)
     if key == "escape" then
         love.event.quit()
         return true
+    elseif key == "g" then
+        local GalleryScene = require("03_game.scenes.galleryScene")
+        self._sceneStack:push(GalleryScene.new(self._sceneStack))
+        return true
     end
     return titleMenu.keypressed(key)
 end

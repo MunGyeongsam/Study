@@ -11,6 +11,7 @@ local achievementSystem = require("03_game.states.achievementSystem")
 local stageData = require("03_game.data.stageData")
 local formationDefs = require("03_game.data.formationDefs")
 local stageStory = require("03_game.data.stageStory")
+local dnaDefs = require("03_game.data.dnaDefs")
 
 local _min    = math.min
 local _max    = math.max
@@ -452,7 +453,12 @@ function StageManager:_spawnWave(config)
             variant = stageData.pickVariant(self.stage)
         end
 
-        if enemyType == "bit" then
+        -- Stage 16+: DNA 변이 적 스폰 (확률 기반)
+        local round = stageData.getEndlessRound(self.stage)
+        if round > 0 and _random() < _min(0.3 + round * 0.1, 0.7) then
+            local dna = dnaDefs.generateDna(round)
+            self.ecsManager.createDnaEnemy(spawnX, spawnY, dna, diff)
+        elseif enemyType == "bit" then
             -- Bit: swarm spawn (3~5 clustered around position)
             local swarmCount = _random(3, 5)
             for _ = 1, swarmCount do

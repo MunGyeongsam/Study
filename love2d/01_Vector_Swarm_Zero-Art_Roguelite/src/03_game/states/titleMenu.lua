@@ -204,7 +204,7 @@ function titleMenu.draw()
     lg.setFont(subFont)
     local alpha = 0.4 + 0.2 * _sin(t * 2)
     lg.setColor(0.5, 0.5, 0.5, alpha)
-    local hint = "UP/DOWN: select | ENTER: confirm"
+    local hint = "UP/DOWN: select | ENTER: confirm | G: gallery"
     local hw = subFont:getWidth(hint)
     lg.print(hint, (w - hw) / 2, h * 0.92)
 
