@@ -302,7 +302,10 @@ function PlayScene:update(dt)
         local pid = player.getEntityId()
         if pid then
             local health = ecsManager.getWorld():getComponent(pid, "Health")
-            if health then health.iTimer = 9999 end
+            if health then
+                health.hp = 999
+                health.maxHp = 999
+            end
         end
     end
 
@@ -474,7 +477,7 @@ function PlayScene:keypressed(key)
         return true
     elseif key == "f7" then
         _godMode = not _godMode
-        _disableWeapon = _godMode
+        _disableWeapon = false  -- 밸런스 테스트: godMode에서도 무기 활성화
         logInfo(string.format("[DEBUG] God mode: %s (weapon: %s)", _godMode and "ON" or "OFF", _disableWeapon and "OFF" or "ON"))
         return true
     elseif key == "f8" then

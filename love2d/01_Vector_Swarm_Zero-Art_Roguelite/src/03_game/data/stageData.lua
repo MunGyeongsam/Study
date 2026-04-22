@@ -79,7 +79,7 @@ function M.getBossScaling(stage)
     local round = M.getEndlessRound(stage)
     if round <= 0 then return nil end
     return {
-        hpMult    = 1.5 ^ round,
+        hpMult    = 2.0 ^ round,
         speedMult = 1.0 + round * 0.1,
         minionAdd = round,
         redShift  = _min(round * 0.15, 0.6),
