@@ -59,6 +59,13 @@ local M = {
         defaultSteps = 400,
     },
     {
+        name = "Rose 8/3",
+        formula = "r = cos(8/3 * t)",
+        fn = function(t) return _cos(8 / 3 * t) end,
+        tRange = {0, 6 * _pi},
+        defaultSteps = 420,
+    },
+    {
         name = "Cardioid",
         formula = "r = 1 + cos(t)",
         fn = function(t) return 1 + _cos(t) end,
@@ -175,6 +182,42 @@ local M = {
         defaultSteps = 150,
     },
     {
+        name = "Epicycloid (k=4)",
+        formula = "x=(R+r)cos(t)-r*cos((R+r)t/r)",
+        fn = "parametric",
+        paramFn = function(t)
+            local R, r = 1, 1 / 4
+            return (R + r) * _cos(t) - r * _cos((R + r) * t / r),
+                   (R + r) * _sin(t) - r * _sin((R + r) * t / r)
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 180,
+    },
+    {
+        name = "Epicycloid (k=5)",
+        formula = "x=(R+r)cos(t)-r*cos((R+r)t/r)",
+        fn = "parametric",
+        paramFn = function(t)
+            local R, r = 1, 1 / 5
+            return (R + r) * _cos(t) - r * _cos((R + r) * t / r),
+                   (R + r) * _sin(t) - r * _sin((R + r) * t / r)
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 220,
+    },
+    {
+        name = "Epicycloid (k=6)",
+        formula = "x=(R+r)cos(t)-r*cos((R+r)t/r)",
+        fn = "parametric",
+        paramFn = function(t)
+            local R, r = 1, 1 / 6
+            return (R + r) * _cos(t) - r * _cos((R + r) * t / r),
+                   (R + r) * _sin(t) - r * _sin((R + r) * t / r)
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 260,
+    },
+    {
         name = "Nephroid",
         formula = "x = 3cos(t)-cos(3t), y = 3sin(t)-sin(3t)",
         fn = "parametric",
@@ -239,6 +282,70 @@ local M = {
         end,
         tRange = {0, 2 * _pi},
         defaultSteps = 300,
+    },
+    {
+        name = "Gerono Lemniscate",
+        formula = "x = cos(t), y = sin(t)cos(t)",
+        fn = "parametric",
+        paramFn = function(t)
+            return _cos(t), _sin(t) * _cos(t)
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 220,
+    },
+    {
+        name = "Booth's Lemniscate",
+        formula = "x = cos(t)/(1+sin^2), y = sin(t)cos(t)/(1+sin^2)",
+        fn = "parametric",
+        paramFn = function(t)
+            local s, c = _sin(t), _cos(t)
+            local d = 1 + s * s
+            return c / d, (s * c) / d
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 260,
+    },
+    {
+        name = "Hypotrochoid (R=7,r=3,d=2)",
+        formula = "x=(R-r)cos(t)+d*cos((R-r)t/r)",
+        fn = "parametric",
+        paramFn = function(t)
+            local R, r, d = 7, 3, 2
+            local k = (R - r) / r
+            local norm = (R - r) + d
+            return ((R - r) * _cos(t) + d * _cos(k * t)) / norm,
+                   ((R - r) * _sin(t) - d * _sin(k * t)) / norm
+        end,
+        tRange = {0, 6 * _pi},
+        defaultSteps = 320,
+    },
+    {
+        name = "Hypotrochoid (R=7,r=3,d=4)",
+        formula = "x=(R-r)cos(t)+d*cos((R-r)t/r)",
+        fn = "parametric",
+        paramFn = function(t)
+            local R, r, d = 7, 3, 4
+            local k = (R - r) / r
+            local norm = (R - r) + d
+            return ((R - r) * _cos(t) + d * _cos(k * t)) / norm,
+                   ((R - r) * _sin(t) - d * _sin(k * t)) / norm
+        end,
+        tRange = {0, 6 * _pi},
+        defaultSteps = 360,
+    },
+    {
+        name = "Epitrochoid (R=5,r=2,d=2)",
+        formula = "x=(R+r)cos(t)-d*cos((R+r)t/r)",
+        fn = "parametric",
+        paramFn = function(t)
+            local R, r, d = 5, 2, 2
+            local k = (R + r) / r
+            local norm = (R + r) + d
+            return ((R + r) * _cos(t) - d * _cos(k * t)) / norm,
+                   ((R + r) * _sin(t) - d * _sin(k * t)) / norm
+        end,
+        tRange = {0, 4 * _pi},
+        defaultSteps = 320,
     },
     {
         name = "Spirograph",
@@ -312,6 +419,201 @@ local M = {
         end,
         tRange = {0, 0},
         defaultSteps = 60,
+    },
+    -- ─── 곡선 추가 2026-04-23 (2차) ─────────────────────────────
+    {
+        name = "Cayley's Sextic",
+        formula = "r = 4cos^3(t/3)",
+        fn = function(t) return 4 * _cos(t / 3) ^ 3 end,
+        tRange = {0, 6 * _pi},
+        defaultSteps = 400,
+    },
+    {
+        name = "Bifolium",
+        formula = "r = sin(t)cos^2(t)",
+        fn = function(t) return _sin(t) * _cos(t) * _cos(t) end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 200,
+    },
+    {
+        name = "Quadrifolium",
+        formula = "r = cos(2t)",
+        fn = function(t) return _cos(2 * t) end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 200,
+    },
+    {
+        name = "Freeth's Nephroid",
+        formula = "r = (1 + 2sin(t/2)) / 3",
+        fn = function(t) return (1 + 2 * _sin(t / 2)) / 3 end,
+        tRange = {0, 4 * _pi},
+        defaultSteps = 300,
+    },
+    {
+        name = "Ophiuride",
+        formula = "r = (sin(t) - 0.5)tan(t)",
+        fn = function(t)
+            local c = _cos(t)
+            if _abs(c) < 0.05 then return 0 end
+            return (_sin(t) - 0.5) * _sin(t) / c
+        end,
+        tRange = {-1.2, 1.2},
+        defaultSteps = 200,
+    },
+    {
+        name = "Strophoid",
+        formula = "x=(1-t^2)/(1+t^2), y=t(1-t^2)/(1+t^2)",
+        fn = "parametric",
+        paramFn = function(t)
+            local d = 1 + t * t
+            return (1 - t * t) / d, t * (1 - t * t) / d
+        end,
+        tRange = {-2.5, 2.5},
+        defaultSteps = 200,
+    },
+    {
+        name = "Bicorn",
+        formula = "x=cos(t), y=sin^2(t)/(2+sin(t))",
+        fn = "parametric",
+        paramFn = function(t)
+            local s = _sin(t)
+            return _cos(t), s * s / (2 + s)
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 150,
+    },
+    {
+        name = "Ranunculoid (k=5)",
+        formula = "x=6cos(t)-cos(6t), y=6sin(t)-sin(6t)",
+        fn = "parametric",
+        paramFn = function(t)
+            return (6 * _cos(t) - _cos(6 * t)) / 7,
+                   (6 * _sin(t) - _sin(6 * t)) / 7
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 200,
+    },
+    {
+        name = "Hypotrochoid (R=5,r=3,d=5)",
+        formula = "x=2cos(t)+5cos(2t/3), y=2sin(t)-5sin(2t/3)",
+        fn = "parametric",
+        paramFn = function(t)
+            return (2 * _cos(t) + 5 * _cos(2 * t / 3)) / 7,
+                   (2 * _sin(t) - 5 * _sin(2 * t / 3)) / 7
+        end,
+        tRange = {0, 6 * _pi},
+        defaultSteps = 300,
+    },
+    {
+        name = "Kampyle of Eudoxus",
+        formula = "x=sec(t), y=tan(t)sec(t)",
+        fn = "custom",
+        customFn = function(steps)
+            local verts = {}
+            local half = _floor(steps / 2)
+            if half < 10 then half = 10 end
+            local tMax = _pi / 2 - 0.12
+            -- right branch
+            for i = 0, half - 1 do
+                local t = -tMax + 2 * tMax * i / (half - 1)
+                local c = _cos(t)
+                verts[#verts + 1] = 1 / (c * 3)
+                verts[#verts + 1] = _sin(t) / (c * c * 3)
+            end
+            -- left branch (mirrored)
+            for i = half - 1, 0, -1 do
+                local t = -tMax + 2 * tMax * i / (half - 1)
+                local c = _cos(t)
+                verts[#verts + 1] = -1 / (c * 3)
+                verts[#verts + 1] = _sin(t) / (c * c * 3)
+            end
+            return verts
+        end,
+        tRange = {0, 0},
+        defaultSteps = 200,
+    },
+    {
+        name = "Cassini Oval",
+        formula = "(x^2+y^2)^2-2a^2(x^2-y^2)+a^4-b^4=0",
+        fn = function(t)
+            local a = 0.6
+            local b = 1.0
+            local a2 = a * a
+            local a4 = a2 * a2
+            local b4 = b * b * b * b
+            local s2 = _sin(2 * t)
+            local c2 = _cos(2 * t)
+            local disc = b4 - a4 * s2 * s2
+            if disc < 0 then return 0 end
+            local r2 = a2 * c2 + _sqrt(disc)
+            if r2 < 0 then return 0 end
+            return _sqrt(r2)
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 360,
+    },
+    {
+        name = "Epitrochoid (R=3,r=1,d=1)",
+        formula = "x=(R+r)cos(t)-d*cos((R+r)t/r)",
+        fn = "parametric",
+        paramFn = function(t)
+            local R, r, d = 3, 1, 1
+            local k = (R + r) / r
+            local norm = R + r + d
+            return ((R + r) * _cos(t) - d * _cos(k * t)) / norm,
+                   ((R + r) * _sin(t) - d * _sin(k * t)) / norm
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 300,
+    },
+    {
+        name = "Conchoid of Nicomedes",
+        formula = "r = a/cos(t) + b",
+        fn = function(t)
+            local a = 0.25
+            local b = 0.65
+            local c = _cos(t)
+            if _abs(c) < 0.06 then return 0 end
+            return a / c + b
+        end,
+        tRange = {-1.45, 1.45},
+        defaultSteps = 320,
+    },
+    {
+        name = "Devil's Curve",
+        formula = "y^2 = x^2(x^2-1)/(x^2+1)",
+        fn = "custom",
+        customFn = function(steps)
+            local verts = {}
+            local n = _floor(steps / 2)
+            if n < 40 then n = 40 end
+            local xMin, xMax = -2.0, 2.0
+
+            -- upper branch
+            for i = 0, n - 1 do
+                local x = xMin + (xMax - xMin) * i / (n - 1)
+                local x2 = x * x
+                local v = x2 * (x2 - 1) / (x2 + 1)
+                if v >= 0 then
+                    verts[#verts + 1] = x / 2
+                    verts[#verts + 1] = _sqrt(v) / 2
+                end
+            end
+
+            -- lower branch (reverse)
+            for i = n - 1, 0, -1 do
+                local x = xMin + (xMax - xMin) * i / (n - 1)
+                local x2 = x * x
+                local v = x2 * (x2 - 1) / (x2 + 1)
+                if v >= 0 then
+                    verts[#verts + 1] = x / 2
+                    verts[#verts + 1] = -_sqrt(v) / 2
+                end
+            end
+            return verts
+        end,
+        tRange = {0, 0},
+        defaultSteps = 320,
     },
     {
         name = "Koch Edge (iter 2)",
@@ -401,5 +703,65 @@ local M = {
         defaultSteps = 361,
     },
 }
+
+local OPEN_CURVES = {
+    ["Logarithmic Spiral"] = true,
+    ["Lituus"] = true,
+    ["Cissoid"] = true,
+    ["Ophiuride"] = true,
+    ["Strophoid"] = true,
+    ["Kampyle of Eudoxus"] = true,
+    ["Conchoid of Nicomedes"] = true,
+    ["Devil's Curve"] = true,
+    ["Koch Edge (iter 2)"] = true,
+    ["Fermat Spiral"] = true,
+}
+
+local DISCONTINUOUS_CURVES = {
+    ["Cissoid"] = true,
+    ["Ophiuride"] = true,
+    ["Kampyle of Eudoxus"] = true,
+    ["Conchoid of Nicomedes"] = true,
+}
+
+local function inferComplexity(defaultSteps)
+    local s = defaultSteps or 0
+    if s <= 160 then return 1 end
+    if s <= 320 then return 2 end
+    return 3
+end
+
+local function inferFamily(curve)
+    local n = curve.name
+    if n:find("Rose") then return "rose" end
+    if n:find("Lemniscate") then return "lemniscate" end
+    if n:find("Epicycloid") or n:find("Hypocycloid") then return "cycloid" end
+    if n:find("Trochoid") or n:find("Spirograph") then return "trochoid" end
+    if n:find("Spiral") then return "spiral" end
+    if curve.fn == "custom" then return "custom" end
+    if curve.fn == "parametric" then return "parametric" end
+    return "polar"
+end
+
+local function inferClosed(curve)
+    if OPEN_CURVES[curve.name] then return false end
+    if curve.fn == "custom" and curve.tRange[1] == 0 and curve.tRange[2] == 0 then
+        -- custom은 이름 기반으로 open 케이스만 제외하고 기본 closed로 본다.
+        return true
+    end
+    local t0, t1 = curve.tRange[1], curve.tRange[2]
+    local span = _abs(t1 - t0)
+    if span < _pi * 1.95 then return false end
+    return true
+end
+
+for i = 1, #M do
+    local c = M[i]
+    c.complexity = inferComplexity(c.defaultSteps)
+    c.family = inferFamily(c)
+    c.closed = inferClosed(c)
+    c.discontinuous = DISCONTINUOUS_CURVES[c.name] or false
+    c.enemyFriendly = c.closed and (not c.discontinuous) and c.complexity <= 2
+end
 
 return M
