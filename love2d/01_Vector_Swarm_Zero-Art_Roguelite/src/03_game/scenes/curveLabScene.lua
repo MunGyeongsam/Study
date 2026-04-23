@@ -15,7 +15,7 @@ CurveLabScene.__index = CurveLabScene
 
 CurveLabScene.name        = "CurveLabScene"
 CurveLabScene.transparent = false
-CurveLabScene.drawBelow   = true
+CurveLabScene.drawBelow   = false
 
 local CURVES = require("03_game.data.curveDefs")
 local MODES  = {"line", "points", "circle", "fill"}
@@ -378,7 +378,7 @@ function CurveLabScene:draw()
     -- Hint bar
     lg.setFont(self._fonts.hint)
     setColor(128, 128, 128, (0.4 + 0.15 * _sin(t * 2)) * 255)
-    lg.printf("L/R: curve | TAB: filter | U/D: verts | M: mode | R: rotate | +/-: scale | ESC: back",
+    lg.printf("L/R: curve | TAB: filter | U/D: verts | M: mode | R: rotate | +/-: scale | ESC: back | top tap: back",
         0, H - 24, W, "center")
 
     resetColor()
@@ -435,13 +435,17 @@ function CurveLabScene:textinput(text)
 end
 
 function CurveLabScene:touchpressed(id, x, y)
-    local W = lg.getDimensions()
-    if x < W * 0.3 then
+    local W, H = lg.getDimensions()
+    -- Top-edge tap is an explicit back action.
+    if y < H * 0.12 then
+        self._sceneStack:pop()
+    elseif x < W * 0.3 then
         self:keypressed("left")
     elseif x > W * 0.7 then
         self:keypressed("right")
     else
-        self._sceneStack:pop()
+        -- Center tap is consumed intentionally to avoid accidental scene close.
+        return true
     end
     return true
 end
