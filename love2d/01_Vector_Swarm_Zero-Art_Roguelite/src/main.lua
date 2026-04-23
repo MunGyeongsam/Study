@@ -242,6 +242,11 @@ function love.keypressed(key)
     sceneStack:keypressed(key)
 end
 
+-- macOS IME(한글 등)에서 알파벳 키가 keypressed를 우회하는 문제 대응
+function love.textinput(text)
+    sceneStack:textinput(text)
+end
+
 function love.touchpressed(id, x, y, dx, dy, pressure)
     sceneStack:touchpressed(id, x, y, dx, dy, pressure)
 end

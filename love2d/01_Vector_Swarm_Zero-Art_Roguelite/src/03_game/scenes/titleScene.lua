@@ -55,6 +55,7 @@ function TitleScene:draw()
 end
 
 function TitleScene:keypressed(key)
+    --logInfo("[TITLE] Key pressed: " .. key)
     if key == "escape" then
         love.event.quit()
         return true
@@ -62,8 +63,23 @@ function TitleScene:keypressed(key)
         local GalleryScene = require("03_game.scenes.galleryScene")
         self._sceneStack:push(GalleryScene.new(self._sceneStack))
         return true
+    elseif key == "c" then
+        local CurveLabScene = require("03_game.scenes.curveLabScene")
+        self._sceneStack:push(CurveLabScene.new(self._sceneStack))
+        return true
     end
     return titleMenu.keypressed(key)
+end
+
+-- macOS IME 한글 입력 시 keypressed 우회 대응
+-- 한글 2벌식: ㅎ=g, ㅊ=c
+local JAMO_TO_KEY = { ["ㅎ"] = "g", ["ㅊ"] = "c" }
+function TitleScene:textinput(text)
+    local key = JAMO_TO_KEY[text] or text:lower()
+    if key == "g" or key == "c" then
+        return self:keypressed(key)
+    end
+    return false
 end
 
 function TitleScene:touchpressed(id, x, y, dx, dy, pressure)

@@ -373,6 +373,17 @@ function GalleryScene:keypressed(key)
     return false
 end
 
+-- macOS IME 한글 입력 시 keypressed 우회 대응
+-- 한글 2벌식: ㄱ=r
+local JAMO_TO_KEY = { ["ㄱ"] = "r" }
+function GalleryScene:textinput(text)
+    local key = JAMO_TO_KEY[text] or text:lower()
+    if key == "r" then
+        return self:keypressed("r")
+    end
+    return false
+end
+
 function GalleryScene:touchpressed(id, x, y, dx, dy, pressure)
     local W = lg.getDimensions()
     if x < W * 0.3 then

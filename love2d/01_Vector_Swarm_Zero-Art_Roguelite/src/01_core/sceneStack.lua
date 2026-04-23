@@ -113,6 +113,13 @@ function SceneStack:keypressed(key)
     return false
 end
 
+--- textinput: IME를 통과한 문자 입력 (macOS 한글 등).
+function SceneStack:textinput(text)
+    local s = self:top()
+    if s and s.textinput then return s:textinput(text) end
+    return false
+end
+
 --- touchpressed: top만 받음.
 function SceneStack:touchpressed(id, x, y, dx, dy, pressure)
     local s = self:top()
