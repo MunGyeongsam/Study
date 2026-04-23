@@ -23,6 +23,23 @@ local saveData = require("00_common.saveData")
 local fonts = nil
 local sceneStack = nil   -- 글로벌 ???�택
 local showWorldGrid = false
+local FORCE_DNA_TOGGLE_DEBOUNCE = 0.08
+local _forceDnaLastToggleTime = -1
+
+local function _tryToggleForceDnaMode()
+    local now = love.timer.getTime()
+    if now - _forceDnaLastToggleTime < FORCE_DNA_TOGGLE_DEBOUNCE then
+        return true
+    end
+
+    local PlayScene = require("03_game.scenes.playScene")
+    if PlayScene.toggleForceDnaModeGlobal() ~= nil then
+        _forceDnaLastToggleTime = now
+        return true
+    end
+
+    return false
+end
 
 function love.load()
     -- Initialize global utilities first
@@ -149,11 +166,14 @@ function love.load()
     end)
     debugOverlay.add("debug keys", function()
         local PlayScene = require("03_game.scenes.playScene")
-        return string.format("%10s : GOD[F7]:%s+WPN:%s BLOOM[F6]:%s BG[F9]:%s", "debug",
+        local sm = ecsManager.getStageManager and ecsManager.getStageManager()
+        local dna = sm and sm:isForceDnaSpawn() and "ON" or "off"
+        return string.format("%10s : GOD[F7]:%s+WPN:%s BLOOM[F6]:%s BG[F9]:%s DNA[F]:%s", "debug",
             PlayScene.getGodMode() and "ON" or "off",
             PlayScene.getDisableWeapon() and "OFF" or "on",
             bloom.isEnabled() and "ON" or "off",
-            background.isEnabled() and "ON" or "off")
+            background.isEnabled() and "ON" or "off",
+            dna)
     end)
     debugOverlay.add("background", function()
         return string.format("%10s : c=%.2f %s %d circles [%s]",
@@ -236,6 +256,10 @@ function love.keypressed(key)
         PlayScene.setShowWorldGrid(showWorldGrid)
         screenDebugDraw.toggle()
         return
+    elseif key == "f" then
+        if _tryToggleForceDnaMode() then
+            return
+        end
     end
 
     -- ?�머지???�택 최상???�에 ?�임
@@ -244,6 +268,11 @@ end
 
 -- macOS IME(한글 등)에서 알파벳 키가 keypressed를 우회하는 문제 대응
 function love.textinput(text)
+    if text == "f" or text == "F" or text == "ㄹ" then
+        if _tryToggleForceDnaMode() then
+            return
+        end
+    end
     sceneStack:textinput(text)
 end
 

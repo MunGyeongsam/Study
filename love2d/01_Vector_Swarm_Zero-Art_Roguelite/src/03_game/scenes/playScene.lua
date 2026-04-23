@@ -14,6 +14,7 @@ local upgradeTree   = require("03_game.states.upgradeTree")
 local achievementSystem = require("03_game.states.achievementSystem")
 local tutorialHints     = require("03_game.states.tutorialHints")
 local trailSystem       = require("03_game.systems.trailSystem")
+local renderSystem      = require("03_game.systems.renderSystem")
 local world         = require("01_core.world")
 
 local _floor = math.floor
@@ -42,6 +43,8 @@ local _whiteout      = 0      -- whiteout alpha (for boss defeat)
 local _whiteoutDecay = false  -- true = fading out phase
 local _shockwave     = nil    -- {x,y, radius, maxRadius, alpha} expanding ring
 local _phaseText     = nil    -- {text, timer, duration}
+local _forceDnaToastTimer = 0
+local _forceDnaToastText  = nil
 
 --- Scene 생성
 function PlayScene.new(sceneStack)
@@ -58,6 +61,22 @@ function PlayScene.getDisableWeapon() return _disableWeapon end
 function PlayScene.setShowWorldGrid(v) _showWorldGrid = v end
 function PlayScene.getShowWorldGrid() return _showWorldGrid end
 function PlayScene.getHitStopTimer() return _hitStopTimer end
+
+function PlayScene.toggleForceDnaModeGlobal()
+    local sm = ecsManager.getStageManager and ecsManager.getStageManager()
+    if not sm then return nil end
+    sm:setForceDnaSpawn(not sm:isForceDnaSpawn())
+    return sm:isForceDnaSpawn()
+end
+
+function PlayScene:_toggleForceDnaMode()
+    local isOn = PlayScene.toggleForceDnaModeGlobal()
+    if isOn == nil then return false end
+
+    _forceDnaToastTimer = 1.2
+    _forceDnaToastText = isOn and "DNA FORCE MODE: ON" or "DNA FORCE MODE: OFF"
+    return true
+end
 
 --- 게임 새로 시작 (타이틀 → 플레이, 리스타트 공용)
 function PlayScene:_initGame()
@@ -88,6 +107,14 @@ function PlayScene:_initGame()
     _whiteoutDecay = false
     _shockwave    = nil
     _phaseText    = nil
+    _forceDnaToastTimer = 0
+    _forceDnaToastText = nil
+
+    -- Reset runtime-tuned DNA curve thickness on each run start.
+    do
+        local cur = renderSystem.getCurveOverlayThickness and renderSystem.getCurveOverlayThickness() or 1.0
+        renderSystem.adjustCurveOverlayThickness(1.0 - cur)
+    end
 
     -- Start Boost: 해금되면 게임 시작 시 랜덤 업그레이드 1개 자동 적용
     if achievementSystem.isRewardUnlocked("start_boost") then
@@ -167,6 +194,9 @@ function PlayScene:update(dt)
     if _phaseText then
         _phaseText.timer = _phaseText.timer + dt
         if _phaseText.timer >= _phaseText.duration then _phaseText = nil end
+    end
+    if _forceDnaToastTimer > 0 then
+        _forceDnaToastTimer = _max(0, _forceDnaToastTimer - dt)
     end
 
     -- Hit-stop freeze
@@ -453,6 +483,50 @@ function PlayScene:draw()
     -- 스테이지 클리어/게임오버 오버레이 (PlayScene 소속)
     gameState.draw()
     ecsManager.stageManager:draw()
+
+    -- Force DNA spawn indicator (always visible)
+    do
+        local sm = ecsManager.getStageManager and ecsManager.getStageManager()
+        if sm then
+            local isOn = sm:isForceDnaSpawn()
+            local pad = 10
+            local text = string.format("DNA FORCE: %s [F]", isOn and "ON" or "OFF")
+            local font = lg.getFont()
+            local tw = font:getWidth(text)
+            local th = font:getHeight()
+            local bx, by = sw - tw - pad * 2 - 10, 10
+            local bw, bh = tw + pad * 2, th + pad + 2
+
+            if isOn then
+                lg.setColor(0.92, 0.2, 0.2, 0.95)
+            else
+                lg.setColor(0.2, 0.22, 0.28, 0.85)
+            end
+            lg.rectangle("fill", bx, by, bw, bh, 6, 6)
+            lg.setColor(1, 1, 1, isOn and 0.9 or 0.5)
+            lg.rectangle("line", bx, by, bw, bh, 6, 6)
+            lg.setColor(1, 1, 1, 1)
+            lg.print(text, bx + pad, by + pad * 0.5 + 1)
+        end
+    end
+
+    -- Toggle toast (brief center hint)
+    if _forceDnaToastTimer > 0 and _forceDnaToastText then
+        local a = _min(1, _forceDnaToastTimer / 0.25)
+        local text = _forceDnaToastText
+        local font = lg.getFont()
+        local tw = font:getWidth(text)
+        local th = font:getHeight()
+        local bx = (sw - tw) * 0.5 - 12
+        local by = sh * 0.18
+        local bw = tw + 24
+        local bh = th + 12
+
+        lg.setColor(0.05, 0.05, 0.08, 0.78 * a)
+        lg.rectangle("fill", bx, by, bw, bh, 8, 8)
+        lg.setColor(1, 1, 1, 1 * a)
+        lg.print(text, bx + 12, by + 6)
+    end
 end
 
 function PlayScene:keypressed(key)
@@ -485,6 +559,17 @@ function PlayScene:keypressed(key)
             local sm = ecsManager.getStageManager and ecsManager.getStageManager()
             if sm then sm:debugSkipStage() end
         end
+        return true
+    elseif key == "[" or key == "9" then
+        local w = renderSystem.adjustCurveOverlayThickness(-0.1)
+        logInfo(string.format("[DNA][VIEW] Curve thickness: %.2f", w))
+        return true
+    elseif key == "]" or key == "0" then
+        local w = renderSystem.adjustCurveOverlayThickness(0.1)
+        logInfo(string.format("[DNA][VIEW] Curve thickness: %.2f", w))
+        return true
+    elseif key == "f" then
+        self:_toggleForceDnaMode()
         return true
     end
 
@@ -523,6 +608,14 @@ function PlayScene:keypressed(key)
         end
     end
 
+    return false
+end
+
+function PlayScene:textinput(text)
+    -- IME 상태에서도 강제 모드 토글 가능하도록 fallback 처리
+    if text == "f" or text == "F" or text == "ㄹ" then
+        return self:_toggleForceDnaMode()
+    end
     return false
 end
 

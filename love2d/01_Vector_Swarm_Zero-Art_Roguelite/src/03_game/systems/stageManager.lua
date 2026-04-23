@@ -19,6 +19,8 @@ local _floor  = math.floor
 local _random = math.random
 local _char   = string.char
 
+local DNA_ROLL_LOG_ENABLED = false
+
 local StageManager = {}
 StageManager.__index = StageManager
 
@@ -60,10 +62,22 @@ function StageManager.new(ecsManager, getPlayerPos)
         bossType     = nil,
         bossScaling  = nil,
 
+        -- Debug: force DNA enemy spawn regardless of stage
+        forceDnaSpawn = false,
+
         -- Victory
         victoryTriggered = false,
     }, StageManager)
     return mgr
+end
+
+function StageManager:setForceDnaSpawn(enabled)
+    self.forceDnaSpawn = enabled and true or false
+    logInfo(string.format("[DNA] Force spawn: %s", self.forceDnaSpawn and "ON" or "OFF"))
+end
+
+function StageManager:isForceDnaSpawn()
+    return self.forceDnaSpawn and true or false
 end
 
 -- Get stage config: hand-designed or auto-generated
@@ -454,8 +468,29 @@ function StageManager:_spawnWave(config)
         end
 
         -- Stage 16+: DNA 변이 적 스폰 (확률 기반)
+        -- Debug force mode: any stage can spawn DNA with round=1 baseline
         local round = stageData.getEndlessRound(self.stage)
-        if round > 0 and _random() < _min(0.3 + round * 0.1, 0.7) then
+        if self.forceDnaSpawn and round <= 0 then
+            round = 1
+        end
+        local dnaSpawnChance = _min(0.3 + round * 0.1, 0.7)
+        local dnaRoll = _random()
+        local shouldSpawnDna = (round > 0) and (self.forceDnaSpawn or dnaRoll < dnaSpawnChance)
+
+        if DNA_ROLL_LOG_ENABLED and round > 0 then
+            logInfo(string.format(
+                "[DNA][ROLL] stage:%d wave:%d idx:%d round:%d force:%s chance:%.2f roll:%.2f -> %s",
+                self.stage,
+                self.wave,
+                i,
+                round,
+                self.forceDnaSpawn and "ON" or "OFF",
+                dnaSpawnChance,
+                dnaRoll,
+                shouldSpawnDna and "SPAWN" or "SKIP"))
+        end
+
+        if shouldSpawnDna then
             local dna = dnaDefs.generateDna(round)
             self.ecsManager.createDnaEnemy(spawnX, spawnY, dna, diff)
         elseif enemyType == "bit" then

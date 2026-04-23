@@ -19,10 +19,27 @@ local PlayerXP      = require("03_game.components.playerXP")
 local XpOrb         = require("03_game.components.xpOrb")
 local BossTag       = require("03_game.components.bossTag")
 local BOSS_TYPES    = require("03_game.data.bossDefs")
+local ShapeDefs     = require("03_game.data.shapeDefs")
 
 local _floor = math.floor
+local _random = math.random
 
 local EntityFactory = {}
+
+local function pickCuratedCurve(role)
+    local groups = ShapeDefs.groups or {}
+    local pool = groups[role]
+    if not pool or #pool == 0 then
+        pool = groups.both
+    end
+    if not pool or #pool == 0 then
+        pool = groups.enemy
+    end
+    if not pool or #pool == 0 then
+        return nil
+    end
+    return pool[_random(#pool)]
+end
 
 -- ─── Player defaults ─────────────────────────────────────────────
 local PLAYER = {
@@ -291,7 +308,10 @@ function EntityFactory.createDnaEnemy(world, x, y, dna, difficulty)
 
     local stats = dna.stats
     local modifier = dna.modifier or "none"
-    local vdef = VARIANT_DEFS[modifier]
+
+    local curveRole = dna.curveRole or "enemy"
+    local curveName = dna.curveName or pickCuratedCurve(curveRole)
+    local curveNorm = curveName and ShapeDefs.getNormalization(curveName) or nil
 
     local entityId = world:createEntity()
     local radius = stats.radius
@@ -312,6 +332,9 @@ function EntityFactory.createDnaEnemy(world, x, y, dna, difficulty)
         radius = radius,
         color = dna.color,
         variant = modifier ~= "none" and modifier or nil,
+        curveName = curveName,
+        curveRole = curveRole,
+        curveNormalization = curveNorm,
     }))
     world:addComponent(entityId, "LifeSpan", LifeSpan.new({
         time = 15, destroyOffScreen = true,
@@ -390,8 +413,15 @@ function EntityFactory.createDnaEnemy(world, x, y, dna, difficulty)
         aiComp.orbitCenterY = y or 5
     end
 
-    logInfo(string.format("[ENTITY] DNA enemy created: %d (base:%s mv:%s atk:%s mod:%s body:%d layers)",
-        entityId, dna.baseType, dna.movement, dna.attack, dna.modifier, #dna.body))
+    logInfo(string.format("[DNA][SPAWN] entity:%d base:%s mv:%s atk:%s mod:%s body:%d curve:%s role:%s",
+        entityId,
+        dna.baseType,
+        dna.movement,
+        dna.attack,
+        dna.modifier,
+        #dna.body,
+        curveName or "none",
+        curveRole))
     return entityId
 end
 

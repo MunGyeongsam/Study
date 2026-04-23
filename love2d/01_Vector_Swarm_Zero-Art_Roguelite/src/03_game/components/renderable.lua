@@ -13,6 +13,9 @@ Renderable.defaults = {
     color = {0, 1, 1, 1},
     visible = true,
     rotation = 0,
+    curveName = nil,
+    curveRole = nil,
+    curveNormalization = nil,
 }
 
 function Renderable.new(data)
@@ -28,6 +31,9 @@ function Renderable.new(data)
         visible  = vis,
         rotation = d.rotation or 0,
         variant  = d.variant,  -- nil for normal, "swift"/"armored"/etc for variants
+        curveName = d.curveName,
+        curveRole = d.curveRole,
+        curveNormalization = d.curveNormalization,
     }
 end
 

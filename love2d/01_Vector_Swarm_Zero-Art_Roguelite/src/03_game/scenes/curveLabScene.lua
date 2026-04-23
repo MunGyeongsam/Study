@@ -27,6 +27,180 @@ local FILTERS = {
     {key = "discontinuous", label = "DISCONT", fn = function(c) return c.discontinuous end},
 }
 
+local CURATION_OPTIONS = {
+    {key = "enemy", label = "ENEMY", short = "1"},
+    {key = "boss", label = "BOSS", short = "2"},
+    {key = "both", label = "ENEMY+BOSS", short = "3"},
+    {key = "overlay", label = "OVERLAY", short = "4"},
+    {key = "bullet", label = "BULLET_CURVE", short = "5"},
+}
+
+local CURATION_LOG_FILE = "curve_curation.log"
+local CURATION_SUMMARY_FILE = "curve_curation_summary.txt"
+local TARGET_NORMALIZED_RADIUS = 1.0
+
+local function _getCurationOption(choiceKey)
+    for i = 1, #CURATION_OPTIONS do
+        local opt = CURATION_OPTIONS[i]
+        if opt.key == choiceKey then return opt end
+    end
+    return nil
+end
+
+local function _joinWithComma(parts)
+    if #parts == 0 then return "NONE" end
+    return table.concat(parts, ", ")
+end
+
+local function _buildRecommendationText(curve)
+    if not curve then return "추천: N/A" end
+
+    local tags = {}
+    if curve.enemyFriendly then
+        tags[#tags + 1] = "Enemy"
+    end
+    if curve.closed then
+        tags[#tags + 1] = "BossShape"
+    end
+    if curve.discontinuous then
+        tags[#tags + 1] = "Overlay/Bullet"
+    end
+    if curve.complexity == 1 then
+        tags[#tags + 1] = "Simple"
+    elseif curve.complexity == 3 then
+        tags[#tags + 1] = "Complex"
+    end
+
+    if curve.family == "rose" or curve.family == "cycloid" or curve.family == "trochoid" then
+        tags[#tags + 1] = "PatternStrong"
+    end
+
+    return "추천: " .. _joinWithComma(tags)
+end
+
+local function _sampleCurveWorld(curve, steps)
+    local verts = {}
+    if not curve then return verts end
+
+    if curve.fn == "custom" then
+        verts = curve.customFn(steps)
+    elseif curve.fn == "parametric" then
+        local t0, t1 = curve.tRange[1], curve.tRange[2]
+        for i = 0, steps - 1 do
+            local t = t0 + (t1 - t0) * i / steps
+            local x, y = curve.paramFn(t)
+            verts[#verts + 1] = x
+            verts[#verts + 1] = y
+        end
+    else
+        local t0, t1 = curve.tRange[1], curve.tRange[2]
+        for i = 0, steps - 1 do
+            local t = t0 + (t1 - t0) * i / steps
+            local r = curve.fn(t)
+            verts[#verts + 1] = r * _cos(t)
+            verts[#verts + 1] = r * _sin(t)
+        end
+    end
+
+    return verts
+end
+
+local function _computeBounds(verts)
+    if #verts < 2 then
+        return {xMin = 0, xMax = 0, yMin = 0, yMax = 0}
+    end
+    local xMin, xMax = verts[1], verts[1]
+    local yMin, yMax = verts[2], verts[2]
+    for i = 3, #verts, 2 do
+        local x = verts[i]
+        local y = verts[i + 1]
+        if x < xMin then xMin = x end
+        if x > xMax then xMax = x end
+        if y < yMin then yMin = y end
+        if y > yMax then yMax = y end
+    end
+    return {xMin = xMin, xMax = xMax, yMin = yMin, yMax = yMax}
+end
+
+local function _computeNormalizationData(curve)
+    local steps = curve.defaultSteps or 180
+    local verts = _sampleCurveWorld(curve, steps)
+    if #verts < 2 then
+        return {
+            centerX = 0, centerY = 0,
+            maxRadius = 0,
+            scaleToTarget = 1,
+            targetRadius = TARGET_NORMALIZED_RADIUS,
+            bounds = {xMin = 0, xMax = 0, yMin = 0, yMax = 0},
+            normalizedBounds = {xMin = 0, xMax = 0, yMin = 0, yMax = 0},
+        }
+    end
+
+    local n = #verts / 2
+    local sx, sy = 0, 0
+    for i = 1, #verts, 2 do
+        sx = sx + verts[i]
+        sy = sy + verts[i + 1]
+    end
+    local cx = sx / n
+    local cy = sy / n
+
+    local maxR = 0
+    local normalized = {}
+    local scale = 1
+
+    for i = 1, #verts, 2 do
+        local dx = verts[i] - cx
+        local dy = verts[i + 1] - cy
+        local r = (dx * dx + dy * dy) ^ 0.5
+        if r > maxR then maxR = r end
+    end
+
+    if maxR > 0 then
+        scale = TARGET_NORMALIZED_RADIUS / maxR
+    end
+
+    for i = 1, #verts, 2 do
+        normalized[#normalized + 1] = (verts[i] - cx) * scale
+        normalized[#normalized + 1] = (verts[i + 1] - cy) * scale
+    end
+
+    return {
+        centerX = cx,
+        centerY = cy,
+        maxRadius = maxR,
+        scaleToTarget = scale,
+        targetRadius = TARGET_NORMALIZED_RADIUS,
+        bounds = _computeBounds(verts),
+        normalizedBounds = _computeBounds(normalized),
+    }
+end
+
+local function _getCurationPanelLayout(W, H)
+    local panelW = 190
+    local panelH = 168
+    local panelX = W - panelW - 14
+    local panelY = H - panelH - 54
+    local rowH = 24
+    local optionRects = {}
+    for i = 1, #CURATION_OPTIONS do
+        optionRects[#optionRects + 1] = {
+            key = CURATION_OPTIONS[i].key,
+            x = panelX + 8,
+            y = panelY + 34 + (i - 1) * rowH,
+            w = panelW - 16,
+            h = rowH - 2,
+        }
+    end
+    return {
+        x = panelX,
+        y = panelY,
+        w = panelW,
+        h = panelH,
+        optionRects = optionRects,
+    }
+end
+
 local function _appendFirstPoint(points)
     points[#points + 1] = points[1]
     points[#points + 1] = points[2]
@@ -101,6 +275,9 @@ function CurveLabScene.new(sceneStack)
         _centroid   = {x = 0, y = 0},
         _filterMode = 1,
         _filtered   = CURVES,
+        _curationByName = {},
+        _curationCount = 0,
+        _curationExported = false,
     }, CurveLabScene)
 end
 
@@ -160,6 +337,117 @@ function CurveLabScene:_getSteps()
     local c = self:_getCurve()
     if not c then return self._steps or 120 end
     return self._steps or c.defaultSteps
+end
+
+function CurveLabScene:_appendCurationLog(line)
+    logInfo(line)
+    local ok = love.filesystem.append(CURATION_LOG_FILE, line .. "\n")
+    if not ok then
+        logWarn("[CURATION] Failed to append curation log file")
+    end
+end
+
+function CurveLabScene:_recordCuration(choiceKey)
+    local curve = self:_getCurve()
+    if not curve then return end
+
+    local opt = _getCurationOption(choiceKey)
+    if not opt then return end
+
+    local prev = self._curationByName[curve.name]
+    self._curationByName[curve.name] = choiceKey
+    if not prev then
+        self._curationCount = self._curationCount + 1
+    end
+
+    local line = string.format("[CURATION] %s -> %s", curve.name, opt.label)
+    self:_appendCurationLog(line)
+
+    if self._curationCount >= #CURVES and not self._curationExported then
+        self:_exportCurationSummary()
+        self._curationExported = true
+    end
+end
+
+function CurveLabScene:_exportCurationSummary()
+    local groups = {
+        enemy = {},
+        boss = {},
+        both = {},
+        overlay = {},
+        bullet = {},
+        excluded = {},
+    }
+
+    local normalizeKeys = {enemy = true, boss = true, both = true}
+    local normalizedLines = {}
+
+    for i = 1, #CURVES do
+        local curve = CURVES[i]
+        local choiceKey = self._curationByName[curve.name]
+        if choiceKey and groups[choiceKey] then
+            groups[choiceKey][#groups[choiceKey] + 1] = curve.name
+            if normalizeKeys[choiceKey] then
+                local n = _computeNormalizationData(curve)
+                normalizedLines[#normalizedLines + 1] = string.format(
+                    "%s | %s | center=(%.4f, %.4f) | maxR=%.4f | scale=%.4f | bounds=(%.4f,%.4f,%.4f,%.4f) | normalizedBounds=(%.4f,%.4f,%.4f,%.4f)",
+                    curve.name,
+                    choiceKey,
+                    n.centerX, n.centerY,
+                    n.maxRadius,
+                    n.scaleToTarget,
+                    n.bounds.xMin, n.bounds.xMax, n.bounds.yMin, n.bounds.yMax,
+                    n.normalizedBounds.xMin, n.normalizedBounds.xMax, n.normalizedBounds.yMin, n.normalizedBounds.yMax
+                )
+            end
+        else
+            groups.excluded[#groups.excluded + 1] = curve.name
+        end
+    end
+
+    local usableCount = #groups.enemy + #groups.boss + #groups.both + #groups.overlay + #groups.bullet
+
+    local lines = {
+        "# Curve Curation Summary",
+        string.format("Curated: %d / %d", self._curationCount, #CURVES),
+        string.format("Usable: %d / %d", usableCount, #CURVES),
+        string.format("Excluded(Unclassified): %d / %d", #groups.excluded, #CURVES),
+        "Rule: Unclassified curves are excluded and considered unusable.",
+        "",
+        "[USABLE]",
+        "- enemy + boss + both + overlay + bullet only",
+        "",
+        "[GROUP] Enemy",
+    }
+
+    for i = 1, #groups.enemy do lines[#lines + 1] = "- " .. groups.enemy[i] end
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "[GROUP] Boss"
+    for i = 1, #groups.boss do lines[#lines + 1] = "- " .. groups.boss[i] end
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "[GROUP] Enemy+Boss"
+    for i = 1, #groups.both do lines[#lines + 1] = "- " .. groups.both[i] end
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "[GROUP] Overlay"
+    for i = 1, #groups.overlay do lines[#lines + 1] = "- " .. groups.overlay[i] end
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "[GROUP] Bullet Curve"
+    for i = 1, #groups.bullet do lines[#lines + 1] = "- " .. groups.bullet[i] end
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "[EXCLUDED] Unclassified"
+    for i = 1, #groups.excluded do lines[#lines + 1] = "- " .. groups.excluded[i] end
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "[NORMALIZATION] target radius = 1.0 (for enemy/boss/enemy+boss)"
+    for i = 1, #normalizedLines do lines[#lines + 1] = normalizedLines[i] end
+
+    local content = table.concat(lines, "\n") .. "\n"
+    local ok = love.filesystem.write(CURATION_SUMMARY_FILE, content)
+    if ok then
+        self:_appendCurationLog("[CURATION] Summary exported -> " .. CURATION_SUMMARY_FILE)
+        self:_appendCurationLog(string.format("[CURATION] Usable=%d Excluded=%d", usableCount, #groups.excluded))
+    else
+        logWarn("[CURATION] Failed to export summary")
+    end
 end
 
 --- 정점 배열 재계산 + 무게중심 갱신
@@ -360,7 +648,7 @@ function CurveLabScene:draw()
     -- Info panel (bottom-left)
     lg.setFont(self._fonts.info)
     local infoX = 16
-    local infoY = H - 176
+    local infoY = H - 240
     local lineH = 16
     setColor(128, 128, 153, 204)
     lg.print(string.format("filter:   %s",         FILTERS[self._filterMode].label),           infoX, infoY); infoY = infoY + lineH
@@ -371,14 +659,58 @@ function CurveLabScene:draw()
     lg.print(string.format("rotate:   %s",         self._rotating and "ON" or "OFF"),         infoX, infoY); infoY = infoY + lineH
     lg.print(string.format("angle:    %.2f",       self._rotAngle),                           infoX, infoY); infoY = infoY + lineH
     lg.print(string.format("centroid:(%.2f,%.2f)", self._centroid.x, self._centroid.y),       infoX, infoY); infoY = infoY + lineH
+    lg.print("select:   1 enemy  2 boss  3 both", infoX, infoY); infoY = infoY + lineH
+    lg.print("          4 overlay 5 bullet", infoX, infoY); infoY = infoY + lineH
     if curve then
         lg.print(string.format("meta:     %s / c%d / %s", curve.family, curve.complexity, curve.enemyFriendly and "enemy" or "non-enemy"), infoX, infoY)
+        infoY = infoY + lineH
+        lg.print(_buildRecommendationText(curve), infoX, infoY)
+        infoY = infoY + lineH
+        local pickedKey = self._curationByName[curve.name]
+        local picked = _getCurationOption(pickedKey)
+        lg.print(string.format("picked:   %s", picked and picked.label or "NONE"), infoX, infoY)
+        infoY = infoY + lineH
+        lg.print(string.format("curated:  %d / %d", self._curationCount, #CURVES), infoX, infoY)
+        infoY = infoY + lineH
+        lg.print("note: unclassified = unusable", infoX, infoY)
     end
+
+    -- DNA curation panel (bottom-right)
+    local panel = _getCurationPanelLayout(W, H)
+    setColor(8, 14, 24, 220)
+    lg.rectangle("fill", panel.x, panel.y, panel.w, panel.h, 6, 6)
+    setColor(64, 128, 200, 180)
+    lg.setLineWidth(1)
+    lg.rectangle("line", panel.x, panel.y, panel.w, panel.h, 6, 6)
+
+    lg.setFont(self._fonts.info)
+    setColor(188, 216, 255, 240)
+    lg.print("DNA CURATION", panel.x + 10, panel.y + 8)
+
+    local pickedKey = curve and self._curationByName[curve.name] or nil
+    for i = 1, #CURATION_OPTIONS do
+        local opt = CURATION_OPTIONS[i]
+        local r = panel.optionRects[i]
+        local isPicked = (pickedKey == opt.key)
+        if isPicked then
+            setColor(48, 142, 255, 168)
+            lg.rectangle("fill", r.x, r.y, r.w, r.h, 4, 4)
+            setColor(120, 220, 255, 220)
+            lg.rectangle("line", r.x, r.y, r.w, r.h, 4, 4)
+            setColor(230, 250, 255, 255)
+        else
+            setColor(116, 136, 170, 220)
+        end
+        lg.print(string.format("%s) %s", opt.short, opt.label), r.x + 6, r.y + 4)
+    end
+
+    setColor(140, 160, 190, 220)
+    lg.print("F5: export summary", panel.x + 10, panel.y + panel.h - 20)
 
     -- Hint bar
     lg.setFont(self._fonts.hint)
     setColor(128, 128, 128, (0.4 + 0.15 * _sin(t * 2)) * 255)
-    lg.printf("L/R: curve | TAB: filter | U/D: verts | M: mode | R: rotate | +/-: scale | ESC: back | top tap: back",
+    lg.printf("L/R: curve | TAB: filter | 1:enemy 2:boss 3:both 4:overlay 5:bullet | F5:export | ESC: back | top tap: back",
         0, H - 24, W, "center")
 
     resetColor()
@@ -420,6 +752,19 @@ function CurveLabScene:keypressed(key, scancode)
         self._scale = math.min(self._scale + 0.2, 5.0)
     elseif key == "-" or key == "kp-" then
         self._scale = math.max(self._scale - 0.2, 0.2)
+    elseif key == "1" or key == "kp1" then
+        self:_recordCuration("enemy")
+    elseif key == "2" or key == "kp2" then
+        self:_recordCuration("boss")
+    elseif key == "3" or key == "kp3" then
+        self:_recordCuration("both")
+    elseif key == "4" or key == "kp4" then
+        self:_recordCuration("overlay")
+    elseif key == "5" or key == "kp5" then
+        self:_recordCuration("bullet")
+    elseif key == "f5" then
+        self:_exportCurationSummary()
+        self._curationExported = true
     else
         return false
     end
@@ -436,6 +781,20 @@ end
 
 function CurveLabScene:touchpressed(id, x, y)
     local W, H = lg.getDimensions()
+    local panel = _getCurationPanelLayout(W, H)
+
+    -- Touch selection for DNA curation options.
+    if x >= panel.x and x <= panel.x + panel.w and y >= panel.y and y <= panel.y + panel.h then
+        for i = 1, #panel.optionRects do
+            local r = panel.optionRects[i]
+            if x >= r.x and x <= r.x + r.w and y >= r.y and y <= r.y + r.h then
+                self:_recordCuration(r.key)
+                return true
+            end
+        end
+        return true
+    end
+
     -- Top-edge tap is an explicit back action.
     if y < H * 0.12 then
         self._sceneStack:pop()

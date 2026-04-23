@@ -7,6 +7,8 @@
 
 local basicShapes = require("03_game.systems.renderers.basicShapes")
 local dnaDefs     = require("03_game.data.dnaDefs")
+local shapeDefs   = require("03_game.data.shapeDefs")
+local curveDefs   = require("03_game.data.curveDefs")
 
 local shapes_draw = basicShapes.shapes_draw
 
@@ -14,6 +16,91 @@ local lg = love.graphics
 local _floor = math.floor
 local _sin   = math.sin
 local _rad   = math.rad
+local _cos   = math.cos
+
+local CURVE_BY_NAME = {}
+for i = 1, #curveDefs do
+    local c = curveDefs[i]
+    CURVE_BY_NAME[c.name] = c
+end
+
+local function pickCuratedCurve(role)
+    local groups = shapeDefs.groups or {}
+    local pool = groups[role]
+    if not pool or #pool == 0 then pool = groups.both end
+    if not pool or #pool == 0 then pool = groups.enemy end
+    if not pool or #pool == 0 then return nil end
+    return pool[math.random(#pool)]
+end
+
+local function sampleCurveWorld(curve, steps)
+    local verts = {}
+    if not curve then return verts end
+
+    if curve.fn == "custom" then
+        return curve.customFn(steps)
+    elseif curve.fn == "parametric" then
+        local t0, t1 = curve.tRange[1], curve.tRange[2]
+        for i = 0, steps - 1 do
+            local t = t0 + (t1 - t0) * i / steps
+            local x, y = curve.paramFn(t)
+            verts[#verts + 1] = x
+            verts[#verts + 1] = y
+        end
+    else
+        local t0, t1 = curve.tRange[1], curve.tRange[2]
+        for i = 0, steps - 1 do
+            local t = t0 + (t1 - t0) * i / steps
+            local r = curve.fn(t)
+            verts[#verts + 1] = r * _cos(t)
+            verts[#verts + 1] = r * _sin(t)
+        end
+    end
+
+    return verts
+end
+
+local GALLERY_CURVE_CACHE = {}
+
+local function getNormalizedCurvePoints(curveName, normalization)
+    local cached = GALLERY_CURVE_CACHE[curveName]
+    if cached then return cached end
+
+    local curve = CURVE_BY_NAME[curveName]
+    if not curve then return nil end
+
+    local verts = sampleCurveWorld(curve, curve.defaultSteps or 140)
+    if #verts < 6 then return nil end
+
+    local cox = normalization.centerOffset and normalization.centerOffset.x or 0
+    local coy = normalization.centerOffset and normalization.centerOffset.y or 0
+    local scaleR = normalization.scaleToUnitRadius or 1
+
+    local points = {}
+    for i = 1, #verts, 2 do
+        points[#points + 1] = (verts[i] - cox) * scaleR
+        points[#points + 1] = (verts[i + 1] - coy) * scaleR
+    end
+
+    GALLERY_CURVE_CACHE[curveName] = points
+    return points
+end
+
+local function drawCurveOverlay(curveName, normalization, cx, cy, radius)
+    if not curveName or not normalization then return end
+
+    local points = getNormalizedCurvePoints(curveName, normalization)
+    if not points then return end
+
+    setColor(120, 200, 255, 120)
+    lg.push()
+    lg.translate(cx, cy)
+    lg.scale(radius)
+    lg.setLineWidth(1 / radius)
+    lg.line(points)
+    lg.pop()
+    lg.setLineWidth(1)
+end
 
 local GalleryScene = {}
 GalleryScene.__index = GalleryScene
@@ -84,6 +171,9 @@ function GalleryScene:_generateDna()
     for round = 1, 4 do
         for i = 1, 4 do
             local dna = dnaDefs.generateDna(round)
+            local role = dna.curveRole or "enemy"
+            dna.curveName = pickCuratedCurve(role)
+            dna.curveNormalization = dna.curveName and shapeDefs.getNormalization(dna.curveName) or nil
             dna._round = round
             self._dnaEntries[#self._dnaEntries + 1] = dna
         end
@@ -291,6 +381,9 @@ function GalleryScene:_drawPage3()
                 -- Body layers
                 drawDnaBody(dna.body, cx, cy, radius, dna.color)
 
+                -- Curated curve overlay (normalized)
+                drawCurveOverlay(dna.curveName, dna.curveNormalization, cx, cy, radius)
+
                 -- Label: movement/attack
                 setColor(150, 150, 170, 160)
                 local info = string.format("%s/%s", dna.movement, dna.attack)
@@ -305,6 +398,12 @@ function GalleryScene:_drawPage3()
                 -- Layer count
                 setColor(100, 100, 100, 120)
                 drawLabel(fonts.hint, string.format("%dL", #dna.body), cx, cy - radius - 12)
+
+                -- Curve name (for DNA curation verification)
+                if dna.curveName then
+                    setColor(120, 180, 220, 180)
+                    drawLabel(fonts.hint, dna.curveName, cx, cy + radius + 24)
+                end
             end
         end
     end

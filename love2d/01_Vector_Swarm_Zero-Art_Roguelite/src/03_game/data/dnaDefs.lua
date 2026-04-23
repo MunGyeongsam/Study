@@ -292,6 +292,25 @@ function M.randomColor()
     return DNA_COLORS[_random(#DNA_COLORS)]
 end
 
+--- DNA 조합에서 곡선 용도(role) 힌트 생성
+--- 실제 curve 선택은 entityFactory에서 shapeDefs를 기반으로 수행한다.
+--- @return string "enemy" | "boss" | "both"
+local function _suggestCurveRole(movement, attack, modifier, round)
+    if movement == "stationary" and attack ~= "none" and round >= 3 then
+        return "boss"
+    end
+
+    if modifier == "armored" or modifier == "shielded" then
+        return "both"
+    end
+
+    if round >= 4 and _random() < 0.2 then
+        return "both"
+    end
+
+    return "enemy"
+end
+
 -- ─── DNA 생성 ───────────────────────────────────────────────────
 
 --- 시드 기반 DNA 자동 생성
@@ -364,6 +383,7 @@ function M.generateDna(round)
 
     -- 스탯 산출
     local stats = M.calcStats(base, movement, attack, modifier, onDeath, round)
+    local curveRole = _suggestCurveRole(movement, attack, modifier, round)
 
     return {
         baseType  = baseKey,
@@ -374,6 +394,8 @@ function M.generateDna(round)
         onDeath   = onDeath,
         color     = color,
         stats     = stats,
+        curveRole = curveRole,
+        curveName = nil, -- entityFactory가 shapeDefs 기반으로 주입
     }
 end
 
