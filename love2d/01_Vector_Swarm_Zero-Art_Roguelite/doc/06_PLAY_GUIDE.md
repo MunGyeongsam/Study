@@ -27,6 +27,7 @@
   │                      ├── Fragment 획득 표시
   │                      ├── 도전과제 해금 알림 (있으면)
   │                      └── [R] Retry / [U] Upgrades / [ESC] Menu
+  ├── [CODEX] → Deity 도감 (CodexScene)
   ├── [UPGRADES] → 영구 강화 트리 (UpgradeScene)
   ├── [ACHIEVEMENTS] → 도전과제 + 해금 목록 (AchievementScene)
   └── [CREDITS] → 크레딧 (CreditsScene)
@@ -246,17 +247,18 @@ Fragment를 소비하여 영구적인 능력치 강화.
 
 | 카테고리 | 강화 항목 | 최대 | 단계당 효과 |
 |---------|----------|:----:|-----------|
-| **Attack** | Base Damage | 5 | +1 기본 데미지 |
-| | Fire Rate | 5 | +5% 발사속도 |
-| | Multi Shot | 3 | +1 기본 탄 수 |
-| **Defense** | Max HP | 5 | +1 최대 HP |
-| | iFrame Duration | 3 | +0.2초 무적시간 |
-| | Dash Cooldown | 3 | -0.3초 쿨타임 |
-| **Utility** | Magnet Range | 5 | +15% 수집범위 |
-| | XP Bonus | 5 | +10% XP 획득 |
-| | Fragment Bonus | 3 | +15% Fragment 획득 |
+| **Attack** | Core Damage | 3 | +1 기본 데미지 |
+| | Overclock (Fire Rate) | 3 | +15% 발사속도 |
+| | Long Reach (Range) | 3 | +20% 자동조준 범위 |
+| **Defense** | Reinforced Core (Max HP) | 3 | +1 최대 HP |
+| | Phase Shield (iFrame) | 3 | +0.3초 무적시간 |
+| | Quick Phase (Dash CD) | 3 | -15% 대시 쿨타임 |
+| **Utility** | Data Magnet | 3 | +30% 수집범위 |
+| | Turbo (Move Speed) | 3 | +10% 이동속도 |
+| | Data Miner (Fragment) | 3 | +5% Fragment 드롭률 |
 
 > 영구 강화는 기본 스탯에 합산 → 인런 레벨업은 그 위에 추가로 쌓임
+> 상세 수치와 밸런싱 근거는 `21_PROGRESSION_DESIGN.md` 참조
 
 ### 도전과제 & 해금
 
