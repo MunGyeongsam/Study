@@ -87,8 +87,103 @@ function ECSManager.init(getPlayerPos)
     return true
 end
 
+-- ── Deity VFX 디스패치 테이블 (시그니처별 발동 이펙트) ──
+-- 새 deity 추가 시 여기에 항목만 추가하면 됨 (O원칙: 확장에 열림, 수정에 닫힘)
+-- @param bp     BulletPool
+-- @param ps     PlayScene (flashScreen/tintScreen)
+-- @param px,py  플레이어 월드 좌표
+-- @param cr,cg,cb deity 대표색
+-- @param ctx    트리거 context
+local _deityVFX = {
+    graze_heal = function(bp, ps, px, py, _cr, _cg, _cb, _ctx)
+        -- 초록 힐 파티클 (위로 퍼지는 꽃잎) + 초록 틴트
+        logDebug(string.format("[DEITY-VFX] graze_heal: pos=(%.1f,%.1f)", px, py))
+        ps.tintScreen(0.2, 0.9, 0.3, 0.15)
+        for i = 1, 5 do
+            local angle = -_pi / 2 + (i - 3) * 0.4
+            local speed = 1.0 + _random() * 0.8
+            bp:spawn(px, py, _cos(angle) * speed, _sin(angle) * speed, {
+                radius = 0.03, maxLifetime = 0.35,
+                color = {0.3, 1.0, 0.4, 0.9}, layer = "debris",
+                damping = 0.03, fadeAlpha = true,
+            })
+        end
+    end,
+
+    critical_hit = function(bp, ps, px, py, _cr, _cg, _cb, ctx)
+        -- 노란 플래시 + 작은 쉐이크 + 적 위치 불꽃
+        logDebug(string.format("[DEITY-VFX] critical_hit: dmg=%s ex=(%.1f,%.1f)",
+            tostring(ctx and ctx.damage), ctx and ctx.enemyX or 0, ctx and ctx.enemyY or 0))
+        ps.flashScreen(0.15)
+        if screenShake then screenShake(0.06, 0.08) end
+        local ex, ey = ctx and ctx.enemyX or px, ctx and ctx.enemyY or py
+        for i = 1, 4 do
+            local angle = _random() * _pi * 2
+            local speed = 2.0 + _random() * 1.5
+            bp:spawn(ex, ey, _cos(angle) * speed, _sin(angle) * speed, {
+                radius = 0.04, maxLifetime = 0.2,
+                color = {1.0, 0.9, 0.2, 1.0}, layer = "debris",
+                damping = 0.04, fadeAlpha = true,
+            })
+        end
+    end,
+
+    kill_reset = function(bp, _ps, px, py, cr, cg, cb, _ctx)
+        -- 시안 파티클 링 (플레이어 주위)
+        logDebug(string.format("[DEITY-VFX] kill_reset: player=(%.1f,%.1f)", px, py))
+        for i = 1, 8 do
+            local angle = (i / 8) * _pi * 2
+            local speed = 1.5
+            bp:spawn(px, py, _cos(angle) * speed, _sin(angle) * speed, {
+                radius = 0.025, maxLifetime = 0.3,
+                color = {cr, cg, cb, 0.9}, layer = "debris",
+                damping = 0.02, fadeAlpha = true,
+            })
+        end
+    end,
+
+    kill_explosion = function(bp, _ps, px, py, cr, cg, cb, ctx, ecs)
+        local ex, ey = ctx and ctx.enemyX or px, ctx and ctx.enemyY or py
+
+        -- AOE 데미지: 폭발 범위 내 적에게 데미지 (deityDefs에서 이관된 로직)
+        local sig = deityDefs.getById("inferno").signature
+        local enemies = ecs:queryEntities({"Transform", "Health", "EnemyAI"})
+        local _aoeHitCount = 0
+        for _, eId in ipairs(enemies) do
+            local t = ecs:getComponent(eId, "Transform")
+            if t then
+                local dx, dy = t.x - ex, t.y - ey
+                if dx * dx + dy * dy <= sig.aoeRadius * sig.aoeRadius then
+                    local eh = ecs:getComponent(eId, "Health")
+                    if eh then eh.hp = eh.hp - sig.aoeDamage; _aoeHitCount = _aoeHitCount + 1 end
+                end
+            end
+        end
+        logDebug(string.format("[DEITY-VFX] kill_explosion: pos=(%.1f,%.1f) aoeHits=%d", ex, ey, _aoeHitCount))
+
+        -- VFX: 붉은 폭발 링 + 파편
+        if screenShake then screenShake(0.12, 0.15) end
+        for i = 1, 10 do
+            local angle = (i / 10) * _pi * 2 + (_random() - 0.5) * 0.3
+            local speed = 2.5 + _random() * 1.5
+            bp:spawn(ex, ey, _cos(angle) * speed, _sin(angle) * speed, {
+                radius = 0.035 + _random() * 0.02, maxLifetime = 0.3,
+                color = {cr, cg, cb, 1.0}, layer = "debris",
+                damping = 0.03, fadeAlpha = true,
+            })
+        end
+        -- 중심 플래시 파티클 (밝은 코어)
+        bp:spawn(ex, ey, 0, 0, {
+            radius = 0.15, maxLifetime = 0.15,
+            color = {1.0, 0.8, 0.3, 0.8}, layer = "debris",
+            damping = 0, fadeAlpha = true,
+        })
+    end,
+}
+
 --- Deity 시그니처 트리거 헬퍼
 --- 플레이어 엔티티를 자동 탐색하여 deity 시그니처 발동을 시도한다.
+--- 발동 시 VFX 디스패치 테이블을 통해 이펙트도 함께 처리.
 --- @param triggerType string "on_graze"|"on_hit"|"on_kill"
 --- @param context table|nil 트리거 데이터 (damage, enemyX, enemyY 등)
 --- @return boolean 발동 여부
@@ -98,7 +193,25 @@ function ECSManager.tryDeityTrigger(triggerType, context)
     local playerId = players[1]
     local tag = ECSManager.world:getComponent(playerId, "PlayerTag")
     if not tag or not tag.deityId then return false end
-    return deityDefs.tryTrigger(ECSManager.world, playerId, tag.deityId, triggerType, context)
+
+    local fired = deityDefs.tryTrigger(ECSManager.world, playerId, tag.deityId, triggerType, context)
+    if not fired then return false end
+
+    logDebug(string.format("[DEITY] %s fired (deity=%s, trigger=%s)", 
+        deityDefs.getById(tag.deityId).signature.id, tag.deityId, triggerType))
+
+    -- VFX 디스패치
+    local def = deityDefs.getById(tag.deityId)
+    if not def then return true end
+    local vfxFn = _deityVFX[def.signature.id]
+    if vfxFn then
+        local cr, cg, cb = def.color[1], def.color[2], def.color[3]
+        local PlayScene = require("03_game.scenes.playScene")
+        local pt = ECSManager.world:getComponent(playerId, "Transform")
+        local px, py = pt and pt.x or 0, pt and pt.y or 0
+        vfxFn(ECSManager.bulletPool, PlayScene, px, py, cr, cg, cb, context, ECSManager.world)
+    end
+    return true
 end
 
 -- 시스템 등록
@@ -340,8 +453,8 @@ function ECSManager._registerBasicSystems()
     }))
     -- 12. EnemyCollision: 플레이어 불릿 ↔ 적 충돌 + XP 드롭
     -- Deity on_hit modifier: 크리티컬 등 데미지 변환
-    local onHitModifier = function(dmg)
-        local ctx = {damage = dmg}
+    local onHitModifier = function(dmg, enemyX, enemyY)
+        local ctx = {damage = dmg, enemyX = enemyX, enemyY = enemyY}
         ECSManager.tryDeityTrigger("on_hit", ctx)
         return ctx.damage
     end

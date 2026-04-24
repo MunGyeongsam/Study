@@ -159,6 +159,10 @@ end
 - `setColor`, `resetColor`
 - `clamp`, `lerp`, `distance`, `normalize`
 
+`main.lua`가 주입하는 전역 (엔진 서비스):
+- `screenShake` — 카메라 쉐이크 (`cameraManager.shake`)
+- `playSound`, `playBGM`, `stopBGM` — 사운드 재생 (`soundManager` 래퍼)
+
 ### 규칙
 - 위 목록 외에 **전역 변수 생성 금지**
 - 모든 변수는 `local` 선언 필수

@@ -179,29 +179,11 @@ M.DEITIES = {
             desc    = "Kill has 10% chance to explode nearby enemies",
             trigger = "on_kill",
             chance  = 0.10,
-            -- execute는 collisionSystem/enemyCollisionSystem에서 처리
-            -- context.enemyX, context.enemyY → 해당 위치에 AOE 생성
-            execute = function(ecs, playerId, context)
-                -- AOE 폭발: 처치된 적 위치에서 범위 내 적에게 데미지
-                if not context then return end
-                local ex, ey = context.enemyX or 0, context.enemyY or 0
-                local aoeDamage = 2
-                local aoeRadius = 1.5
-
-                local enemies = ecs:queryEntities({"Transform", "Health", "EnemyAI"})
-                for _, eId in ipairs(enemies) do
-                    if eId ~= (context.enemyId or -1) then
-                        local t = ecs:getComponent(eId, "Transform")
-                        if t then
-                            local dx, dy = t.x - ex, t.y - ey
-                            if dx * dx + dy * dy <= aoeRadius * aoeRadius then
-                                local eh = ecs:getComponent(eId, "Health")
-                                if eh then eh.hp = eh.hp - aoeDamage end
-                            end
-                        end
-                    end
-                end
-            end,
+            aoeDamage = 2,
+            aoeRadius = 1.5,
+            -- AOE 로직은 ecsManager._deityVFX.kill_explosion에서 처리
+            -- (data 순수성 유지: ECS 로직은 data 레이어에 두지 않는다)
+            execute = function(_ecs, _playerId, _context) end,
         },
     },
 }

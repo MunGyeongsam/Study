@@ -79,6 +79,14 @@ function PlayScene.setShowWorldGrid(v) _showWorldGrid = v end
 function PlayScene.getShowWorldGrid() return _showWorldGrid end
 function PlayScene.getHitStopTimer() return _hitStopTimer end
 
+--- VFX 트리거 (외부 시스템에서 호출 가능)
+function PlayScene.flashScreen(alpha)
+    _screenFlash = math.max(_screenFlash, alpha or 0.3)
+end
+function PlayScene.tintScreen(r, g, b, a)
+    _screenTint = {r, g, b, a or 0.3}
+end
+
 function PlayScene.toggleForceDnaModeGlobal()
     local sm = ecsManager.getStageManager and ecsManager.getStageManager()
     if not sm then return nil end

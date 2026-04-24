@@ -112,7 +112,7 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath, onSpawnEnemy
 
                         -- Deity: on_hit 시그니처 (크리티컬 등)
                         if onHitModifier then
-                            dmg = onHitModifier(dmg)
+                            dmg = onHitModifier(dmg, ex, ey)
                         end
 
                         health.hp = health.hp - dmg
