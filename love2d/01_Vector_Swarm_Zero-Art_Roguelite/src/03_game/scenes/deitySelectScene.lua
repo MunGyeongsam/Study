@@ -16,6 +16,10 @@ local _floor = math.floor
 local _min   = math.min
 local _max   = math.max
 
+-- 곡선 드로잉 애니메이션 상수
+local _DRAW_DURATION = 1.2   -- 각 곡선 드로잉 소요 시간(초)
+local _DRAW_STAGGER  = 0.15  -- 카드 간 시작 시차(초)
+
 local DeitySelectScene = {}
 DeitySelectScene.__index = DeitySelectScene
 
@@ -88,6 +92,7 @@ function DeitySelectScene.new(sceneStack)
     self._selectTimer = 0        -- 선택 후 연출 타이머
     self._SELECT_DELAY = 0.6     -- 선택 후 전환까지 대기
     self._entranceTimer = 0      -- 입장 연출 타이머
+    self._drawTimer  = 0         -- 곡선 드로잉 타이머
     return self
 end
 
@@ -96,6 +101,7 @@ function DeitySelectScene:enter(prev)
     self._selected = nil
     self._selectTimer = 0
     self._entranceTimer = 0
+    self._drawTimer = 0
 
     -- 폰트 캐시 (매 프레임 newFont 방지)
     self._fontTitle = love.graphics.newFont(24)
@@ -123,6 +129,7 @@ function DeitySelectScene:enter(prev)
             verts    = normVerts,
             hover    = false,
             pulse    = 0,
+            drawProgress = 0,   -- 곡선 드로잉 진행도 (0→1)
         }
     end
 
@@ -138,6 +145,15 @@ end
 function DeitySelectScene:update(dt)
     self._angle = self._angle + dt * 0.5   -- 천천히 회전
     self._entranceTimer = _min(self._entranceTimer + dt * 2.0, 1.0)
+    self._drawTimer = self._drawTimer + dt
+
+    -- 카드별 드로잉 진행도 (시차 + ease-out cubic: 빠른 시작 → 부드러운 마무리)
+    for i, card in ipairs(self._cards) do
+        local stagger = (i - 1) * _DRAW_STAGGER
+        local t = _max(0, _min((self._drawTimer - stagger) / _DRAW_DURATION, 1))
+        local inv = 1 - t
+        card.drawProgress = 1 - inv * inv * inv   -- ease-out cubic
+    end
 
     -- 카드별 pulse
     for _, card in ipairs(self._cards) do
@@ -237,18 +253,21 @@ function DeitySelectScene:_drawCard(card, index, x, y, w, h, alpha)
     lg.setLineWidth(isSelected and 3 or (1 + pulse))
     lg.rectangle("line", x, y, w, h, 8, 8)
 
-    -- 곡선 렌더링
+    -- 곡선 렌더링 (드로잉 애니메이션)
     local curveRadius = _min(w, h * 0.55) * 0.38 * scale
     local cx, cy = x + w / 2, y + h * 0.38
     local angle = self._angle + index * _pi / 4   -- 각 카드 위상 차이
 
-    if #card.verts >= 4 then
+    local totalPairs = #card.verts / 2
+    local visiblePairs = _floor(card.drawProgress * totalPairs)
+
+    if visiblePairs >= 2 then
         setColor(_floor(cr * 255), _floor(cg * 255), _floor(cb * 255), _floor(cardAlpha * 240))
         lg.setLineWidth(2)
 
         local screenVerts = {}
         local cosA, sinA = _cos(angle), _sin(angle)
-        for j = 1, #card.verts, 2 do
+        for j = 1, visiblePairs * 2, 2 do
             local vx, vy = card.verts[j], card.verts[j + 1]
             -- 회전 변환
             local rx = vx * cosA - vy * sinA
@@ -260,26 +279,41 @@ function DeitySelectScene:_drawCard(card, index, x, y, w, h, alpha)
         if #screenVerts >= 4 then
             lg.line(screenVerts)
         end
+
+        -- 펜 끝 글로우 (드로잉 진행 중일 때만)
+        if card.drawProgress < 1 and #screenVerts >= 2 then
+            local tipX = screenVerts[#screenVerts - 1]
+            local tipY = screenVerts[#screenVerts]
+            -- 밝은 코어
+            setColor(255, 255, 255, _floor(cardAlpha * 200))
+            lg.circle("fill", tipX, tipY, 3)
+            -- 컬러 글로우
+            setColor(_floor(cr * 255), _floor(cg * 255), _floor(cb * 255), _floor(cardAlpha * 100))
+            lg.circle("fill", tipX, tipY, 7)
+        end
     end
+
+    -- 텍스트 (곡선 드로잉 80% 이후 페이드인)
+    local textAlpha = _max(0, (card.drawProgress - 0.8) / 0.2) * cardAlpha
 
     -- 이름
     lg.setFont(self._fontName)
-    setColor(255, 255, 255, _floor(cardAlpha * 230))
+    setColor(255, 255, 255, _floor(textAlpha * 230))
     lg.printf(deity.name, x, y + h * 0.70, w, "center")
 
     -- 시그니처 능력
     lg.setFont(self._fontSig)
-    setColor(_floor(cr * 255), _floor(cg * 255), _floor(cb * 255), _floor(cardAlpha * 200))
+    setColor(_floor(cr * 255), _floor(cg * 255), _floor(cb * 255), _floor(textAlpha * 200))
     lg.printf(deity.signature.name, x, y + h * 0.70 + 22, w, "center")
 
     -- 설명
     lg.setFont(self._fontDesc)
-    setColor(200, 200, 220, _floor(cardAlpha * 160))
+    setColor(200, 200, 220, _floor(textAlpha * 160))
     lg.printf(deity.signature.desc, x + 4, y + h * 0.70 + 38, w - 8, "center")
 
     -- 스탯 보너스
     lg.setFont(self._fontStat)
-    setColor(160, 160, 180, _floor(cardAlpha * 140))
+    setColor(160, 160, 180, _floor(textAlpha * 140))
     local statText = deity.statBonuses[1].label .. "  |  " .. deity.statBonuses[2].label
     lg.printf(statText, x + 4, y + h * 0.70 + 54, w - 8, "center")
 
@@ -317,6 +351,8 @@ end
 
 function DeitySelectScene:touchpressed(id, x, y)
     if self._selected then return true end
+    -- 드로잉 완료 전엔 선택 불가
+    if self._cards[#self._cards] and self._cards[#self._cards].drawProgress < 1 then return false end
     local hit = self:_hitTest(x, y)
     if hit then
         self._selected = hit
@@ -344,6 +380,8 @@ end
 
 function DeitySelectScene:keypressed(key)
     if self._selected then return true end
+    -- 드로잉 완료 전엔 선택 불가
+    if self._cards[#self._cards] and self._cards[#self._cards].drawProgress < 1 then return false end
 
     -- 숫자 키 1-4로 선택
     local num = tonumber(key)
