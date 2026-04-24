@@ -36,8 +36,9 @@ model: sonnet
 |------|------|------|
 | 1 | `work_log/` (최신 파일) | 마지막 세션에서 뭘 했는지, 다음 뭘 해야 하는지 |
 | 2 | `doc/00_PROJECT_ROADMAP.md` | 전체 Phase 진행률, 체크박스 현황 |
-| 3 | `doc/02_CONCEPT_DESIGN.md` | 게임 컨셉, 재미 철학, 유니크 아이덴티티 |
-| 4 | `.github/copilot-instructions.md` | 개발 컨벤션, 워크플로우, 자동 챙김 규칙 |
+| 3 | `src/SOURCE_MAP.md` | 전체 파일 인덱스 + API + 데이터 흐름 + 수정 가이드 |
+| 4 | `doc/02_CONCEPT_DESIGN.md` | 게임 컨셋, 재미 철학, 유니크 아이덴티티 |
+| 5 | `.github/copilot-instructions.md` | 개발 컨벤션, 워크플로우, 자동 챙김 규칙 |
 
 ---
 

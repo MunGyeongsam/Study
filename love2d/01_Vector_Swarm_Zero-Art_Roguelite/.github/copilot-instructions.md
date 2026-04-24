@@ -115,6 +115,8 @@ src/
 - `00_common/global.lua` must be loaded **first** in `love.load()`; it defines globals used everywhere (`log`, `setColor`, etc.).
 - `logger.init()` is called immediately after `global.init()`.
 
+> **파일별 상세 API, 의존 관계, 데이터 흐름은 `src/SOURCE_MAP.md` 참조.**
+
 ### ECS architecture (`01_core/` + `03_game/ecsManager.lua`)
 - **ecs.lua**: Entity lifecycle (create/destroy with ID recycling), component CRUD, `queryEntities()` with pivot optimization and `componentIndex` cache.
 - **system.lua**: `System.new(name, requiredComponents, updateFn)` — base class with built-in performance timing.

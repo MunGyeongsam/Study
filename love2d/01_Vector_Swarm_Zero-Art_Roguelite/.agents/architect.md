@@ -10,9 +10,10 @@ model: opus
 ---
 
 # 아키텍처 규칙 참조
-이 agent는 반드시 아래 두 skill을 먼저 읽고 규칙을 숙지한 뒤 분석을 수행합니다.
+이 agent는 반드시 아래 문서를 먼저 읽고 규칙을 숙지한 뒤 분석을 수행합니다.
 - `.skills/architecture-rules.md` — 레이어 규칙, 모듈 패턴, 성능, ECS 등 9개 영역
 - `.skills/clean-code-guide.md` — SOLID 원칙 & Clean Code (Lua 게임 개발 변형)
+- `src/SOURCE_MAP.md` — 전체 파일 인덱스, API, 의존 관계 (코드 네비게이션용)
 
 # 분석 워크플로우
 

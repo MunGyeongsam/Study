@@ -15,9 +15,10 @@ model: opus
 
 1. **`.skills/planning-guide.md`** — 디자인 원칙, ECS 분해 템플릿, Phase 프로세스, 밸런스 프레임워크
 2. **`doc/00_PROJECT_ROADMAP.md`** — 현재 Phase 위치, 완료/미완료 작업 현황
-3. **`doc/04_TECHNICAL_ARCHITECTURE.md`** — 현재 ECS 구조, 컴포넌트/시스템 전체 목록
-4. **`doc/02_CONCEPT_DESIGN.md`** — 재미 철학, 컨셉, 유니크 아이덴티티 (필요시)
-5. **`.skills/architecture-rules.md`** — 레이어 규칙, ECS 설계 규칙 (기능 분해 시)
+3. **`src/SOURCE_MAP.md`** — 전체 파일 인덱스, API, 의존 관계, 데이터 흐름
+4. **`doc/04_TECHNICAL_ARCHITECTURE.md`** — 현재 ECS 구조, 컴포넌트/시스템 전체 목록
+5. **`doc/02_CONCEPT_DESIGN.md`** — 재미 철학, 컨셋, 유니크 아이덴티티 (필요시)
+6. **`.skills/architecture-rules.md`** — 레이어 규칙, ECS 설계 규칙 (기능 분해 시)
 
 ---
 
