@@ -13,6 +13,7 @@ local topHud = {}
 local gameData = {
     score = 0,
     lives = 3,
+    maxLives = 3,
     level = 1,
     fps = 0,
     -- Boss data
@@ -95,7 +96,7 @@ function topHud.draw()
     lg.print(stageText, 10, 25)
     
     -- 라이프 표시
-    local livesText = string.format("HP x %d", gameData.lives)
+    local livesText = string.format("HP %d/%d", gameData.lives, gameData.maxLives)
     lg.print(livesText, 10, 40)
     
     -- 레벨과 진행률 표시
@@ -162,6 +163,7 @@ end
 function topHud.setGameData(data)
     if data.score then gameData.score = data.score end
     if data.lives then gameData.lives = data.lives end
+    if data.maxLives then gameData.maxLives = data.maxLives end
     if data.level then gameData.level = data.level end
     if data.fps then gameData.fps = data.fps end
     if data.stage then gameData.stage = data.stage end

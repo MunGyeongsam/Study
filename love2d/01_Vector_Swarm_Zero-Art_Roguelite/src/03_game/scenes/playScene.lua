@@ -374,9 +374,17 @@ function PlayScene:update(dt)
     local playerStats = player.getStats()
     local stageStats = ecsManager.getStats().stage
 
+    -- 플레이어 HP 읽기
+    local w = ecsManager.getWorld()
+    local playerEntities = w:queryEntities({"PlayerTag", "Health"})
+    local playerHealth = #playerEntities > 0 and w:getComponent(playerEntities[1], "Health") or nil
+    local pHp    = playerHealth and playerHealth.hp or 0
+    local pMaxHp = playerHealth and playerHealth.maxHp or 1
+
     uiManager.setGameData({
         score = _floor(gameState.getScore()),
-        lives = 3,
+        lives = pHp,
+        maxLives = pMaxHp,
         level = playerStats.zonesVisited + 1,
         fps = love.timer.getFPS(),
         stage = stageStats.stage,
@@ -409,9 +417,6 @@ function PlayScene:update(dt)
     end
 
     -- 게임 상태 업데이트
-    local w = ecsManager.getWorld()
-    local playerEntities = w:queryEntities({"PlayerTag", "Health"})
-    local playerHealth = #playerEntities > 0 and w:getComponent(playerEntities[1], "Health") or nil
     gameState.setStageInfo(stageStats.stage, stageStats.wave, stageStats.wavesPerStage)
     gameState.setWaveReached(stageStats.totalWaves)
     gameState.update(dt, playerHealth)
