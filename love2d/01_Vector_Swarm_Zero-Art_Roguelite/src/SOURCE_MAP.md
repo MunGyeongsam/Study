@@ -114,6 +114,7 @@
 | `playScene.lua` (~600L) | 메인 전투 루프 (ECS+카메라+UI) | ✗ | ✗ |
 | `titleScene.lua` (~60L) | 타이틀 메뉴 래퍼 | ✗ | ✗ |
 | `deitySelectScene.lua` (~200L) | Deity 의식 선택 (2×2 곡선 카드 + 드로잉 애니메이션) | ✗ | ✗ |
+| `codexScene.lua` (~300L) | Deity 도감 (풀화면 1신씩, 곡선+lore+스탯) | ✓ | ✗ |
 | `pauseScene.lua` (~50L) | 일시정지 오버레이 | ✓ | ✗ |
 | `levelUpScene.lua` (~40L) | 레벨업 3택 오버레이 (자동 pop) | ✓ | ✗ |
 | `gameOverScene.lua` (~80L) | 게임오버 결과 화면 | ✗ | ✗ |

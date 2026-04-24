@@ -89,6 +89,7 @@ src/
 │   │   ├── playScene.lua      # Game loop scene (ECS + rendering + camera)
 │   │   ├── titleScene.lua     # Title menu scene
 │   │   ├── deitySelectScene.lua # Deity ritual selection (2×2 animated curves)
+│   │   ├── codexScene.lua     # Deity codex (full-screen curve + lore viewer)
 │   │   ├── pauseScene.lua     # Pause overlay scene (drawBelow)
 │   │   ├── levelUpScene.lua   # Level-up overlay (auto-pop)
 │   │   ├── upgradeScene.lua   # Upgrade tree overlay (auto-pop)

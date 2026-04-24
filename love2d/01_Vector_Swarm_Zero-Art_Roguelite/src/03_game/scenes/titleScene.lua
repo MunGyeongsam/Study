@@ -25,6 +25,10 @@ function TitleScene:enter(prev)
             local DeitySelectScene = require("03_game.scenes.deitySelectScene")
             self._sceneStack:replace(DeitySelectScene.new(self._sceneStack))
         end,
+        onCodex = function()
+            local CodexScene = require("03_game.scenes.codexScene")
+            self._sceneStack:push(CodexScene.new(self._sceneStack))
+        end,
         onUpgrades = function()
             local UpgradeScene = require("03_game.scenes.upgradeScene")
             self._sceneStack:push(UpgradeScene.new(self._sceneStack))
@@ -67,16 +71,20 @@ function TitleScene:keypressed(key)
         local CurveLabScene = require("03_game.scenes.curveLabScene")
         self._sceneStack:push(CurveLabScene.new(self._sceneStack))
         return true
+    elseif key == "d" then
+        local CodexScene = require("03_game.scenes.codexScene")
+        self._sceneStack:push(CodexScene.new(self._sceneStack))
+        return true
     end
     return titleMenu.keypressed(key)
 end
 
 -- macOS IME 한글 입력 시 keypressed 우회 대응
 -- 한글 2벌식: ㅎ=g, ㅊ=c
-local JAMO_TO_KEY = { ["ㅎ"] = "g", ["ㅊ"] = "c" }
+local JAMO_TO_KEY = { ["ㅎ"] = "g", ["ㅊ"] = "c", ["ㅇ"] = "d" }
 function TitleScene:textinput(text)
     local key = JAMO_TO_KEY[text] or text:lower()
-    if key == "g" or key == "c" then
+    if key == "g" or key == "c" or key == "d" then
         return self:keypressed(key)
     end
     return false

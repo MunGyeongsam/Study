@@ -14,6 +14,7 @@ local titleMenu = {}
 -- Menu items
 local MENU_ITEMS = {
     { id = "play",         label = "PLAY" },
+    { id = "codex",        label = "CODEX" },
     { id = "upgrades",     label = "UPGRADES" },
     { id = "achievements", label = "ACHIEVEMENTS" },
     { id = "credits",      label = "CREDITS" },
@@ -50,6 +51,7 @@ local subFont     = nil
 -- Callbacks (set from main.lua)
 local callbacks = {
     onPlay         = nil,
+    onCodex        = nil,
     onUpgrades     = nil,
     onAchievements = nil,
     onCredits      = nil,
@@ -217,6 +219,8 @@ local function executeSelection()
 
     if item.id == "play" and callbacks.onPlay then
         callbacks.onPlay()
+    elseif item.id == "codex" and callbacks.onCodex then
+        callbacks.onCodex()
     elseif item.id == "upgrades" and callbacks.onUpgrades then
         callbacks.onUpgrades()
     elseif item.id == "achievements" and callbacks.onAchievements then
