@@ -1,5 +1,21 @@
--- ECS Manager
--- 전체 ECS 월드와 시스템들을 관리
+-- ============================================================================
+-- ecsManager.lua — ECS 오케스트레이터
+-- ============================================================================
+--
+-- ◆ 역할
+--   ECS world 생성, 18개 시스템 등록/실행, bulletPool/stageManager 호출.
+--   update(dt)는 로직 시스템, draw()는 렌더 시스템만 실행한다.
+--
+-- ◆ 시스템 실행 순서 (등록 순)
+--   Input → Focus → Dash → EnemyAI → Movement → Boundary → LifeSpan
+--   → BulletEmitter → PlayerWeapon → Collision → EnemyCollision
+--   → XpCollection → Boss → [bulletPool] → [stageManager]
+--   렌더: Render → PlayerRender → [bulletPool.draw]
+--
+-- ◆ 핵심 API
+--   init(getPlayerPos), update(dt), draw()
+--   createPlayer/createEnemy/createDnaEnemy/restart
+--   getWorld/getBulletPool/getStageManager
 
 local ECS = require("01_core.ecs")
 local world = require("01_core.world")

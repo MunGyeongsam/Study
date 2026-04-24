@@ -1,5 +1,22 @@
--- Simple Camera System
--- 하나의 전역 카메라로 단순하게
+-- ============================================================================
+-- camera.lua — Unity 스타일 정사영 카메라
+-- ============================================================================
+--
+-- ◆ 역할
+--   orthographicSize 기반 2D 카메라. 월드 좌표 Y↑, 스크린 좌표 Y↓ 변환.
+--   draw(fn) 안에서 모든 월드 렌더링이 이루어진다.
+--
+-- ◆ 핵심 API
+--   camera.new(x, y, orthoSize) → cam
+--   cam:draw(fn) — attach → fn() → detach (transform 적용)
+--   cam:worldCoords(sx, sy) → wx, wy  (스크린→월드)
+--   cam:cameraCoords(wx, wy) → sx, sy (월드→스크린)
+--   cam:lookAt(x, y) / move / zoom / setOrthographicSize
+--   cam:getPixelsPerUnit() — 스크린 px 당 월드 유닛
+--
+-- ◆ 좌표계
+--   월드: 중심(0,0), Y↑, 단위=world units
+--   스크린: 좌상단(0,0), Y↓, 단위=pixels
 
 local cos, sin = math.cos, math.sin
 

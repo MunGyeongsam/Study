@@ -1,9 +1,18 @@
--- Camera Manager
--- 게임 카메라와 디버그 카메라를 관리하고 전환한다.
+-- ============================================================================
+-- cameraManager.lua — 카메라 컨트롤러 (게임/디버그 모드)
+-- ============================================================================
 --
--- 모드:
---   "game"  — 플레이어를 자동 추적 (기본)
---   "debug" — 마우스 드래그로 자유 이동, 휠로 줌
+-- ◆ 역할
+--   게임 카메라(플레이어 추적) ↔ 디버그 카메라(자유 이동) 전환 (F5).
+--   스크린 셰이크, 월드 바운드 클램핑을 처리한다.
+--
+-- ◆ 모드
+--   "game"  — 플레이어 자동 추적 (exp smoothing k=12)
+--   "debug" — 마우스 드래그 + 휠 줌
+--
+-- ◆ 핵심 API
+--   init(orthoSize), update(dt, targetX, targetY), draw(drawFn)
+--   toggle(), shake(intensity, duration), worldCoords(sx, sy)
 
 local camera   = require("02_renderer.camera")
 local mathUtil = require("00_common.mathUtil")

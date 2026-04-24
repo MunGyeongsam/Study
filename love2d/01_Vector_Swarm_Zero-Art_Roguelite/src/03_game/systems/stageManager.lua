@@ -1,7 +1,20 @@
--- Stage Manager
--- Manages stage progression: waves → stage clear → next stage
--- Data-driven: STAGE_DEFS for hand-designed stages, formula for infinite stages.
--- Not an ECS system — called from ecsManager.update().
+-- ============================================================================
+-- stageManager.lua — 스테이지/웨이브/보스 진행 관리
+-- ============================================================================
+--
+-- ◆ 역할
+--   웨이브 스포닝 → 스테이지 클리어 → 보스전 → 다음 스테이지.
+--   STAGE_DEFS(수작업) + 공식(무한) 하이브리드. ECS 시스템이 아님.
+--   ecsManager.update()에서 직접 호출된다.
+--
+-- ◆ 상태 흐름
+--   wave_spawning → wave_active → wave_complete → (반복 or 보스)
+--   boss_intro → boss_active → boss_clear → collecting → 다음 스테이지
+--
+-- ◆ 핵심 API
+--   SM.new(ecsManager, getPlayerPos) → manager
+--   manager:update(dt), draw(), getStats()
+--   manager:debugSkipStage(), continueEndless()
 
 local world = require("01_core.world")
 local EntityFactory = require("03_game.entities.entityFactory")

@@ -1,5 +1,20 @@
--- Entity Factory
--- 엔티티 생성 헬퍼 함수 모음
+-- ============================================================================
+-- entityFactory.lua — 엔티티 팩토리 (플레이어/적/보스/XP오브/DNA적)
+-- ============================================================================
+--
+-- ◆ 역할
+--   ECS 엔티티를 생성하고 컴포넌트를 조립한다.
+--   적 타입 5종(bit/node/vector/loop/matrix) + 변형 4종(swift/armored/splitter/shielded)
+--
+-- ◆ 핵심 API
+--   createPlayer(world, x, y, charId) → id
+--   createEnemy(world, x, y, type, difficulty, variant) → id
+--   createBoss(world, x, y, type, scaling) → id
+--   createDnaEnemy(world, x, y, dna, difficulty) → id
+--   createXpOrb(world, x, y, value) → id
+--
+-- ◆ 새 적 추가: 여기 + stageData.lua + basicShapes.lua
+-- ◆ 새 변형 추가: 여기 + stageData.lua + variantOverlays.lua
 
 local Transform     = require("03_game.components.transform")
 local Velocity      = require("03_game.components.velocity")

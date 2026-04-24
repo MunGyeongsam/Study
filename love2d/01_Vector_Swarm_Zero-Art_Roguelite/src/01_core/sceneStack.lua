@@ -1,6 +1,22 @@
--- Scene Stack
--- push/pop 기반 상태 스택. Input은 top만, Draw는 아래부터 위로.
--- see doc/14_SCENE_STACK_ARCHITECTURE.md
+-- ============================================================================
+-- sceneStack.lua — 씬 스택 엔진 (push/pop/replace/clear)
+-- ============================================================================
+--
+-- ◆ 역할
+--   push/pop 기반 상태 관리. Input은 top 씬만, Draw는 drawBelow 체인.
+--   see doc/14_SCENE_STACK_ARCHITECTURE.md
+--
+-- ◆ 씬 인터페이스
+--   name, transparent(=update 전파), drawBelow(=아래 씬도 그리기)
+--   enter(prev), exit(), update(dt), draw()
+--   keypressed(key), textinput(text)
+--   touchpressed/moved/released(id, x, y, dx, dy, pressure)
+--
+-- ◆ 핵심 API
+--   SceneStack.new() → stack
+--   stack:push(scene) / pop() / replace(scene) / clear()
+--   stack:update(dt) / draw() — transparent/drawBelow 체인 처리
+--   stack:top() → 현재 씬 | nil
 
 local SceneStack = {}
 SceneStack.__index = SceneStack

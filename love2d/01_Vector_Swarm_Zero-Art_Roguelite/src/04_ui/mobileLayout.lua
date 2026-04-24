@@ -1,5 +1,15 @@
--- Mobile Layout
--- 모바일 화면 레이아웃 계산 및 관리
+-- ============================================================================
+-- mobileLayout.lua — 반응형 화면 레이아웃
+-- ============================================================================
+--
+-- ◆ 역할
+--   화면을 top(5%) / play(85%) / bottom(10%) 영역으로 분할.
+--   DPI 자동 감지 → UI 스케일링.
+--
+-- ◆ 핵심 API
+--   getLayout() → {screenWidth, playAreaStart, playAreaHeight, ...}
+--   isTouchInArea(x, y, "top"|"play"|"bottom") → bool
+--   getSafeTouchSize(base) → pixels (min 44dp)
 
 local logger = require("00_common.logger")
 

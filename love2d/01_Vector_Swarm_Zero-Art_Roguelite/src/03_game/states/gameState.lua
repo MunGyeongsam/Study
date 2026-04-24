@@ -1,6 +1,16 @@
--- Game State Manager
--- Manages game states: title, playing, paused, game_over
--- Tracks score (survival time) and handles restart.
+-- ============================================================================
+-- gameState.lua — 게임 상태 머신
+-- ============================================================================
+--
+-- ◆ 역할
+--   게임 상태(title/playing/paused/game_over/victory/endless) 전환 관리.
+--   생존 시간 점수, 타임스케일(포커스 슬로모), 스테이지 정보를 추적한다.
+--
+-- ◆ 핵심 API
+--   startPlaying(), update(dt, playerHealth), isPlaying/isGameOver/isVictory
+--   pause/resume, triggerVictory, continueToEndless
+--   setTimeScale(scale) / getTimeScale() — 포커스 슬로모용
+--   setStageInfo/getStageInfo, getScore, canRestart
 
 local GameState = {}
 

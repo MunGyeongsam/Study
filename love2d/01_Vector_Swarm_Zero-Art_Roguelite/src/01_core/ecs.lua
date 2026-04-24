@@ -1,5 +1,21 @@
--- ECS Core System
--- Entity-Component-System 핵심 구현
+-- ============================================================================
+-- ecs.lua — ECS 코어 (Entity-Component-System)
+-- ============================================================================
+--
+-- ◆ 역할
+--   엔티티 생성/삭제(ID 재활용), 컴포넌트 CRUD, queryEntities().
+--   componentIndex 캐시로 다중 컴포넌트 쿼리를 피벗 최적화한다.
+--
+-- ◆ 핵심 API
+--   ECS.new() → world
+--   world:createEntity() → id
+--   world:destroyEntity(id)
+--   world:addComponent(id, name, data) / getComponent / removeComponent
+--   world:queryEntities({"Transform", "Velocity"}) → {id, ...}
+--   world:getStats() → {activeEntities, recycledIds, ...}
+--
+-- ◆ 사용처
+--   ecsManager.lua가 world를 생성하고 시스템들이 queryEntities()로 접근
 
 local ECS = {}
 

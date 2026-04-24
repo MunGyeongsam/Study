@@ -1,5 +1,22 @@
-﻿-- Vector Swarm - Zero Art Roguelite
--- Main game file ??Scene Stack 기반 게임 루프
+﻿-- ============================================================================
+-- main.lua — LÖVE 콜백 진입점 (Scene Stack 기반 게임 루프)
+-- ============================================================================
+--
+-- ◆ 역할
+--   love.load/update/draw + 입력 콜백을 Scene Stack으로 전달한다.
+--   전역 유틸(global, logger)을 가장 먼저 초기화하고,
+--   bloom → camera.draw(ECS) → UI 순서로 렌더링한다.
+--
+-- ◆ 전역 함수 (global.lua에서 주입)
+--   log/logInfo/logDebug/logWarn/logError, setColor, resetColor
+--
+-- ◆ 디버그 키: F1=워치, F2=UI, F3=UI디버그, F4=그리드,
+--   F5=카메라, F7=갓모드, F8=스테이지스킵, ESC=종료
+--
+-- ◆ 입력 파이프라인
+--   touch/mouse → sceneStack → top scene → uiManager or game
+--   mouse → touch 브릿지 (PC 프로토타입용)
+--   love.textinput → sceneStack:textinput (macOS IME 한글 대응)
 
 -- Global utilities first (?�역 ?�수 최우??초기??
 local global = require("00_common.global")

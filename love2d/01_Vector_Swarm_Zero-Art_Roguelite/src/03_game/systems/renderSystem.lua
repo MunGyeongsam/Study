@@ -1,7 +1,19 @@
--- Render System
--- Transform + Renderable을 가진 엔티티를 그린다
--- draw()에서만 실행되며, update()에서는 스킵된다.
--- Strategy Pattern: 렌더 타입별 함수를 디스패치 테이블로 관리
+-- ============================================================================
+-- renderSystem.lua — 엔티티 렌더링 (Strategy Pattern 디스패치)
+-- ============================================================================
+--
+-- ◆ 역할
+--   Transform + Renderable 엔티티를 그린다. draw()에서만 실행.
+--   Strategy Pattern: 렌더 타입 → 함수 테이블로 자동 디스패치.
+--
+-- ◆ 렌더러 자동 등록 (수정 불필요)
+--   basicShapes.lua  → 적 도형 12종
+--   bossRenderers.lua → 보스 외형 5종
+--   variantOverlays.lua → 변형 오버레이 4종
+--   새 렌더러: 해당 파일에 함수만 추가하면 자동 등록됨
+--
+-- ◆ DNA 적 렌더링
+--   body 레이어 다중 합성 + 곡선 오버레이 (정규화 좌표)
 
 local System = require("01_core.system")
 

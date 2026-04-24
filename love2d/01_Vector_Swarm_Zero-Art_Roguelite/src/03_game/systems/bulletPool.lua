@@ -1,13 +1,21 @@
--- Bullet Pool
--- Pre-allocated object pool for zero-GC bullet management.
--- Bullets live outside ECS for performance (no per-entity component overhead).
+-- ============================================================================
+-- bulletPool.lua — 불릿 오브젝트 풀 (ECS 외부, zero-GC)
+-- ============================================================================
 --
--- Behaviors: nil (default linear), "orbit" (circular then release), "return" (decel+reverse)
+-- ◆ 역할
+--   2000개 사전 할당 풀. ECS 밖에서 관리하여 컴포넌트 오버헤드 제거.
+--   ecsManager.update/draw에서 직접 호출된다.
 --
--- Usage:
---   local pool = BulletPool.new(2000)
---   pool:spawn(x, y, vx, vy, { maxLifetime = 5, radius = 0.04 })
---   pool:update(dt, worldBounds)
+-- ◆ 핵심 API
+--   BP.new(maxBullets) → pool
+--   pool:spawn(x, y, vx, vy, opts) — opts: radius, maxLifetime, color, layer
+--   pool:update(dt, bounds) / draw()
+--   pool:clear() / clearLayer(layer) / harvestLayer(layer)
+--
+-- ◆ 불릿 행동
+--   nil = 직선, "orbit" = 원형→방출, "return" = 감속→역주행
+--
+-- ◆ 레이어: "game"(일반), "effects"(특수), "debris"(파티클)
 --   pool:draw()
 --   pool:clear()
 

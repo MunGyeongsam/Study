@@ -1,6 +1,18 @@
--- PlayScene
--- 전투 플레이 씬: ECS 업데이트 + 월드 렌더링 + 게임플레이 Input
--- 기존 main.lua 게임 루프를 래핑한 Scene
+-- ============================================================================
+-- playScene.lua — 메인 전투 루프 씬
+-- ============================================================================
+--
+-- ◆ 역할
+--   ECS 업데이트 + 카메라 추적 + 블룸 렌더 + UI 오버레이.
+--   스테이지 클리어/보스 연출/게임오버 판정을 처리한다.
+--
+-- ◆ 렌더 파이프라인
+--   bloom.begin → cameraManager.draw(background + ECS + trail) → bloom.end → UI
+--
+-- ◆ 디버그 (F5=카메라, F7=갓모드, F8=스테이지스킵, F9=DNA스폰)
+--
+-- ◆ 주요 의존
+--   ecsManager, cameraManager, bloom, background, uiManager, gameState
 
 local cameraManager = require("02_renderer.cameraManager")
 local bloom         = require("02_renderer.bloom")

@@ -1,5 +1,15 @@
--- UI Manager
--- 모바일 친화적 UI 시스템 관리
+-- ============================================================================
+-- uiManager.lua — UI 오케스트레이터
+-- ============================================================================
+--
+-- ◆ 역할
+--   topHud, bottomControls, minimap을 통합 관리.
+--   터치 입력을 UI 영역으로 라우팅한다.
+--
+-- ◆ 핵심 API
+--   init/update(dt)/draw(), setGameData(data), setMinimapData(ecs, player, cam)
+--   touchpressed/moved/released — UI가 먼저 소비, 미소비는 게임으로
+--   toggleVisibility(F2), toggleDebugMode(F3)
 
 local logger = require("00_common.logger")
 local mobileLayout = require("04_ui.mobileLayout")
