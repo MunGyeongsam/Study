@@ -129,8 +129,8 @@ local VARIANT_COLORS = {
     shielded = {0.3, 0.6, 1.0},
 }
 
--- Page 2: 신규 도형 6종 (fill + line)
-local NEW_SHAPES = { "triangle", "star", "cross", "tear", "bowtie", "gear" }
+-- Page 2: 신규 도형 6종 (fill + line) — 수학 곡선 기반
+local NEW_SHAPES = { "triangle", "star", "reuleaux", "astroid", "superellipse", "gear" }
 
 -- ─── GalleryScene ────────────────────────────────────────────────
 

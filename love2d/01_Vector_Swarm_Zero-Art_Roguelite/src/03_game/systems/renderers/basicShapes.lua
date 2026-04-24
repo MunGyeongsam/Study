@@ -60,33 +60,6 @@ for i = 0, 9 do
     starVerts[i * 2 + 2] = r * sin(a)
 end
 
--- Pre-built cross vertices (unit radius, 12-point path)
-local crossW = 0.35  -- arm width ratio
-local crossVerts = {
-     crossW, -1,     crossW,  -crossW,   1, -crossW,
-     1,       crossW, crossW,   crossW,  crossW,  1,
-    -crossW,  1,    -crossW,   crossW,  -1,  crossW,
-    -1,      -crossW,-crossW,  -crossW, -crossW, -1,
-}
-
--- Pre-built tear vertices (convex teardrop: semicircle top + point bottom)
-local tearVerts = {}
-local tearSemiN = 10
-for i = 0, tearSemiN do
-    local a = pi - (i / tearSemiN) * pi  -- pi→0 (left→top→right)
-    tearVerts[#tearVerts + 1] = cos(a) * 0.6
-    tearVerts[#tearVerts + 1] = sin(a) * 0.6
-end
-tearVerts[#tearVerts + 1] = 0
-tearVerts[#tearVerts + 1] = -1.0
--- 12 vertices, convex → polygon("fill") works directly
-
--- Pre-built bowtie vertices (unit radius, 2 triangles touching center)
-local bowtieVerts = {
-    -1, -0.6,   0, 0,  -1,  0.6,  -- left triangle
-     1,  0.6,   0, 0,   1, -0.6,  -- right triangle
-}
-
 -- Pre-built gear vertices (8-tooth, unit radius)
 local gearVerts = {}
 local gearTeeth = 8
@@ -105,9 +78,77 @@ for i = 0, gearTeeth * 4 - 1 do
     gearVerts[i * 2 + 2] = r * sin(a)
 end
 
+-- Pre-built reuleaux triangle vertices (constant-width curve, 3 arcs)
+-- Unit radius normalized: circumscribed circle radius ≈ 1.0
+local reuleauxVerts = {}
+do
+    local sqrt3 = math.sqrt(3)
+    local pts = {}
+    for i = 0, 2 do
+        local a = i * pi2 / 3 - halfPi
+        pts[i + 1] = {cos(a), sin(a)}
+    end
+    local arcSteps = 8  -- per arc, 24 total
+    local arcR = sqrt3
+    local order = {{1, 2, 3}, {2, 3, 1}, {3, 1, 2}}
+    for _, o in ipairs(order) do
+        local center = pts[o[1]]
+        local pFrom  = pts[o[2]]
+        local pTo    = pts[o[3]]
+        local aStart = math.atan2(pFrom[2] - center[2], pFrom[1] - center[1])
+        local aEnd   = math.atan2(pTo[2] - center[2], pTo[1] - center[1])
+        if aEnd < aStart then aEnd = aEnd + pi2 end
+        for s = 0, arcSteps - 1 do
+            local t = aStart + (aEnd - aStart) * s / arcSteps
+            reuleauxVerts[#reuleauxVerts + 1] = center[1] + arcR * cos(t)
+            reuleauxVerts[#reuleauxVerts + 1] = center[2] + arcR * sin(t)
+        end
+    end
+    -- Normalize to unit radius (max distance from center = 1.0)
+    local maxR = 0
+    for i = 1, #reuleauxVerts, 2 do
+        local d = math.sqrt(reuleauxVerts[i]^2 + reuleauxVerts[i+1]^2)
+        if d > maxR then maxR = d end
+    end
+    if maxR > 0 then
+        for i = 1, #reuleauxVerts do
+            reuleauxVerts[i] = reuleauxVerts[i] / maxR
+        end
+    end
+end
+local reuleauxN = #reuleauxVerts / 2  -- 24
+
+-- Pre-built astroid vertices (hypocycloid k=4: x=cos³θ, y=sin³θ)
+local astroidVerts = {}
+do
+    local steps = 32
+    for i = 0, steps - 1 do
+        local t = i / steps * pi2
+        astroidVerts[i * 2 + 1] = cos(t) ^ 3
+        astroidVerts[i * 2 + 2] = sin(t) ^ 3
+    end
+end
+local astroidN = 32
+
+-- Pre-built superellipse vertices (Lamé curve n=4, "squircle")
+-- |x|^n + |y|^n = 1 → parametric: x = sgn(cos t)|cos t|^(2/n), y = sgn(sin t)|sin t|^(2/n)
+local superellipseVerts = {}
+do
+    local steps = 32
+    local exp = 0.5  -- 2/n where n=4
+    for i = 0, steps - 1 do
+        local t = i / steps * pi2
+        local c, s = cos(t), sin(t)
+        local sc = c >= 0 and 1 or -1
+        local ss = s >= 0 and 1 or -1
+        superellipseVerts[i * 2 + 1] = sc * math.abs(c) ^ exp
+        superellipseVerts[i * 2 + 2] = ss * math.abs(s) ^ exp
+    end
+end
+local superellipseN = 32
+
 -- Vertex counts for concave shapes (star-convex → triangle fan from center)
 local starN  = 10
-local crossN = 12
 local gearN  = gearTeeth * 4  -- 32
 
 --- Fill a star-convex polygon using triangle fan from origin (0,0)
@@ -194,37 +235,35 @@ function M.star(x, y, r, renderable, transform)
     lg.pop()
 end
 
-function M.cross(x, y, r, renderable, transform)
-    lg.push()
-    lg.translate(x, y)
-    lg.scale(r, r)
-    _fillFanPoly(crossVerts, crossN)
-    lg.pop()
-end
-
-function M.tear(x, y, r, renderable, transform)
-    lg.push()
-    lg.translate(x, y)
-    lg.scale(r, r)
-    lg.polygon("fill", unpack(tearVerts))
-    lg.pop()
-end
-
-function M.bowtie(x, y, r, renderable, transform)
-    lg.push()
-    lg.translate(x, y)
-    lg.scale(r, r)
-    -- 2 triangles (polygon can't do concave, draw separately)
-    lg.polygon("fill", -1, -0.6, 0, 0, -1, 0.6)
-    lg.polygon("fill",  1,  0.6, 0, 0,  1, -0.6)
-    lg.pop()
-end
-
 function M.gear(x, y, r, renderable, transform)
     lg.push()
     lg.translate(x, y)
     lg.scale(r, r)
     _fillFanPoly(gearVerts, gearN)
+    lg.pop()
+end
+
+function M.reuleaux(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    lg.polygon("fill", unpack(reuleauxVerts))
+    lg.pop()
+end
+
+function M.astroid(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    _fillFanPoly(astroidVerts, astroidN)
+    lg.pop()
+end
+
+function M.superellipse(x, y, r, renderable, transform)
+    lg.push()
+    lg.translate(x, y)
+    lg.scale(r, r)
+    lg.polygon("fill", unpack(superellipseVerts))
     lg.pop()
 end
 
@@ -258,9 +297,13 @@ M.shapes_draw.arrow = function(x, y, r, mode)
     if mode == "line" then
         lg.setLineWidth(r * 0.2)
         lg.polygon("line", x+r*1.2, y, x-r*0.6, y+r*0.6, x-r*0.6, y-r*0.6)
+        lg.line(x-r*1.2, y, x-r*0.4, y)
         lg.setLineWidth(1)
     else
         lg.polygon("fill", x+r*1.2, y, x-r*0.6, y+r*0.6, x-r*0.6, y-r*0.6)
+        lg.setLineWidth(r * 0.4)
+        lg.line(x-r*1.2, y, x-r*0.4, y)
+        lg.setLineWidth(1)
     end
 end
 
@@ -324,32 +367,20 @@ M.shapes_draw.star = function(x, y, r, mode)
     _drawConcaveVerts(x, y, r, starVerts, starN, mode)
 end
 
-M.shapes_draw.cross = function(x, y, r, mode)
-    _drawConcaveVerts(x, y, r, crossVerts, crossN, mode)
-end
-
-M.shapes_draw.tear = function(x, y, r, mode)
-    _drawPolygonVerts(x, y, r, tearVerts, mode)
-end
-
-M.shapes_draw.bowtie = function(x, y, r, mode)
-    lg.push()
-    lg.translate(x, y)
-    lg.scale(r, r)
-    if mode == "line" then
-        lg.setLineWidth(1 / r * 0.15)
-        lg.polygon("line", -1, -0.6, 0, 0, -1, 0.6)
-        lg.polygon("line",  1,  0.6, 0, 0,  1, -0.6)
-        lg.setLineWidth(1)
-    else
-        lg.polygon("fill", -1, -0.6, 0, 0, -1, 0.6)
-        lg.polygon("fill",  1,  0.6, 0, 0,  1, -0.6)
-    end
-    lg.pop()
-end
-
 M.shapes_draw.gear = function(x, y, r, mode)
     _drawConcaveVerts(x, y, r, gearVerts, gearN, mode)
+end
+
+M.shapes_draw.reuleaux = function(x, y, r, mode)
+    _drawPolygonVerts(x, y, r, reuleauxVerts, mode)
+end
+
+M.shapes_draw.astroid = function(x, y, r, mode)
+    _drawConcaveVerts(x, y, r, astroidVerts, astroidN, mode)
+end
+
+M.shapes_draw.superellipse = function(x, y, r, mode)
+    _drawPolygonVerts(x, y, r, superellipseVerts, mode)
 end
 
 return M

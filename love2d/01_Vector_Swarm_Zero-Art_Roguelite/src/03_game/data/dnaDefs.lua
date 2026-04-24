@@ -7,7 +7,7 @@
 --   5개 유전자(Body, Movement, Attack, Modifier, OnDeath)의 풀과 조합 규칙.
 --
 -- ◆ 구조
---   M.BODY_SHAPES    — 도형 12종 (기존 6 + 신규 6)
+--   M.BODY_SHAPES    — 도형 12종 (기존 6 + 신규 6: triangle/star/reuleaux/astroid/superellipse/gear)
 --   M.BODY_LAYERS    — 레이어 후보 목록 (shape × mode × scale × rot)
 --   M.MOVEMENT_POOL  — 이동 AI 풀
 --   M.ATTACK_POOL    — 탄막 패턴 풀
@@ -35,8 +35,8 @@ local M = {}
 M.BODY_SHAPES = {
     -- 기존
     "circle", "diamond", "arrow", "spiral_ring", "hexagon", "rectangle",
-    -- 신규
-    "triangle", "star", "cross", "tear", "bowtie", "gear",
+    -- 신규 (수학 곡선 기반)
+    "triangle", "star", "reuleaux", "astroid", "superellipse", "gear",
 }
 
 -- ─── Body 레이어 후보 ───────────────────────────────────────────
@@ -66,15 +66,15 @@ M.BODY_LAYERS = {
     -- star (신규)
     { shape = "star",        mode = "fill", scale = {0.5, 0.9}, rot = {0, 36} },
     { shape = "star",        mode = "line", scale = {0.8, 1.2}, rot = {0, 36} },
-    -- cross (신규)
-    { shape = "cross",       mode = "fill", scale = {0.5, 0.8}, rot = {0, 45} },
-    { shape = "cross",       mode = "line", scale = {0.8, 1.2}, rot = {0, 45} },
-    -- tear (신규)
-    { shape = "tear",        mode = "fill", scale = {0.6, 1.0}, rot = {0, 180} },
-    { shape = "tear",        mode = "line", scale = {0.8, 1.2}, rot = {0, 180} },
-    -- bowtie (신규)
-    { shape = "bowtie",      mode = "fill", scale = {0.5, 0.9}, rot = {0, 90} },
-    { shape = "bowtie",      mode = "line", scale = {0.8, 1.2}, rot = {0, 90} },
+    -- reuleaux (신규 — 뛸로 삼각형, 정폭도형)
+    { shape = "reuleaux",     mode = "fill", scale = {0.5, 0.9}, rot = {0, 120, 240} },
+    { shape = "reuleaux",     mode = "line", scale = {0.8, 1.2}, rot = {0, 120, 240} },
+    -- astroid (신규 — 4첨성, hypocycloid k=4)
+    { shape = "astroid",      mode = "fill", scale = {0.5, 0.9}, rot = {0, 45} },
+    { shape = "astroid",      mode = "line", scale = {0.8, 1.2}, rot = {0, 45} },
+    -- superellipse (신규 — 스쿼클, Lamé curve n=4)
+    { shape = "superellipse", mode = "fill", scale = {0.5, 0.8}, rot = {0, 45} },
+    { shape = "superellipse", mode = "line", scale = {0.8, 1.2}, rot = {0, 45} },
     -- gear (신규)
     { shape = "gear",        mode = "fill", scale = {0.5, 0.8}, rot = {0} },
     { shape = "gear",        mode = "line", scale = {0.8, 1.2}, rot = {0} },
