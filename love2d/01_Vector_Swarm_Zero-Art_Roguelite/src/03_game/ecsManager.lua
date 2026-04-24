@@ -53,6 +53,7 @@ local createBossSystem          = require("03_game.systems.bossSystem")
 -- Game state (for XP scaling by stage)
 local gameState = require("03_game.states.gameState")
 local upgradeTree = require("03_game.states.upgradeTree")
+local deityDefs = require("03_game.data.deityDefs")
 
 -- Entity factories (03_game/entities/)
 local EntityFactory = require("03_game.entities.entityFactory")
@@ -84,6 +85,20 @@ function ECSManager.init(getPlayerPos)
     ECSManager._registerBasicSystems()
     
     return true
+end
+
+--- Deity 시그니처 트리거 헬퍼
+--- 플레이어 엔티티를 자동 탐색하여 deity 시그니처 발동을 시도한다.
+--- @param triggerType string "on_graze"|"on_hit"|"on_kill"
+--- @param context table|nil 트리거 데이터 (damage, enemyX, enemyY 등)
+--- @return boolean 발동 여부
+function ECSManager.tryDeityTrigger(triggerType, context)
+    local players = ECSManager.world:queryEntities({"PlayerTag"})
+    if #players == 0 then return false end
+    local playerId = players[1]
+    local tag = ECSManager.world:getComponent(playerId, "PlayerTag")
+    if not tag or not tag.deityId then return false end
+    return deityDefs.tryTrigger(ECSManager.world, playerId, tag.deityId, triggerType, context)
 end
 
 -- 시스템 등록
@@ -295,6 +310,8 @@ function ECSManager._registerBasicSystems()
         if focus then
             focus.energy = _min(focus.energy + 0.3, focus.maxEnergy)
         end
+        -- Deity: on_graze 시그니처 트리거
+        ECSManager.tryDeityTrigger("on_graze", nil)
     end
     -- 11. Enemy death handler (shared by bullet collision + contact collision)
     local onEnemyDeath = function(ecs, x, y, xpValue)
@@ -312,6 +329,8 @@ function ECSManager._registerBasicSystems()
 
         -- Achievement: 킬 수 추적
         achievementSystem.onEnemyKill()
+        -- Deity: on_kill 시그니처 트리거
+        ECSManager.tryDeityTrigger("on_kill", {enemyX = x, enemyY = y})
     end
     ECSManager.addSystem(createCollisionSystem(ECSManager.bulletPool, {
         onGraze = onGraze,
@@ -320,6 +339,12 @@ function ECSManager._registerBasicSystems()
         end,
     }))
     -- 12. EnemyCollision: 플레이어 불릿 ↔ 적 충돌 + XP 드롭
+    -- Deity on_hit modifier: 크리티컬 등 데미지 변환
+    local onHitModifier = function(dmg)
+        local ctx = {damage = dmg}
+        ECSManager.tryDeityTrigger("on_hit", ctx)
+        return ctx.damage
+    end
     ECSManager.addSystem(createEnemyCollisionSystem(ECSManager.bulletPool, onEnemyDeath, function(x, y, enemyType, difficulty, variant, scaleMult)
         local id = ECSManager.createEnemy(x, y, enemyType, difficulty, variant)
         if id and scaleMult then
@@ -335,7 +360,7 @@ function ECSManager._registerBasicSystems()
             if be then be.enabled = false end
         end
         return id
-    end))
+    end, onHitModifier))
     -- 12. XpCollection: XP 오브 자석 수집 + 레벨업
     ECSManager.addSystem(createXpCollectionSystem(getPlayerPos))
     -- 12.5. Boss: 보스 라이프사이클 (페이즈 + 패턴 순환 + 이동)

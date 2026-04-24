@@ -22,8 +22,8 @@ function TitleScene:enter(prev)
     -- 콜백 설정
     titleMenu.setCallbacks({
         onPlay = function()
-            local PlayScene = require("03_game.scenes.playScene")
-            self._sceneStack:replace(PlayScene.new(self._sceneStack))
+            local DeitySelectScene = require("03_game.scenes.deitySelectScene")
+            self._sceneStack:replace(DeitySelectScene.new(self._sceneStack))
         end,
         onUpgrades = function()
             local UpgradeScene = require("03_game.scenes.upgradeScene")

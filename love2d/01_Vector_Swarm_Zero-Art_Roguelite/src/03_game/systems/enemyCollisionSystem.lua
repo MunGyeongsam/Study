@@ -50,7 +50,7 @@ local function spawnBossXpBurst(ecs, entityId, ex, ey, onEnemyDeath)
     bossTag.defeated = true
 end
 
-local function createEnemyCollisionSystem(bulletPool, onEnemyDeath, onSpawnEnemy)
+local function createEnemyCollisionSystem(bulletPool, onEnemyDeath, onSpawnEnemy, onHitModifier)
 
     local EnemyCollisionSystem = System.new("EnemyCollision", {"EnemyAI", "Transform", "Collider", "Health"},
         function(ecs, dt, entities)
@@ -109,6 +109,11 @@ local function createEnemyCollisionSystem(bulletPool, onEnemyDeath, onSpawnEnemy
 
                         local dmg = b.damage or 1
                         bulletPool:_recycle(i)
+
+                        -- Deity: on_hit 시그니처 (크리티컬 등)
+                        if onHitModifier then
+                            dmg = onHitModifier(dmg)
+                        end
 
                         health.hp = health.hp - dmg
                         health.hitCount = health.hitCount + 1

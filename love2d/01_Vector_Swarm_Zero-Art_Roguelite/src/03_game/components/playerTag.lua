@@ -10,6 +10,7 @@ PlayerTag.defaults = {
     checkpointsSaved = {},
     currentZone = nil,
     zoneHistory = {},
+    deityId = nil,
 }
 
 function PlayerTag.new(data)
@@ -18,6 +19,7 @@ function PlayerTag.new(data)
         checkpointsSaved = data and data.checkpointsSaved or {},
         currentZone      = data and data.currentZone      or nil,
         zoneHistory      = data and data.zoneHistory      or {},
+        deityId          = data and data.deityId           or nil,
     }
 end
 

@@ -23,6 +23,7 @@ local ecsManager    = require("03_game.ecsManager")
 local gameState     = require("03_game.states.gameState")
 local levelUp       = require("03_game.states.levelUp")
 local upgradeTree   = require("03_game.states.upgradeTree")
+local deityDefs     = require("03_game.data.deityDefs")
 local achievementSystem = require("03_game.states.achievementSystem")
 local tutorialHints     = require("03_game.states.tutorialHints")
 local trailRenderer     = require("02_renderer.trailRenderer")
@@ -60,10 +61,13 @@ local _forceDnaToastTimer = 0
 local _forceDnaToastText  = nil
 
 --- Scene 생성
-function PlayScene.new(sceneStack)
+--- @param sceneStack table
+--- @param deityId string|nil  선택된 Deity ID (nil이면 버프 없음)
+function PlayScene.new(sceneStack, deityId)
     return setmetatable({
         _sceneStack = sceneStack,
         _gameOverPushed = false,
+        _deityId = deityId,
     }, PlayScene)
 end
 
@@ -102,6 +106,13 @@ function PlayScene:_initGame()
     player.bind(ecsManager.getWorld(), playerId)
     player.init(0, -12)
     upgradeTree.applyToPlayer(ecsManager.getWorld(), playerId)
+
+    -- Deity 패시브 적용
+    if self._deityId then
+        deityDefs.applyStats(ecsManager.getWorld(), playerId, self._deityId)
+        local tag = ecsManager.getWorld():getComponent(playerId, "PlayerTag")
+        if tag then tag.deityId = self._deityId end
+    end
 
     local px, py = player.getPosition()
     cameraManager.getGameCamera():lookAt(px, py)

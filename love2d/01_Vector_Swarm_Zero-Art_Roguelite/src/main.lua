@@ -202,8 +202,6 @@ function love.load()
         return string.format("%10s : depth=%d top=%s", "Scenes", sceneStack:size(), top and top.name or "none")
     end)
 
-    debugOverlay.toggleConsole()
-
     cameraManager.getGameCamera():lookAt(0, -12)
     logger.info("[CAM] Positioned at player start: (0.0, -12.0)")
     
