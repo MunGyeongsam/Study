@@ -25,6 +25,7 @@ src/
 - **같은 레이어 내 require 허용**: `03_game/entities/player.lua` → `03_game/systems/...`
 - **역방향 절대 금지**: `01_core`가 `03_game`을 require하면 위반
 - **main.lua는 예외**: 모든 레이어를 require할 수 있음 (진입점)
+- **scenes/는 예외**: `main.lua`와 동일한 컴포지터 역할. 여러 레이어를 조합하므로 모든 레이어를 require 가능
 
 ### 검증 방법
 ```lua

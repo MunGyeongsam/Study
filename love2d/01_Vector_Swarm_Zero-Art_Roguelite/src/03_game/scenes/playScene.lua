@@ -25,8 +25,9 @@ local levelUp       = require("03_game.states.levelUp")
 local upgradeTree   = require("03_game.states.upgradeTree")
 local achievementSystem = require("03_game.states.achievementSystem")
 local tutorialHints     = require("03_game.states.tutorialHints")
-local trailSystem       = require("03_game.systems.trailSystem")
+local trailRenderer     = require("02_renderer.trailRenderer")
 local renderSystem      = require("03_game.systems.renderSystem")
+local DashSystem        = require("03_game.systems.dashSystem")
 local world         = require("01_core.world")
 
 local _floor = math.floor
@@ -111,7 +112,8 @@ function PlayScene:_initGame()
     gameState.startPlaying()
     levelUp.reset()
     achievementSystem.resetSession()
-    trailSystem.reset()
+    trailRenderer.reset()
+    DashSystem.setOnDashCallback(trailRenderer.onDash)
     _hitStopTimer = 0
     _screenFlash  = 0
     _screenTint   = nil
@@ -355,7 +357,7 @@ function PlayScene:update(dt)
 
     -- 리본 트레일 위치 기록 (매 프레임)
     local px, py = player.getPosition()
-    if px then trailSystem.update(dt, px, py) end
+    if px then trailRenderer.update(dt, px, py) end
 
     -- Tutorial hints (timeScale 오버라이드: ecsManager 이후 실행)
     tutorialHints.update(dt, ecsManager.getWorld())
@@ -436,6 +438,7 @@ function PlayScene:draw()
             world.drawGrid(1, cam)
         end
         ecsManager.draw()
+        trailRenderer.draw()
     end)
     bloom.endCapture()
     bloom.draw()

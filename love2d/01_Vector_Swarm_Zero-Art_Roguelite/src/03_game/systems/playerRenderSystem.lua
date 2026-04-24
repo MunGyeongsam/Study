@@ -1,9 +1,9 @@
 -- Player Render System
 -- PlayerTag + Transform + Renderable을 가진 엔티티 전용 렌더링
 -- 기본 원 + 외곽선 + 이동 방향 표시 + 대쉬 잔상
+-- 트레일 렌더링은 playScene이 trailRenderer로 직접 처리
 
 local System = require("01_core.system")
-local trailSystem = require("03_game.systems.trailSystem")
 
 local lg = love.graphics
 local sqrt = math.sqrt
@@ -57,9 +57,6 @@ local PlayerRenderSystem = System.new("PlayerRender", {"PlayerTag", "Transform",
             local transform  = ecs:getComponent(entityId, "Transform")
             local renderable = ecs:getComponent(entityId, "Renderable")
             local dash = ecs:hasComponent(entityId, "Dash") and ecs:getComponent(entityId, "Dash") or nil
-
-            -- 리본 트레일 (trailSystem이 관리)
-            trailSystem.draw()
 
             -- 본체 가시성 판정
             if not renderable.visible then

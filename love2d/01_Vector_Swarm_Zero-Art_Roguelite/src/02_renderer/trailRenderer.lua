@@ -1,8 +1,19 @@
--- Trail System
--- 플레이어 리본 트레일: 매 프레임 위치 기록 → 법선 오프셋 → triangle strip 메쉬
+-- ============================================================================
+-- trailRenderer.lua — 플레이어 리본 트레일 렌더러
+-- ============================================================================
+-- 매 프레임 위치 기록 → 법선 오프셋 → triangle strip 메쉬
 -- 평소: 얇은 시안 리본 / 대쉬 시: 폭 + 밝기 부스트
+--
+-- ◆ 핵심 API
+--   reset()                         — 상태 초기화 (씬 진입/재시작)
+--   onDash(sx, sy, ex, ey)          — 대쉬 궤적 삽입 (콜백으로 전달)
+--   update(dt, playerX, playerY)    — 매 프레임 위치 기록 + 에이징
+--   draw()                          — 리본 메쉬 빌드 + 렌더 (카메라 내부)
+--
+-- ◆ 호출 관계
+--   playScene이 lifecycle 전체를 관리 (reset/update/draw)
+--   dashSystem은 콜백을 통해 onDash 호출 (직접 require 없음)
 
-local System = require("01_core.system")
 local world  = require("01_core.world")
 
 local lg    = love.graphics
@@ -32,10 +43,10 @@ local meshVerts = {} -- 정점 버퍼 (재사용)
 local trailBoostTimer = 0  -- 대쉬 부스트 남은 시간
 
 -- ─── 모듈 API ────────────────────────────────────────────────
-local TrailSystem = {}
+local TrailRenderer = {}
 
 --- 초기화 (playScene 리셋 시 호출)
-function TrailSystem.reset()
+function TrailRenderer.reset()
     points = {}
     head = 0
     trailBoostTimer = 0
@@ -44,7 +55,7 @@ function TrailSystem.reset()
 end
 
 --- 대쉬 발동 시 호출 — 부스트 시작 + 경로 포인트 삽입
-function TrailSystem.onDash(startX, startY, endX, endY)
+function TrailRenderer.onDash(startX, startY, endX, endY)
     trailBoostTimer = BOOST_DURATION
     -- 대쉬 궤적을 보간 포인트로 삽입 (시작→끝 균등 배치)
     local INTERP_COUNT = 8
@@ -66,7 +77,7 @@ function TrailSystem.onDash(startX, startY, endX, endY)
 end
 
 --- 매 프레임 위치 기록 + 에이징
-function TrailSystem.update(dt, playerX, playerY)
+function TrailRenderer.update(dt, playerX, playerY)
     -- 부스트 타이머 감소
     if trailBoostTimer > 0 then
         trailBoostTimer = trailBoostTimer - dt
@@ -112,7 +123,7 @@ function TrailSystem.update(dt, playerX, playerY)
 end
 
 --- 리본 메쉬 빌드 + 드로잉 (camera transform 내부에서 호출)
-function TrailSystem.draw()
+function TrailRenderer.draw()
     local n = #points
     if n < 2 then return end
 
@@ -236,4 +247,4 @@ function TrailSystem.draw()
     lg.setBlendMode(prevMode, prevAlphaMode)
 end
 
-return TrailSystem
+return TrailRenderer

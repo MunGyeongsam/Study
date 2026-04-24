@@ -47,7 +47,7 @@
 | `sceneStack.lua` (~120L) | push/pop 씬 스택 (투명/drawBelow 지원) | `push/pop/replace/clear/update/draw` |
 | `world.lua` (~120L) | 아레나 월드 (20×30, 중심 0,0) | `getBounds/getSize/getStartPosition` |
 
-### 02_renderer/ — 그래픽 (4파일, ~800L)
+### 02_renderer/ — 그래픽 (5파일, ~1040L)
 
 | 파일 | 역할 | 핵심 API |
 |------|------|----------|
@@ -55,6 +55,7 @@
 | `cameraManager.lua` (~200L) | 게임/디버그 카메라 전환 (F5) | `init/update/draw/shake/toggle` |
 | `bloom.lua` (~240L) | 블룸 후처리 (threshold + Gaussian) | `beginCapture/endCapture/draw` |
 | `background.lua` (~350L) | Random Space Filling 배경 (Paul Bourke) | `init/update/draw/setStage` |
+| `trailRenderer.lua` (~240L) | 플레이어 리본 트레일 (additive 메쉬) | `reset/update/draw/onDash` |
 
 ### 03_game/ — 게임 로직 (50+파일, ~7000L)
 
@@ -154,7 +155,6 @@
 | 13 | `bossSystem.lua` (~300L) | 보스 생애주기 (페이즈/텔레포트/미니언) | BossTag, Transform, Health |
 | — | `bulletPool.lua` (~260L) | 불릿 오브젝트 풀 (2000개, 레이어별) | (ECS 외부, ecsManager가 호출) |
 | — | `stageManager.lua` (~820L) | 스테이지/웨이브/보스 진행 관리 | (ECS 외부, ecsManager가 호출) |
-| — | `trailSystem.lua` (~240L) | 대쉬 잔상 리본 이펙트 | (ECS 외부, playScene이 호출) |
 | R1 | `renderSystem.lua` (~250L) | 적/보스/XP 오브 렌더링 (Strategy) | Transform, Renderable |
 | R2 | `playerRenderSystem.lua` (~105L) | 플레이어 렌더링 (외곽+방향) | PlayerTag, Transform, Health |
 
@@ -208,7 +208,7 @@ love.draw()
       → cameraManager.draw(function()
           background.draw(cam)
           ecsManager.draw()  -- renderSystem + playerRenderSystem
-          trailSystem.draw()
+          trailRenderer.draw()
         end)
       → bloom.endCapture() + bloom.draw()
       → uiManager.draw()
