@@ -94,24 +94,26 @@
 | `lifespan` | time, destroyOffScreen |
 | `worldBound` | enabled |
 
-#### data/ — 순수 데이터 테이블 (7파일, ~2200L)
+#### data/ — 순수 데이터 테이블 (8파일, ~2300L)
 
 | 파일 | 역할 | 핵심 데이터 |
 |------|------|------------|
 | `stageData.lua` (~175L) | 스테이지 정의 + 보스 배치 + 변형 확률 | `BOSS_STAGES/STAGE_DEFS/VARIANT_TIERS` |
 | `bossDefs.lua` (~280L) | 보스 5종 프리셋 (스탯/패턴/AI) | `BOSS_TYPES["NULL"/"STACK"/...]` |
+| `deityDefs.lua` (~100L) | Deity 4신 정의 (패시브+시그니처) | `DEITIES/applyStats/tryTrigger` |
 | `dnaDefs.lua` (~450L) | DNA 변이 엔진 유전자 풀 (Stage 16+) | `generateDna/calcStats/BODY_SHAPES` |
 | `formationDefs.lua` (~140L) | 대형 패턴 5종 (wedge, pincer 등) | `DEFS/getAvailable/getChance` |
-| `curveDefs.lua` (~770L) | 수학 곡선 라이브러리 52+종 | `polar/parametric/custom` 곡선 함수 |
+| `curveDefs.lua` (~800L) | 수학 곡선 라이브러리 53종 | `polar/parametric/custom` 곡선 함수 |
 | `shapeDefs.lua` (~360L) | 곡선 큐레이션 결과 (적/보스/오버레이 분류) | `groups/isUsable/getNormalization` |
 | `stageStory.lua` (~70L) | 스토리 텍스트 (일반/보스/엔들리스) | `NORMAL_STORIES/BOSS_STORIES` |
 
-#### scenes/ — 씬 스택 패턴 (11파일)
+#### scenes/ — 씬 스택 패턴 (12파일)
 
 | 파일 | 역할 | drawBelow | transparent |
 |------|------|-----------|-------------|
 | `playScene.lua` (~600L) | 메인 전투 루프 (ECS+카메라+UI) | ✗ | ✗ |
 | `titleScene.lua` (~60L) | 타이틀 메뉴 래퍼 | ✗ | ✗ |
+| `deitySelectScene.lua` (~200L) | Deity 의식 선택 (2×2 곡선 카드 + 드로잉 애니메이션) | ✗ | ✗ |
 | `pauseScene.lua` (~50L) | 일시정지 오버레이 | ✓ | ✗ |
 | `levelUpScene.lua` (~40L) | 레벨업 3택 오버레이 (자동 pop) | ✓ | ✗ |
 | `gameOverScene.lua` (~80L) | 게임오버 결과 화면 | ✗ | ✗ |

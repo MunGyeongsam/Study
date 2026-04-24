@@ -63,8 +63,13 @@ src/
 │   │   ├── xpOrb.lua, bossTag.lua
 │   ├── data/         # Pure data tables (no logic, no require)
 │   │   ├── bossDefs.lua       # Boss presets (stats, patterns, AI)
+│   │   ├── deityDefs.lua      # Deity system (4 gods, passive + signature abilities)
 │   │   ├── stageData.lua      # Stage defs, enemy pools, variant tables, boss mapping
-│   │   └── formationDefs.lua  # Formation patterns (wedge, pincer, etc.)
+│   │   ├── formationDefs.lua  # Formation patterns (wedge, pincer, etc.)
+│   │   ├── curveDefs.lua      # Math curves library (53 parametric/polar)
+│   │   ├── shapeDefs.lua      # Curve curation (enemy/boss/overlay groups)
+│   │   ├── dnaDefs.lua        # Procedural enemy DNA (Stage 16+)
+│   │   └── stageStory.lua     # Stage story text (normal/boss/endless)
 │   ├── systems/      # ECS systems (17 files)
 │   │   ├── inputSystem.lua, movementSystem.lua, boundarySystem.lua
 │   │   ├── lifespanSystem.lua, renderSystem.lua, playerRenderSystem.lua
@@ -83,10 +88,14 @@ src/
 │   ├── scenes/       # Scene wrappers (Scene Stack pattern)
 │   │   ├── playScene.lua      # Game loop scene (ECS + rendering + camera)
 │   │   ├── titleScene.lua     # Title menu scene
+│   │   ├── deitySelectScene.lua # Deity ritual selection (2×2 animated curves)
 │   │   ├── pauseScene.lua     # Pause overlay scene (drawBelow)
 │   │   ├── levelUpScene.lua   # Level-up overlay (auto-pop)
 │   │   ├── upgradeScene.lua   # Upgrade tree overlay (auto-pop)
 │   │   ├── gameOverScene.lua  # Game over result scene
+│   │   ├── victoryScene.lua   # Victory cinematic (glitch + stats)
+│   │   ├── galleryScene.lua   # Enemy gallery (3 pages)
+│   │   ├── curveLabScene.lua  # Curve lab browser (53+ curves)
 │   │   ├── creditsScene.lua   # Credits overlay scene (Paul Bourke attribution)
 │   │   └── achievementScene.lua # Achievement list overlay
 │   ├── patterns/     # Bullet patterns (planned)
