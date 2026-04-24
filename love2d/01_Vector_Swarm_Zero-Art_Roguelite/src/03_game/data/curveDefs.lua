@@ -702,6 +702,20 @@ local M = {
         tRange = {0, 0},
         defaultSteps = 361,
     },
+    -- #53: Teardrop (물방울형 비대칭 closed curve)
+    -- m 파라미터로 뾰족함 조절: m=1 부드러운 방울, m=3 날카로운 첨단
+    -- 적 용도: "물방울형 돌진 적" — 비대칭이 방향성 암시 (뾰족한 쪽이 앞)
+    {
+        name = "Teardrop",
+        formula = "x=cos(t), y=sin(t)*sin(t/2)^m (m=2)",
+        fn = "parametric",
+        paramFn = function(t)
+            local st2 = _sin(t * 0.5)
+            return _cos(t), _sin(t) * st2 * st2
+        end,
+        tRange = {0, 2 * _pi},
+        defaultSteps = 150,
+    },
 }
 
 local OPEN_CURVES = {

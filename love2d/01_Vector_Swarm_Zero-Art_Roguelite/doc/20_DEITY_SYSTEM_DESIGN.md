@@ -361,6 +361,17 @@ local _deityVFX = {
 | **Lemniscate** | Lemniscate (r² = cos(2θ)) | ∞ 기호 그 자체. 두 초점 사이 거리 곱이 일정 = "영원한 균형" | 무한대 = "끝이 곧 시작". 대쉬 리셋 = 행동의 무한 반복 |
 | **Inferno** | Devil's Curve (y⁴ − y² = x⁴ − x²) | 자기교차하는 4차 곡선. 원점에서 갈라지는 위험한 분기점 = 불안정/폭발 | "Devil" 이름 자체가 금기·위험. 날카로운 교차점 = 통제 불가의 파괴 에너지 |
 
+#### 52종 비교 분석 — 왜 대안이 아닌 이 곡선인가
+
+총 52종 곡선 라이브러리를 Fun / Juice / Constraint Beauty 3가지 가치로 평가하여 최종 4종을 선정했다.
+
+| 역할 | 현재 선택 | 최강 대안 | 대안을 채택하지 않은 이유 |
+|------|----------|----------|------------------------|
+| **힐러** | Rose 5 | Cardioid (하트) | 직관성은 Cardioid가 우세하나, 형태가 단순해서 쾌감(Juice)이 약함. Rose 5는 cos(5θ) 하나로 5겹 꽃이 피어나는 **제약의 미학** 최고점 |
+| **공격** | Epicycloid k=3 | Hypocycloid k=5 (5각 별) | 시각적 임팩트는 Hypo k=5가 강하지만, Epicycloid의 "바퀴 위의 바퀴 = Rolling Thunder"라는 **수학↔이름 매칭이 대체 불가** |
+| **무한** | Lemniscate | Koch Edge (프랙탈) | Koch의 자기유사성이 "진짜 무한"이지만, ∞ 기호의 **즉각적 인식성**과 "끝이 곧 시작"의 대쉬 리셋 의미는 Lemniscate만 가능 |
+| **폭발** | Devil's Curve | Butterfly (Fay) | Butterfly가 시각적 최강이지만 "나비 = 부드러움"은 파괴와 모순. **"Devil"이라는 이름의 힘**이 곡선의 불안정한 4차 분기와 완벽히 일치 |
+
 > 참고: 각 곡선의 상세 수학 배경은 `doc/18_CURVE_MATH_SCIENCE_NOTES.md`,
 > 스토리 연결은 `doc/17_CURVE_STORY_ATLAS.md` 참조.
 ### 의식(Ritual) = Deity Select Scene
