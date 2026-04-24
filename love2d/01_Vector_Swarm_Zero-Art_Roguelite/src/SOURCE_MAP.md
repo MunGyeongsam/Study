@@ -2,7 +2,7 @@
 
 > **용도**: Copilot / 개발자가 코드베이스를 빠르게 파악하기 위한 네비게이션 문서
 > 마지막 갱신: 2026-04-24
-> 총 파일: 90개 Lua 파일 (~12,000 lines)
+> 총 파일: 93개 Lua 파일 (~13,000 lines)
 
 ---
 
@@ -107,7 +107,7 @@
 | `shapeDefs.lua` (~360L) | 곡선 큐레이션 결과 (적/보스/오버레이 분류) | `groups/isUsable/getNormalization` |
 | `stageStory.lua` (~70L) | 스토리 텍스트 (일반/보스/엔들리스) | `NORMAL_STORIES/BOSS_STORIES` |
 
-#### scenes/ — 씬 스택 패턴 (12파일)
+#### scenes/ — 씬 스택 패턴 (13파일)
 
 | 파일 | 역할 | drawBelow | transparent |
 |------|------|-----------|-------------|
@@ -137,7 +137,7 @@
 | `pauseMenu.lua` (~150L) | 일시정지 메뉴 UI | `setCallbacks/draw/keypressed` |
 | `tutorialHints.lua` (~280L) | 첫 플레이 힌트 (슬로모+글리치) | `init/update/draw/isActive` |
 
-#### systems/ — ECS 시스템 (18파일, ~3000L)
+#### systems/ — ECS 시스템 (17파일, ~3000L)
 
 **실행 순서** (ecsManager 등록 순):
 

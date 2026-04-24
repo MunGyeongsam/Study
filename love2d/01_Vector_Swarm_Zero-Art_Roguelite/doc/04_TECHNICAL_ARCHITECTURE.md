@@ -1,6 +1,6 @@
 # 04. 기술 아키텍처 — Vector Swarm
 
-> 마지막 갱신: 2026-04-22 (Phase 5B 완료, 리팩토링 후)
+> 마지막 갱신: 2026-04-25 (Phase 6A 완료, Codex Scene 추가)
 > 이 문서는 현재 코드베이스의 **실제 구현**을 기준으로 작성되었습니다.
 
 ---
@@ -38,15 +38,21 @@ src/
 │   ├── camera.lua           # Unity 스타일 orthographic 카메라
 │   ├── cameraManager.lua    # game/debug 카메라 모드 (F5 토글)
 │   ├── bloom.lua            # Bloom 후처리 (threshold + Gaussian blur)
-│   └── background.lua       # Random Space Filling 배경 (Paul Bourke)
+│   ├── background.lua       # Random Space Filling 배경 (Paul Bourke)
+│   └── trailRenderer.lua    # 플레이어 리본 트레일 (additive 메쉬)
 │
 ├── 03_game/               # 게임 로직
 │   ├── ecsManager.lua       # ECS 오케스트레이터 (시스템 등록, update/draw 분리)
 │   ├── components/ (17종)   # 순수 데이터 ECS 컴포넌트
 │   ├── data/                # 순수 데이터 테이블 (로직 없음)
 │   │   ├── bossDefs.lua       # 보스 프리셋 (스탯, 패턴, AI)
+│   │   ├── deityDefs.lua      # Deity 4신 정의 (패시브+시그니처)
 │   │   ├── stageData.lua      # 스테이지 정의, 적 풀, 변형 테이블, 보스 매핑
-│   │   └── formationDefs.lua  # 포메이션 패턴 (wedge, pincer 등 5종)
+│   │   ├── formationDefs.lua  # 포메이션 패턴 (wedge, pincer 등 5종)
+│   │   ├── curveDefs.lua      # 수학 곡선 라이브러리 53종
+│   │   ├── shapeDefs.lua      # 곡선 큐레이션 (적/보스/오버레이 분류)
+│   │   ├── dnaDefs.lua        # DNA 변이 엔진 유전자 풀 (Stage 16+)
+│   │   └── stageStory.lua     # 스토리 텍스트 (일반/보스/엔들리스)
 │   ├── systems/             # ECS 시스템 (17개)
 │   │   ├── inputSystem, movementSystem, boundarySystem, lifespanSystem
 │   │   ├── renderSystem, playerRenderSystem, bulletEmitterSystem
@@ -60,13 +66,18 @@ src/
 │   ├── entities/            # 엔티티 팩토리 + Player 파사드
 │   │   ├── entityFactory.lua  # createPlayer(), createEnemy(), createBoss(), createXpOrb()
 │   │   └── player.lua         # ECS 파사드 (bind/update/getPosition)
-│   ├── scenes/              # Scene Stack 씬 (8종)
+│   ├── scenes/              # Scene Stack 씬 (13종)
 │   │   ├── playScene.lua      # 게임 루프 씬 (ECS + 렌더 + 카메라)
 │   │   ├── titleScene.lua     # 타이틀 메뉴 씬
+│   │   ├── deitySelectScene.lua # Deity 의식 선택 (2×2 곡선 카드)
+│   │   ├── codexScene.lua     # 곡선 도감 (53종 감상 + Deity 특별 정보)
 │   │   ├── pauseScene.lua     # 일시정지 오버레이 (drawBelow)
 │   │   ├── levelUpScene.lua   # 레벨업 오버레이 (auto-pop)
 │   │   ├── upgradeScene.lua   # 업그레이드 트리 오버레이
-│   │   ├── gameOverScene.lua  # 게임오버 결과 씬
+│   │   ├── gameOverScene.lua  # 게임오버 결과 화면
+│   │   ├── victoryScene.lua   # 승리 연출 (글리치+통계)
+│   │   ├── galleryScene.lua   # 적 갤러리 (3페이지: 기존/신규/DNA)
+│   │   ├── curveLabScene.lua  # 곡선 실험실 (53종 브라우저)
 │   │   ├── creditsScene.lua   # 크레딧 오버레이
 │   │   └── achievementScene.lua # 도전과제 목록 오버레이
 │   ├── patterns/            # 탄막 패턴 (예정)

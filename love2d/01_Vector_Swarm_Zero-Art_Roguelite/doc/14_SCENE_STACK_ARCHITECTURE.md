@@ -243,10 +243,15 @@ drawBelow = true, transparent = true (투명 오버레이)
 |-----------|-----------|:---------:|:-----------:|------|
 | TitleScene | titleMenu.lua | false | false | 전체화면, BGM 정지 |
 | PlayScene | ecsManager + player + bloom + bg | — | — | 스택 베이스. ECS 업데이트 + 렌더링 |
+| DeitySelectScene | deityDefs.lua | false | false | 2×2 곡선 카드 + 드로잉 애니메이션 |
+| CodexScene | curveDefs + deityDefs | true | false | 53곡선 도감. 타이틀에서 push |
 | PauseScene | pauseMenu.lua | true | false | Continue / Restart / Menu |
 | LevelUpScene | levelUp.lua | true | false | 3택 선택 후 자동 pop |
 | UpgradeScene | upgradeTree.lua | true | false | 타이틀/게임오버에서 push 가능 |
 | GameOverScene | gameState.lua draw | true | false | 도전과제 해금 toast + R/U/ESC |
+| VictoryScene | (자체 구현) | false | false | 글리치 연출 + 통계 표시 |
+| GalleryScene | (자체 구현) | false | false | 적 갤러리 3페이지 (G키) |
+| CurveLabScene | curveDefs | false | false | 곡선 실험실 53종 브라우저 |
 | CreditsScene | (자체 구현) | true | false | Zero-Art 스타일 크레딧 |
 | AchievementScene | achievementSystem | true | false | 진행도 바 + 보상 정보 |
 
@@ -257,6 +262,10 @@ drawBelow = true, transparent = true (투명 오버레이)
   stack: [ TitleScene ]
 
 [PLAY 선택]
+  → replace(DeitySelectScene)
+  stack: [ DeitySelectScene ]
+
+[Deity 선택 완료]
   → replace(PlayScene)
   stack: [ PlayScene ]
 
@@ -298,6 +307,14 @@ drawBelow = true, transparent = true (투명 오버레이)
   → push(CreditsScene)
   stack: [ TitleScene, CreditsScene ]
 
+[CODEX (타이틀에서 D키)]
+  → push(CodexScene)
+  stack: [ TitleScene, CodexScene ]
+
+[GALLERY (G키, 디버그)]
+  → push(GalleryScene)
+  stack: [ TitleScene, GalleryScene ]
+
 [플레이어 사망]
   → push(GameOverScene)
   stack: [ PlayScene, GameOverScene ]
@@ -309,6 +326,10 @@ drawBelow = true, transparent = true (투명 오버레이)
 [U 업그레이드 (게임오버에서)]
   → push(UpgradeScene)
   stack: [ PlayScene, GameOverScene, UpgradeScene ]
+
+[보스 15 클리어 (승리)]
+  → push(VictoryScene)
+  stack: [ PlayScene, VictoryScene ]
 ```
 
 ### 4.3. main.lua 변화 (Before → After)
@@ -447,7 +468,9 @@ Step 2: PlayScene 작성 (기존 게임 로직 래핑)                 ✅
 Step 3: TitleScene 작성 (titleMenu.lua 래핑)               ✅
 Step 4: main.lua를 sceneStack 기반으로 전환              ✅
 Step 5: PauseScene, LevelUpScene, UpgradeScene,         ✅
-        GameOverScene, CreditsScene, AchievementScene
+        GameOverScene, CreditsScene, AchievementScene,
+        VictoryScene, DeitySelectScene, CodexScene,
+        GalleryScene, CurveLabScene
 Step 6: gameState에서 TITLE/PAUSED 상태 제거              ✅
 ```
 

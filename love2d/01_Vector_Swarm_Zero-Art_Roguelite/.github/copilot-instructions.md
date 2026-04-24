@@ -42,6 +42,7 @@ src/
 │   ├── logger.lua    # 4-level logging + in-game console (` key)
 │   ├── debug.lua     # In-game debug overlay (key-value watch panel)
 │   ├── gridDebugDraw.lua  # Screen-space grid overlay (F4)
+│   ├── mathUtil.lua  # Math utilities (exp decay)
 │   └── saveData.lua  # love.filesystem JSON save/load (fragments, upgrades, tutorialDone)
 ├── 01_core/          # Engine layer (pure engine, no game deps)
 │   ├── world.lua     # World boundaries, zones, fun elements
@@ -52,7 +53,8 @@ src/
 │   ├── camera.lua    # Unity-style orthographic camera
 │   ├── cameraManager.lua  # Game/debug camera modes (F5 toggle)
 │   ├── bloom.lua     # Bloom post-processing (threshold + Gaussian blur)
-│   └── background.lua # Random Space Filling background (Paul Bourke)
+│   ├── background.lua # Random Space Filling background (Paul Bourke)
+│   └── trailRenderer.lua # Player ribbon trail (additive mesh)
 ├── 03_game/          # Game logic
 │   ├── ecsManager.lua # ECS orchestrator (system registration, update/draw split)
 │   ├── components/   # Pure-data ECS components (17 types)
@@ -77,7 +79,7 @@ src/
 │   │   ├── dashSystem.lua, focusSystem.lua, enemyAISystem.lua
 │   │   ├── playerWeaponSystem.lua, enemyCollisionSystem.lua
 │   │   ├── xpCollectionSystem.lua, bossSystem.lua
-│   │   ├── stageManager.lua, enemySpawner.lua
+│   │   ├── stageManager.lua
 │   │   └── renderers/        # Strategy Pattern render modules
 │   │       ├── basicShapes.lua    # 6 basic enemy shapes (auto-registered)
 │   │       ├── bossRenderers.lua  # 5 boss visuals (auto-registered)
