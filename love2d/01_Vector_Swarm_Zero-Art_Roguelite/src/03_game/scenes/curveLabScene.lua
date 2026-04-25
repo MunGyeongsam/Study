@@ -19,7 +19,7 @@ CurveLabScene.drawBelow   = false
 
 local CURVES = require("03_game.data.curveDefs")
 local ShapeDefs = require("03_game.data.shapeDefs")
-local MODES  = {"line", "points", "circle", "fill"}
+local MODES  = {"line+fill", "line", "points", "circle", "fill"}
 local FILTERS = {
     {key = "all", label = "ALL", fn = function(_) return true end},
     {key = "enemy", label = "ENEMY", fn = function(c) return c.enemyFriendly end},
@@ -318,6 +318,7 @@ function CurveLabScene.new(sceneStack)
         _rotAngle   = 0,
         _rotAngleByName = {},
         _directionalByName = {},
+        _skipCenterByName = {},
         _centroid   = {x = 0, y = 0},
         _filterMode = 1,
         _filtered   = CURVES,
@@ -341,6 +342,7 @@ function CurveLabScene:enter(prev)
     self._rotAngle = 0
     self._rotAngleByName = {}
     self._directionalByName = {}
+    self._skipCenterByName = {}
     self._centroid = {x = 0, y = 0}
     self._steps    = nil
     self._filterMode = 1
@@ -465,7 +467,7 @@ function CurveLabScene:_exportCurationSummary()
         excluded = {},
     }
 
-    local normalizeKeys = {enemy = true, boss = true}
+    local normalizeKeys = {enemy = true, boss = true, overlay = true}
     local normalizedLines = {}
 
     for i = 1, #CURVES do
@@ -596,9 +598,9 @@ function CurveLabScene:_exportShapeDefsLua(groups)
     end
     w("")
 
-    -- M.normalized (enemy/boss curves)
+    -- M.normalized (enemy/boss/overlay curves)
     w("M.normalized = {")
-    local normalizeKeys = {enemy = true, boss = true}
+    local normalizeKeys = {enemy = true, boss = true, overlay = true}
     local normalized = {}  -- avoid duplicates
     for i = 1, #CURVES do
         local curve = CURVES[i]
@@ -621,6 +623,12 @@ function CurveLabScene:_exportShapeDefsLua(groups)
                     n.bounds.xMin, n.bounds.xMax, n.bounds.yMin, n.bounds.yMax)
                 wf("        normalizedBounds = { xMin = %.4f, xMax = %.4f, yMin = %.4f, yMax = %.4f },",
                     n.normalizedBounds.xMin, n.normalizedBounds.xMax, n.normalizedBounds.yMin, n.normalizedBounds.yMax)
+                local isDir = self._directionalByName[curve.name] or false
+                local rAngle = self._rotAngleByName[curve.name] or 0
+                local skipCtr = self._skipCenterByName[curve.name] or false
+                wf("        directional = %s,", tostring(isDir))
+                wf("        rotAngle = %.4f,", rAngle)
+                wf("        skipCenter = %s,", tostring(skipCtr))
                 w("    },")
             end
         end
@@ -886,10 +894,11 @@ function CurveLabScene:draw()
         local modeName = MODES[self._mode]
 
         -- Glow pass
+        local glowMode = modeName == "line+fill" and "line" or modeName
         setColor(51, 128, 255, 64)
         lg.setLineWidth(3)
         lg.setPointSize(4)
-        _drawLayer(sv, segments, closeLoop, modeName, cx, cy, 4)
+        _drawLayer(sv, segments, closeLoop, glowMode, cx, cy, 4)
 
         -- Main pass
         if modeName == "fill" then
@@ -904,6 +913,14 @@ function CurveLabScene:draw()
                 _appendFirstPoint(outline)
                 lg.line(outline)
             end
+        elseif modeName == "line+fill" then
+            -- Fill: 반투명
+            setColor(76, 204, 255, 80)
+            _drawLayer(sv, segments, closeLoop, "fill", cx, cy, 0)
+            -- Line: 밝은 외곽선
+            setColor(140, 230, 255, 255)
+            lg.setLineWidth(2)
+            _drawLayer(sv, segments, closeLoop, "line", cx, cy, 0)
         else
             setColor(76, 204, 255, 255)
             lg.setLineWidth(1.5)
@@ -948,6 +965,7 @@ function CurveLabScene:draw()
 
         self._toolbarBtns = {}
         local isDir = curve and self._directionalByName[curve.name] or false
+        local skipCtr = curve and self._skipCenterByName[curve.name] or false
 
         local rows = {
             {{id = "prev", w = btnW}, {id = "next", w = btnW}},
@@ -955,7 +973,7 @@ function CurveLabScene:draw()
             {{id = "mode", w = pairW}},
             {{id = "norm", w = pairW}},
             {{id = "rotate", w = pairW}},
-            {{id = "directional", w = pairW}},
+            {{id = "directional", w = btnW}, {id = "skipcenter", w = btnW}},
             {{id = "rot_ccw", w = btnW}, {id = "rot_cw", w = btnW}},
             {{id = "scale_dn", w = btnW}, {id = "scale_up", w = btnW}},
             {{id = "export", w = pairW}},
@@ -969,6 +987,7 @@ function CurveLabScene:draw()
             norm        = self._normalizedView and "NORM *" or "NORM",
             rotate      = self._rotating and "ROT *" or "ROT",
             directional = isDir and "DIR *" or "DIR",
+            skipcenter  = skipCtr and "CTR *" or "CTR",
             rot_ccw     = "-90",
             rot_cw      = "+90",
             scale_dn    = "-",
@@ -980,6 +999,7 @@ function CurveLabScene:draw()
             norm        = self._normalizedView,
             rotate      = self._rotating,
             directional = isDir,
+            skipcenter  = skipCtr,
         }
 
         for _, row in ipairs(rows) do
@@ -1053,6 +1073,12 @@ function CurveLabScene:draw()
         local isDir = curve and self._directionalByName[curve.name] or false
         if isDir then setColor(255, 180, 80, 230) end
         lg.print(string.format("direct:   %s", isDir and "YES" or "no"), infoX, infoY); infoY = infoY + lineH
+        setColor(128, 128, 153, 204)
+    end
+    do
+        local skipCtr = curve and self._skipCenterByName[curve.name] or false
+        if skipCtr then setColor(255, 180, 80, 230) end
+        lg.print(string.format("skipCtr:  %s", skipCtr and "YES" or "no"), infoX, infoY); infoY = infoY + lineH
         setColor(128, 128, 153, 204)
     end
     lg.print(string.format("centroid:(%.2f,%.2f)", self._centroid.x, self._centroid.y), infoX, infoY); infoY = infoY + lineH
@@ -1153,6 +1179,11 @@ function CurveLabScene:keypressed(key, scancode)
         if curve then
             self._directionalByName[curve.name] = not self._directionalByName[curve.name]
         end
+    elseif key == "o" or scancode == "o" then
+        local curve = self:_getCurve()
+        if curve then
+            self._skipCenterByName[curve.name] = not self._skipCenterByName[curve.name]
+        end
     elseif key == "q" or scancode == "q" then
         self._rotAngle = self._rotAngle - _pi / 2
         if self._rotAngle < 0 then self._rotAngle = self._rotAngle + 2 * _pi end
@@ -1205,6 +1236,11 @@ function CurveLabScene:_handleToolbarAction(id)
         local curve = self:_getCurve()
         if curve then
             self._directionalByName[curve.name] = not self._directionalByName[curve.name]
+        end
+    elseif id == "skipcenter" then
+        local curve = self:_getCurve()
+        if curve then
+            self._skipCenterByName[curve.name] = not self._skipCenterByName[curve.name]
         end
     elseif id == "rot_ccw" then
         self._rotAngle = self._rotAngle - _pi / 2
