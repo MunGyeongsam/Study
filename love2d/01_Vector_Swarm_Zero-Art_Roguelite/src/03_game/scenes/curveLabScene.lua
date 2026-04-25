@@ -18,6 +18,7 @@ CurveLabScene.transparent = false
 CurveLabScene.drawBelow   = false
 
 local CURVES = require("03_game.data.curveDefs")
+local ShapeDefs = require("03_game.data.shapeDefs")
 local MODES  = {"line", "points", "circle", "fill"}
 local FILTERS = {
     {key = "all", label = "ALL", fn = function(_) return true end},
@@ -30,21 +31,64 @@ local FILTERS = {
 local CURATION_OPTIONS = {
     {key = "enemy", label = "ENEMY", short = "1"},
     {key = "boss", label = "BOSS", short = "2"},
-    {key = "both", label = "ENEMY+BOSS", short = "3"},
-    {key = "overlay", label = "OVERLAY", short = "4"},
-    {key = "bullet", label = "BULLET_CURVE", short = "5"},
+    {key = "overlay", label = "OVERLAY", short = "3"},
+    {key = "bullet", label = "BULLET_CURVE", short = "4"},
 }
 
 local CURATION_LOG_FILE = "curve_curation.log"
 local CURATION_SUMMARY_FILE = "curve_curation_summary.txt"
+local CURATION_LUA_FILE = "shapeDefs_generated.lua"
 local TARGET_NORMALIZED_RADIUS = 1.0
 
-local function _getCurationOption(choiceKey)
-    for i = 1, #CURATION_OPTIONS do
-        local opt = CURATION_OPTIONS[i]
-        if opt.key == choiceKey then return opt end
+local GROUP_COLORS = {
+    enemy    = {76, 204, 76},
+    boss     = {255, 76, 76},
+    overlay  = {76, 204, 255},
+    bullet   = {204, 76, 255},
+    excluded = {100, 100, 100},
+    none     = {60, 60, 60},
+}
+
+local function _layoutRow(defs, y, W, h, gap)
+    local totalW = -gap
+    for i = 1, #defs do totalW = totalW + defs[i].w + gap end
+    local x = math.floor((W - totalW) / 2)
+    local rects = {}
+    for i = 1, #defs do
+        rects[i] = {id = defs[i].id, x = x, y = y, w = defs[i].w, h = h}
+        x = x + defs[i].w + gap
     end
-    return nil
+    return rects
+end
+
+--- 태그셋을 대문자 콤마 문자열로 (예: "ENEMY, BOSS")
+local function _tagsToString(tags)
+    if not tags then return "NONE" end
+    local parts = {}
+    -- 정렬된 순서로 출력
+    local order = {"enemy", "boss", "overlay", "bullet"}
+    for _, k in ipairs(order) do
+        if tags[k] then parts[#parts + 1] = string.upper(k) end
+    end
+    if #parts == 0 then return "NONE" end
+    return table.concat(parts, ", ")
+end
+
+--- 태그셋의 첫 번째 태그 색상 반환
+local function _tagsColor(tags)
+    if not tags then return GROUP_COLORS.none end
+    local order = {"enemy", "boss", "overlay", "bullet"}
+    for _, k in ipairs(order) do
+        if tags[k] then return GROUP_COLORS[k] end
+    end
+    return GROUP_COLORS.none
+end
+
+--- 태그셋에 하나라도 태그가 있는지
+local function _hasTags(tags)
+    if not tags then return false end
+    for _ in pairs(tags) do return true end
+    return false
 end
 
 local function _joinWithComma(parts)
@@ -53,7 +97,7 @@ local function _joinWithComma(parts)
 end
 
 local function _buildRecommendationText(curve)
-    if not curve then return "추천: N/A" end
+    if not curve then return "recommand: N/A" end
 
     local tags = {}
     if curve.enemyFriendly then
@@ -177,8 +221,8 @@ local function _computeNormalizationData(curve)
 end
 
 local function _getCurationPanelLayout(W, H)
-    local panelW = 190
-    local panelH = 168
+    local panelW = 200
+    local panelH = 146
     local panelX = W - panelW - 14
     local panelY = H - panelH - 54
     local rowH = 24
@@ -272,9 +316,16 @@ function CurveLabScene.new(sceneStack)
         _fonts      = nil,
         _rotating   = false,
         _rotAngle   = 0,
+        _rotAngleByName = {},
+        _directionalByName = {},
         _centroid   = {x = 0, y = 0},
         _filterMode = 1,
         _filtered   = CURVES,
+        _normalizedView = false,
+        _normData   = nil,
+        _normSource = nil,
+        _groupTags  = nil,
+        _toolbarBtns = {},
         _curationByName = {},
         _curationCount = 0,
         _curationExported = false,
@@ -288,9 +339,32 @@ function CurveLabScene:enter(prev)
     self._scale    = 1.0
     self._rotating = false
     self._rotAngle = 0
+    self._rotAngleByName = {}
+    self._directionalByName = {}
     self._centroid = {x = 0, y = 0}
     self._steps    = nil
     self._filterMode = 1
+    self._normalizedView = false
+    self._normData = nil
+    self._normSource = nil
+    self._groupTags = nil
+    self._toolbarBtns = {}
+
+    -- Sync curation from shapeDefs tags (multi-tag)
+    self._curationByName = {}
+    self._curationCount = 0
+    for i = 1, #CURVES do
+        local tags = ShapeDefs.getTags(CURVES[i].name)
+        if _hasTags(tags) then
+            -- deep copy tag set
+            local copy = {}
+            for k, v in pairs(tags) do copy[k] = v end
+            self._curationByName[CURVES[i].name] = copy
+            self._curationCount = self._curationCount + 1
+        end
+    end
+    self._curationExported = false
+
     self:_rebuildFilter()
     self._fonts = {
         title   = lg.newFont(16),
@@ -347,20 +421,33 @@ function CurveLabScene:_appendCurationLog(line)
     end
 end
 
-function CurveLabScene:_recordCuration(choiceKey)
+function CurveLabScene:_recordCuration(tagKey)
     local curve = self:_getCurve()
     if not curve then return end
 
-    local opt = _getCurationOption(choiceKey)
-    if not opt then return end
+    local tags = self._curationByName[curve.name]
+    local hadTags = _hasTags(tags)
 
-    local prev = self._curationByName[curve.name]
-    self._curationByName[curve.name] = choiceKey
-    if not prev then
-        self._curationCount = self._curationCount + 1
+    if not tags then
+        tags = {}
+        self._curationByName[curve.name] = tags
     end
 
-    local line = string.format("[CURATION] %s -> %s", curve.name, opt.label)
+    -- Toggle the tag
+    if tags[tagKey] then
+        tags[tagKey] = nil
+    else
+        tags[tagKey] = true
+    end
+
+    local hasTags = _hasTags(tags)
+    if not hadTags and hasTags then
+        self._curationCount = self._curationCount + 1
+    elseif hadTags and not hasTags then
+        self._curationCount = self._curationCount - 1
+    end
+
+    local line = string.format("[CURATION] %s -> %s", curve.name, _tagsToString(tags))
     self:_appendCurationLog(line)
 
     if self._curationCount >= #CURVES and not self._curationExported then
@@ -373,49 +460,70 @@ function CurveLabScene:_exportCurationSummary()
     local groups = {
         enemy = {},
         boss = {},
-        both = {},
         overlay = {},
         bullet = {},
         excluded = {},
     }
 
-    local normalizeKeys = {enemy = true, boss = true, both = true}
+    local normalizeKeys = {enemy = true, boss = true}
     local normalizedLines = {}
 
     for i = 1, #CURVES do
         local curve = CURVES[i]
-        local choiceKey = self._curationByName[curve.name]
-        if choiceKey and groups[choiceKey] then
-            groups[choiceKey][#groups[choiceKey] + 1] = curve.name
-            if normalizeKeys[choiceKey] then
-                local n = _computeNormalizationData(curve)
-                normalizedLines[#normalizedLines + 1] = string.format(
-                    "%s | %s | center=(%.4f, %.4f) | maxR=%.4f | scale=%.4f | bounds=(%.4f,%.4f,%.4f,%.4f) | normalizedBounds=(%.4f,%.4f,%.4f,%.4f)",
-                    curve.name,
-                    choiceKey,
-                    n.centerX, n.centerY,
-                    n.maxRadius,
-                    n.scaleToTarget,
-                    n.bounds.xMin, n.bounds.xMax, n.bounds.yMin, n.bounds.yMax,
-                    n.normalizedBounds.xMin, n.normalizedBounds.xMax, n.normalizedBounds.yMin, n.normalizedBounds.yMax
-                )
+        local tags = self._curationByName[curve.name]
+        if _hasTags(tags) then
+            for tagKey, _ in pairs(tags) do
+                if groups[tagKey] then
+                    groups[tagKey][#groups[tagKey] + 1] = curve.name
+                end
+                if normalizeKeys[tagKey] then
+                    -- avoid duplicate normalization lines
+                    local already = false
+                    for j = 1, #normalizedLines do
+                        if normalizedLines[j]:sub(1, #curve.name) == curve.name then
+                            already = true; break
+                        end
+                    end
+                    if not already then
+                        local n = _computeNormalizationData(curve)
+                        normalizedLines[#normalizedLines + 1] = string.format(
+                            "%s | %s | center=(%.4f, %.4f) | maxR=%.4f | scale=%.4f | bounds=(%.4f,%.4f,%.4f,%.4f) | normalizedBounds=(%.4f,%.4f,%.4f,%.4f)",
+                            curve.name,
+                            _tagsToString(tags),
+                            n.centerX, n.centerY,
+                            n.maxRadius,
+                            n.scaleToTarget,
+                            n.bounds.xMin, n.bounds.xMax, n.bounds.yMin, n.bounds.yMax,
+                            n.normalizedBounds.xMin, n.normalizedBounds.xMax, n.normalizedBounds.yMin, n.normalizedBounds.yMax
+                        )
+                    end
+                end
             end
         else
             groups.excluded[#groups.excluded + 1] = curve.name
         end
     end
 
-    local usableCount = #groups.enemy + #groups.boss + #groups.both + #groups.overlay + #groups.bullet
+    local usableCount = 0
+    local counted = {}
+    for _, gKey in ipairs({"enemy", "boss", "overlay", "bullet"}) do
+        for _, name in ipairs(groups[gKey]) do
+            if not counted[name] then
+                counted[name] = true
+                usableCount = usableCount + 1
+            end
+        end
+    end
 
     local lines = {
-        "# Curve Curation Summary",
+        "# Curve Curation Summary (Multi-Tag)",
         string.format("Curated: %d / %d", self._curationCount, #CURVES),
         string.format("Usable: %d / %d", usableCount, #CURVES),
-        string.format("Excluded(Unclassified): %d / %d", #groups.excluded, #CURVES),
-        "Rule: Unclassified curves are excluded and considered unusable.",
+        string.format("Excluded(Untagged): %d / %d", #groups.excluded, #CURVES),
+        "Rule: Curves with no tags are excluded and considered unusable.",
         "",
         "[USABLE]",
-        "- enemy + boss + both + overlay + bullet only",
+        "- enemy + boss + overlay + bullet (multi-tag possible)",
         "",
         "[GROUP] Enemy",
     }
@@ -425,19 +533,16 @@ function CurveLabScene:_exportCurationSummary()
     lines[#lines + 1] = "[GROUP] Boss"
     for i = 1, #groups.boss do lines[#lines + 1] = "- " .. groups.boss[i] end
     lines[#lines + 1] = ""
-    lines[#lines + 1] = "[GROUP] Enemy+Boss"
-    for i = 1, #groups.both do lines[#lines + 1] = "- " .. groups.both[i] end
-    lines[#lines + 1] = ""
     lines[#lines + 1] = "[GROUP] Overlay"
     for i = 1, #groups.overlay do lines[#lines + 1] = "- " .. groups.overlay[i] end
     lines[#lines + 1] = ""
     lines[#lines + 1] = "[GROUP] Bullet Curve"
     for i = 1, #groups.bullet do lines[#lines + 1] = "- " .. groups.bullet[i] end
     lines[#lines + 1] = ""
-    lines[#lines + 1] = "[EXCLUDED] Unclassified"
+    lines[#lines + 1] = "[EXCLUDED] Untagged"
     for i = 1, #groups.excluded do lines[#lines + 1] = "- " .. groups.excluded[i] end
     lines[#lines + 1] = ""
-    lines[#lines + 1] = "[NORMALIZATION] target radius = 1.0 (for enemy/boss/enemy+boss)"
+    lines[#lines + 1] = "[NORMALIZATION] target radius = 1.0 (for enemy/boss)"
     for i = 1, #normalizedLines do lines[#lines + 1] = normalizedLines[i] end
 
     local content = table.concat(lines, "\n") .. "\n"
@@ -447,6 +552,125 @@ function CurveLabScene:_exportCurationSummary()
         self:_appendCurationLog(string.format("[CURATION] Usable=%d Excluded=%d", usableCount, #groups.excluded))
     else
         logWarn("[CURATION] Failed to export summary")
+    end
+
+    -- Generate shapeDefs Lua source
+    self:_exportShapeDefsLua(groups)
+end
+
+function CurveLabScene:_exportShapeDefsLua(groups)
+    local L = {}
+    local function w(s) L[#L + 1] = s end
+    local function wf(...) L[#L + 1] = string.format(...) end
+
+    w("-- shapeDefs.lua")
+    w("-- Auto-generated by CurveLab export.")
+    w("-- Unclassified curves are intentionally excluded.")
+    w("")
+    w("local M = {}")
+    w("")
+    wf("M.targetRadius = %.1f", TARGET_NORMALIZED_RADIUS)
+    w("")
+    w("M.groups = {")
+
+    local groupOrder = {"enemy", "boss", "overlay", "bullet", "excluded"}
+    for _, gKey in ipairs(groupOrder) do
+        local list = groups[gKey]
+        if list and #list > 0 then
+            wf("    %s = {", gKey)
+            for i = 1, #list do
+                wf("        %q,", list[i])
+            end
+            w("    },")
+        end
+    end
+    w("}")
+    w("")
+
+    -- M.usable
+    w("M.usable = {}")
+    for _, gKey in ipairs({"enemy", "boss", "overlay", "bullet"}) do
+        if groups[gKey] and #groups[gKey] > 0 then
+            wf("for i = 1, #M.groups.%s do M.usable[M.groups.%s[i]] = true end", gKey, gKey)
+        end
+    end
+    w("")
+
+    -- M.normalized (enemy/boss curves)
+    w("M.normalized = {")
+    local normalizeKeys = {enemy = true, boss = true}
+    local normalized = {}  -- avoid duplicates
+    for i = 1, #CURVES do
+        local curve = CURVES[i]
+        local tags = self._curationByName[curve.name]
+        if _hasTags(tags) and not normalized[curve.name] then
+            local needNorm = false
+            for k, _ in pairs(tags) do
+                if normalizeKeys[k] then needNorm = true; break end
+            end
+            if needNorm then
+                normalized[curve.name] = true
+                local n = _computeNormalizationData(curve)
+                local usage = _tagsToString(tags):lower()
+                wf("    [%q] = {", curve.name)
+                wf("        usage = %q,", usage)
+                wf("        centerOffset = { x = %.4f, y = %.4f },", n.centerX, n.centerY)
+                wf("        maxRadius = %.4f,", n.maxRadius)
+                wf("        scaleToUnitRadius = %.4f,", n.scaleToTarget)
+                wf("        bounds = { xMin = %.4f, xMax = %.4f, yMin = %.4f, yMax = %.4f },",
+                    n.bounds.xMin, n.bounds.xMax, n.bounds.yMin, n.bounds.yMax)
+                wf("        normalizedBounds = { xMin = %.4f, xMax = %.4f, yMin = %.4f, yMax = %.4f },",
+                    n.normalizedBounds.xMin, n.normalizedBounds.xMax, n.normalizedBounds.yMin, n.normalizedBounds.yMax)
+                w("    },")
+            end
+        end
+    end
+    w("}")
+    w("")
+
+    -- Reverse lookup + API
+    w("-- Reverse lookup: curveName → tag set {enemy=true, boss=true, ...}")
+    w("M._tagLookup = {}")
+    w("for groupName, list in pairs(M.groups) do")
+    w("    for i = 1, #list do")
+    w("        local name = list[i]")
+    w("        if not M._tagLookup[name] then")
+    w("            M._tagLookup[name] = {}")
+    w("        end")
+    w("        M._tagLookup[name][groupName] = true")
+    w("    end")
+    w("end")
+    w("")
+    w("function M.isUsable(curveName)")
+    w("    return M.usable[curveName] == true")
+    w("end")
+    w("")
+    w("--- Returns tag set table (e.g. {enemy=true, boss=true}) or empty table.")
+    w("function M.getTags(curveName)")
+    w("    return M._tagLookup[curveName] or {}")
+    w("end")
+    w("")
+    w("--- Backward compat: returns first tag name or \"none\".")
+    w("function M.getGroup(curveName)")
+    w("    local tags = M._tagLookup[curveName]")
+    w("    if not tags then return \"none\" end")
+    w("    for k, _ in pairs(tags) do return k end")
+    w("    return \"none\"")
+    w("end")
+    w("")
+    w("function M.getNormalization(curveName)")
+    w("    return M.normalized[curveName]")
+    w("end")
+    w("")
+    w("return M")
+
+    local luaContent = table.concat(L, "\n") .. "\n"
+    local ok = love.filesystem.write(CURATION_LUA_FILE, luaContent)
+    if ok then
+        local savePath = love.filesystem.getSaveDirectory()
+        self:_appendCurationLog(string.format("[CURATION] Lua export -> %s/%s", savePath, CURATION_LUA_FILE))
+    else
+        logWarn("[CURATION] Failed to export Lua file")
     end
 end
 
@@ -496,6 +720,45 @@ function CurveLabScene:_buildVerts()
     else
         self._centroid = {x = 0, y = 0}
     end
+    self:_updateCurveInfo()
+end
+
+function CurveLabScene:_updateCurveInfo()
+    local curve = self:_getCurve()
+    if not curve then
+        self._groupTags = nil
+        self._normData = nil
+        self._normSource = nil
+        return
+    end
+    self._groupTags = ShapeDefs.getTags(curve.name)
+    local stored = ShapeDefs.getNormalization(curve.name)
+    if stored then
+        self._normData = stored
+        self._normSource = "stored"
+    else
+        local computed = _computeNormalizationData(curve)
+        self._normData = {
+            centerOffset = { x = computed.centerX, y = computed.centerY },
+            maxRadius = computed.maxRadius,
+            scaleToUnitRadius = computed.scaleToTarget,
+            bounds = computed.bounds,
+            normalizedBounds = computed.normalizedBounds,
+        }
+        self._normSource = "computed"
+    end
+end
+
+function CurveLabScene:_savePerCurveState()
+    local curve = self:_getCurve()
+    if not curve then return end
+    self._rotAngleByName[curve.name] = self._rotAngle
+end
+
+function CurveLabScene:_loadPerCurveState()
+    local curve = self:_getCurve()
+    if not curve then return end
+    self._rotAngle = self._rotAngleByName[curve.name] or 0
 end
 
 -- 화면 좌표 정점 배열을 modeName에 따라 렌더 (Glow/Main 공용)
@@ -569,6 +832,16 @@ function CurveLabScene:draw()
     setColor(178, 178, 204, 230)
     lg.printf(curve and curve.formula or "", 0, 34, W, "center")
 
+    -- Category badge + NORM indicator
+    if curve then
+        local gc = _tagsColor(self._groupTags)
+        setColor(gc[1], gc[2], gc[3], 230)
+        local badge = _tagsToString(self._groupTags)
+        if self._normalizedView then badge = badge .. "  |  NORM" end
+        lg.setFont(self._fonts.info)
+        lg.printf(badge, 0, 52, W, "center")
+    end
+
     -- Crosshair
     setColor(76, 76, 76, 76)
     lg.line(cx - 20, cy, cx + 20, cy)
@@ -583,17 +856,28 @@ function CurveLabScene:draw()
 
     local verts = self._verts
     if curve and verts and #verts >= 4 then
-        -- World -> screen: centroid-based rotation
+        -- World -> screen: centroid-based rotation (+ optional normalization)
         local sv   = {}
         local cosR = _cos(self._rotAngle)
         local sinR = _sin(self._rotAngle)
         local ox   = self._centroid.x
         local oy   = self._centroid.y
-        for i = 1, #verts, 2 do
-            local dx = verts[i]     - ox
-            local dy = verts[i + 1] - oy
-            sv[#sv + 1] = cx + (dx * cosR - dy * sinR + ox) * baseScale
-            sv[#sv + 1] = cy - (dx * sinR + dy * cosR + oy) * baseScale
+        if self._normalizedView and self._normData then
+            local co = self._normData.centerOffset
+            local s  = self._normData.scaleToUnitRadius
+            for i = 1, #verts, 2 do
+                local nx = (verts[i] - co.x) * s
+                local ny = (verts[i + 1] - co.y) * s
+                sv[#sv + 1] = cx + (nx * cosR - ny * sinR) * baseScale
+                sv[#sv + 1] = cy - (nx * sinR + ny * cosR) * baseScale
+            end
+        else
+            for i = 1, #verts, 2 do
+                local dx = verts[i]     - ox
+                local dy = verts[i + 1] - oy
+                sv[#sv + 1] = cx + (dx * cosR - dy * sinR + ox) * baseScale
+                sv[#sv + 1] = cy - (dx * sinR + dy * cosR + oy) * baseScale
+            end
         end
 
         local segments = _buildSegments(sv)
@@ -634,8 +918,14 @@ function CurveLabScene:draw()
         end
 
         -- Centroid dot (rotation pivot, always visible)
-        local scx = cx + ox * baseScale
-        local scy = cy - oy * baseScale
+        local scx, scy
+        if self._normalizedView and self._normData then
+            scx = cx
+            scy = cy
+        else
+            scx = cx + ox * baseScale
+            scy = cy - oy * baseScale
+        end
         setColor(255, 220, 60, 200)
         lg.circle("fill", scx, scy, 3)
         setColor(255, 220, 60, 80)
@@ -645,34 +935,139 @@ function CurveLabScene:draw()
         lg.setPointSize(1)
     end
 
+    -- ─── Right-side Toolbar (vertical column) ─────────────────────
+    do
+        local btnW = 40
+        local pairW = btnW * 2 + 4
+        local btnH = 26
+        local btnGap = 4
+        local colX = W - pairW - 14
+        local curY = 70
+        local btnFont = self._fonts.hint
+        lg.setFont(btnFont)
+
+        self._toolbarBtns = {}
+        local isDir = curve and self._directionalByName[curve.name] or false
+
+        local rows = {
+            {{id = "prev", w = btnW}, {id = "next", w = btnW}},
+            {{id = "filter", w = pairW}},
+            {{id = "mode", w = pairW}},
+            {{id = "norm", w = pairW}},
+            {{id = "rotate", w = pairW}},
+            {{id = "directional", w = pairW}},
+            {{id = "rot_ccw", w = btnW}, {id = "rot_cw", w = btnW}},
+            {{id = "scale_dn", w = btnW}, {id = "scale_up", w = btnW}},
+            {{id = "export", w = pairW}},
+        }
+
+        local labels = {
+            prev        = "<<",
+            next        = ">>",
+            filter      = FILTERS[self._filterMode].label,
+            mode        = MODES[self._mode],
+            norm        = self._normalizedView and "NORM *" or "NORM",
+            rotate      = self._rotating and "ROT *" or "ROT",
+            directional = isDir and "DIR *" or "DIR",
+            rot_ccw     = "-90",
+            rot_cw      = "+90",
+            scale_dn    = "-",
+            scale_up    = "+",
+            export      = "EXPORT",
+        }
+
+        local actives = {
+            norm        = self._normalizedView,
+            rotate      = self._rotating,
+            directional = isDir,
+        }
+
+        for _, row in ipairs(rows) do
+            local rx = colX
+            for _, def in ipairs(row) do
+                local b = {id = def.id, x = rx, y = curY, w = def.w, h = btnH}
+                local active = actives[b.id] or false
+                local label = labels[b.id] or b.id
+
+                if active then
+                    setColor(48, 142, 255, 200)
+                else
+                    setColor(24, 36, 56, 220)
+                end
+                lg.rectangle("fill", b.x, b.y, b.w, b.h, 4, 4)
+
+                if active then
+                    setColor(120, 220, 255, 220)
+                else
+                    setColor(80, 140, 220, 160)
+                end
+                lg.rectangle("line", b.x, b.y, b.w, b.h, 4, 4)
+
+                setColor(220, 240, 255, active and 255 or 180)
+                lg.printf(label, b.x, b.y + (b.h - btnFont:getHeight()) / 2, b.w, "center")
+
+                self._toolbarBtns[#self._toolbarBtns + 1] = b
+                rx = rx + def.w + 4
+            end
+            curY = curY + btnH + btnGap
+        end
+    end
+
+    -- ─── Shortcut Legend (top-left) ──────────────────────────────
+    do
+        lg.setFont(self._fonts.hint)
+        setColor(100, 110, 130, 160)
+        local lx, ly, lh = 10, 70, 13
+        lg.print("L/R  curve",   lx, ly); ly = ly + lh
+        lg.print("TAB  filter",  lx, ly); ly = ly + lh
+        lg.print("M    mode",    lx, ly); ly = ly + lh
+        lg.print("N    norm",    lx, ly); ly = ly + lh
+        lg.print("R    rotate",  lx, ly); ly = ly + lh
+        lg.print("D    direct",  lx, ly); ly = ly + lh
+        lg.print("Q/E  rot 90",  lx, ly); ly = ly + lh
+        lg.print("+/-  scale",   lx, ly); ly = ly + lh
+        lg.print("U/D  verts",   lx, ly); ly = ly + lh
+        lg.print("1-4  curation", lx, ly); ly = ly + lh
+        lg.print("ESC  back",    lx, ly)
+    end
+
     -- Info panel (bottom-left)
     lg.setFont(self._fonts.info)
     local infoX = 16
-    local infoY = H - 240
+    local infoY = H - 260
     local lineH = 16
+    do
+        local gc = _tagsColor(self._groupTags)
+        setColor(gc[1], gc[2], gc[3], 230)
+        lg.print(string.format("group:    %s", _tagsToString(self._groupTags)), infoX, infoY); infoY = infoY + lineH
+    end
     setColor(128, 128, 153, 204)
-    lg.print(string.format("filter:   %s",         FILTERS[self._filterMode].label),           infoX, infoY); infoY = infoY + lineH
-    lg.print(string.format("visible:  %d",         self:_getCurveCount()),                       infoX, infoY); infoY = infoY + lineH
-    lg.print(string.format("mode:     %s",         MODES[self._mode]),                        infoX, infoY); infoY = infoY + lineH
-    lg.print(string.format("vertices: %d",         self:_getSteps()),                         infoX, infoY); infoY = infoY + lineH
-    lg.print(string.format("scale:    %.1fx",      self._scale),                              infoX, infoY); infoY = infoY + lineH
-    lg.print(string.format("rotate:   %s",         self._rotating and "ON" or "OFF"),         infoX, infoY); infoY = infoY + lineH
-    lg.print(string.format("angle:    %.2f",       self._rotAngle),                           infoX, infoY); infoY = infoY + lineH
-    lg.print(string.format("centroid:(%.2f,%.2f)", self._centroid.x, self._centroid.y),       infoX, infoY); infoY = infoY + lineH
-    lg.print("select:   1 enemy  2 boss  3 both", infoX, infoY); infoY = infoY + lineH
-    lg.print("          4 overlay 5 bullet", infoX, infoY); infoY = infoY + lineH
+    lg.print(string.format("norm:     %s", self._normSource or "none"), infoX, infoY); infoY = infoY + lineH
+    lg.print(string.format("filter:   %s", FILTERS[self._filterMode].label), infoX, infoY); infoY = infoY + lineH
+    lg.print(string.format("visible:  %d", self:_getCurveCount()), infoX, infoY); infoY = infoY + lineH
+    lg.print(string.format("mode:     %s", MODES[self._mode]), infoX, infoY); infoY = infoY + lineH
+    lg.print(string.format("verts:    %d", self:_getSteps()), infoX, infoY); infoY = infoY + lineH
+    lg.print(string.format("scale:    %.1fx", self._scale), infoX, infoY); infoY = infoY + lineH
+    lg.print(string.format("angle:    %.0f deg", math.deg(self._rotAngle)), infoX, infoY); infoY = infoY + lineH
+    do
+        local isDir = curve and self._directionalByName[curve.name] or false
+        if isDir then setColor(255, 180, 80, 230) end
+        lg.print(string.format("direct:   %s", isDir and "YES" or "no"), infoX, infoY); infoY = infoY + lineH
+        setColor(128, 128, 153, 204)
+    end
+    lg.print(string.format("centroid:(%.2f,%.2f)", self._centroid.x, self._centroid.y), infoX, infoY); infoY = infoY + lineH
+    if self._normData then
+        local nd = self._normData
+        local co = nd.centerOffset
+        setColor(128, 153, 128, 204)
+        lg.print(string.format("maxR:     %.4f", nd.maxRadius), infoX, infoY); infoY = infoY + lineH
+        lg.print(string.format("scale1R:  %.4f", nd.scaleToUnitRadius), infoX, infoY); infoY = infoY + lineH
+        lg.print(string.format("offset:  (%.4f,%.4f)", co.x, co.y), infoX, infoY); infoY = infoY + lineH
+    end
+    setColor(128, 128, 153, 204)
     if curve then
         lg.print(string.format("meta:     %s / c%d / %s", curve.family, curve.complexity, curve.enemyFriendly and "enemy" or "non-enemy"), infoX, infoY)
         infoY = infoY + lineH
-        lg.print(_buildRecommendationText(curve), infoX, infoY)
-        infoY = infoY + lineH
-        local pickedKey = self._curationByName[curve.name]
-        local picked = _getCurationOption(pickedKey)
-        lg.print(string.format("picked:   %s", picked and picked.label or "NONE"), infoX, infoY)
-        infoY = infoY + lineH
-        lg.print(string.format("curated:  %d / %d", self._curationCount, #CURVES), infoX, infoY)
-        infoY = infoY + lineH
-        lg.print("note: unclassified = unusable", infoX, infoY)
     end
 
     -- DNA curation panel (bottom-right)
@@ -687,11 +1082,11 @@ function CurveLabScene:draw()
     setColor(188, 216, 255, 240)
     lg.print("DNA CURATION", panel.x + 10, panel.y + 8)
 
-    local pickedKey = curve and self._curationByName[curve.name] or nil
+    local pickedTags = curve and self._curationByName[curve.name] or nil
     for i = 1, #CURATION_OPTIONS do
         local opt = CURATION_OPTIONS[i]
         local r = panel.optionRects[i]
-        local isPicked = (pickedKey == opt.key)
+        local isPicked = pickedTags and pickedTags[opt.key] or false
         if isPicked then
             setColor(48, 142, 255, 168)
             lg.rectangle("fill", r.x, r.y, r.w, r.h, 4, 4)
@@ -701,16 +1096,13 @@ function CurveLabScene:draw()
         else
             setColor(116, 136, 170, 220)
         end
-        lg.print(string.format("%s) %s", opt.short, opt.label), r.x + 6, r.y + 4)
+        lg.print(string.format("%s) %s %s", opt.short, isPicked and "[x]" or "[ ]", opt.label), r.x + 6, r.y + 4)
     end
-
-    setColor(140, 160, 190, 220)
-    lg.print("F5: export summary", panel.x + 10, panel.y + panel.h - 20)
 
     -- Hint bar
     lg.setFont(self._fonts.hint)
     setColor(128, 128, 128, (0.4 + 0.15 * _sin(t * 2)) * 255)
-    lg.printf("L/R: curve | TAB: filter | 1:enemy 2:boss 3:both 4:overlay 5:bullet | F5:export | ESC: back | top tap: back",
+    lg.printf(string.format("curated: %d/%d | ESC: back", self._curationCount, #CURVES),
         0, H - 24, W, "center")
 
     resetColor()
@@ -722,22 +1114,28 @@ function CurveLabScene:keypressed(key, scancode)
     if key == "escape" then
         self._sceneStack:pop()
     elseif key == "tab" then
+        self:_savePerCurveState()
         self._filterMode = self._filterMode % #FILTERS + 1
         self._steps = nil
         self:_rebuildFilter()
         self:_buildVerts()
+        self:_loadPerCurveState()
     elseif key == "left" then
         local n = self:_getCurveCount()
         if n == 0 then return true end
+        self:_savePerCurveState()
         self._curveIdx = (self._curveIdx - 2) % n + 1
         self._steps = nil
         self:_buildVerts()
+        self:_loadPerCurveState()
     elseif key == "right" then
         local n = self:_getCurveCount()
         if n == 0 then return true end
+        self:_savePerCurveState()
         self._curveIdx = self._curveIdx % n + 1
         self._steps = nil
         self:_buildVerts()
+        self:_loadPerCurveState()
     elseif key == "up" then
         self._steps = math.min(self:_getSteps() + 10, 2000)
         self:_buildVerts()
@@ -748,6 +1146,19 @@ function CurveLabScene:keypressed(key, scancode)
         self._mode = self._mode % #MODES + 1
     elseif key == "r" or scancode == "r" then
         self._rotating = not self._rotating
+    elseif key == "n" or scancode == "n" then
+        self._normalizedView = not self._normalizedView
+    elseif key == "d" or scancode == "d" then
+        local curve = self:_getCurve()
+        if curve then
+            self._directionalByName[curve.name] = not self._directionalByName[curve.name]
+        end
+    elseif key == "q" or scancode == "q" then
+        self._rotAngle = self._rotAngle - _pi / 2
+        if self._rotAngle < 0 then self._rotAngle = self._rotAngle + 2 * _pi end
+    elseif key == "e" or scancode == "e" then
+        self._rotAngle = self._rotAngle + _pi / 2
+        if self._rotAngle >= 2 * _pi then self._rotAngle = self._rotAngle - 2 * _pi end
     elseif key == "=" or key == "kp+" then
         self._scale = math.min(self._scale + 0.2, 5.0)
     elseif key == "-" or key == "kp-" then
@@ -757,10 +1168,8 @@ function CurveLabScene:keypressed(key, scancode)
     elseif key == "2" or key == "kp2" then
         self:_recordCuration("boss")
     elseif key == "3" or key == "kp3" then
-        self:_recordCuration("both")
-    elseif key == "4" or key == "kp4" then
         self:_recordCuration("overlay")
-    elseif key == "5" or key == "kp5" then
+    elseif key == "4" or key == "kp4" then
         self:_recordCuration("bullet")
     elseif key == "f5" then
         self:_exportCurationSummary()
@@ -771,16 +1180,60 @@ function CurveLabScene:keypressed(key, scancode)
     return true
 end
 
--- macOS IME 한글 2벌식: ㅡ->m, ㄱ->r
-local JAMO_TO_KEY = {["ㅡ"] = "m", ["ㄱ"] = "r"}
+-- macOS IME 한글 2벌식: ㅡ->m, ㄱ->r, ㅜ->n, ㅂ->q, ㄷ->e
+local JAMO_TO_KEY = {["ㅡ"] = "m", ["ㄱ"] = "r", ["ㅜ"] = "n", ["ㅂ"] = "q", ["ㄷ"] = "e", ["ㅇ"] = "d"}
 function CurveLabScene:textinput(text)
     local key = JAMO_TO_KEY[text]
     if key then return self:keypressed(key) end
     return false
 end
 
+function CurveLabScene:_handleToolbarAction(id)
+    if id == "prev" then
+        self:keypressed("left")
+    elseif id == "next" then
+        self:keypressed("right")
+    elseif id == "filter" then
+        self:keypressed("tab")
+    elseif id == "mode" then
+        self:keypressed("m")
+    elseif id == "norm" then
+        self._normalizedView = not self._normalizedView
+    elseif id == "rotate" then
+        self._rotating = not self._rotating
+    elseif id == "directional" then
+        local curve = self:_getCurve()
+        if curve then
+            self._directionalByName[curve.name] = not self._directionalByName[curve.name]
+        end
+    elseif id == "rot_ccw" then
+        self._rotAngle = self._rotAngle - _pi / 2
+        if self._rotAngle < 0 then self._rotAngle = self._rotAngle + 2 * _pi end
+    elseif id == "rot_cw" then
+        self._rotAngle = self._rotAngle + _pi / 2
+        if self._rotAngle >= 2 * _pi then self._rotAngle = self._rotAngle - 2 * _pi end
+    elseif id == "scale_dn" then
+        self._scale = math.max(self._scale - 0.2, 0.2)
+    elseif id == "scale_up" then
+        self._scale = math.min(self._scale + 0.2, 5.0)
+    elseif id == "export" then
+        self:_exportCurationSummary()
+        self._curationExported = true
+    end
+end
+
 function CurveLabScene:touchpressed(id, x, y)
     local W, H = lg.getDimensions()
+
+    -- Toolbar buttons
+    for i = 1, #self._toolbarBtns do
+        local b = self._toolbarBtns[i]
+        if x >= b.x and x <= b.x + b.w and y >= b.y and y <= b.y + b.h then
+            self:_handleToolbarAction(b.id)
+            return true
+        end
+    end
+
     local panel = _getCurationPanelLayout(W, H)
 
     -- Touch selection for DNA curation options.

@@ -27,7 +27,6 @@ end
 local function pickCuratedCurve(role)
     local groups = shapeDefs.groups or {}
     local pool = groups[role]
-    if not pool or #pool == 0 then pool = groups.both end
     if not pool or #pool == 0 then pool = groups.enemy end
     if not pool or #pool == 0 then return nil end
     return pool[math.random(#pool)]

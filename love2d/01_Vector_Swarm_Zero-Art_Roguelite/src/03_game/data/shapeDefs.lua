@@ -33,13 +33,16 @@ M.groups = {
         "Ranunculoid (k=5)",
         "Hypotrochoid (R=5,r=3,d=5)",
         "Epitrochoid (R=3,r=1,d=1)",
+        "Rose 5/4",
+        "Rose 8/3",
+        "Wavy Circle (19:3)",
+        "Lissajous (5:4)",
+        "Hypotrochoid (R=7,r=3,d=2)",
     },
     boss = {
         "Butterfly (Fay)",
         "Gerono Lemniscate",
         "Maurer Rose (n=6, d=71)",
-    },
-    both = {
         "Rose 5/4",
         "Rose 8/3",
         "Wavy Circle (19:3)",
@@ -76,7 +79,6 @@ M.groups = {
 M.usable = {}
 for i = 1, #M.groups.enemy do M.usable[M.groups.enemy[i]] = true end
 for i = 1, #M.groups.boss do M.usable[M.groups.boss[i]] = true end
-for i = 1, #M.groups.both do M.usable[M.groups.both[i]] = true end
 for i = 1, #M.groups.overlay do M.usable[M.groups.overlay[i]] = true end
 for i = 1, #M.groups.bullet do M.usable[M.groups.bullet[i]] = true end
 
@@ -218,7 +220,7 @@ M.normalized = {
         normalizedBounds = { xMin = -0.8219, xMax = 1.0000, yMin = -0.9539, yMax = 0.9539 },
     },
     ["Hypotrochoid (R=7,r=3,d=2)"] = {
-        usage = "both",
+        usage = "enemy,boss",
         centerOffset = { x = -0.0000, y = -0.0000 },
         maxRadius = 1.0000,
         scaleToUnitRadius = 1.0000,
@@ -242,7 +244,7 @@ M.normalized = {
         normalizedBounds = { xMin = -0.7419, xMax = 0.7419, yMin = -0.7419, yMax = 0.7419 },
     },
     ["Lissajous (5:4)"] = {
-        usage = "both",
+        usage = "enemy,boss",
         centerOffset = { x = -0.0000, y = -0.0000 },
         maxRadius = 1.3917,
         scaleToUnitRadius = 0.7185,
@@ -306,7 +308,7 @@ M.normalized = {
         normalizedBounds = { xMin = -0.8169, xMax = 1.0000, yMin = -0.9528, yMax = 0.9528 },
     },
     ["Rose 5/4"] = {
-        usage = "both",
+        usage = "enemy,boss",
         centerOffset = { x = -0.0000, y = 0.0000 },
         maxRadius = 1.0000,
         scaleToUnitRadius = 1.0000,
@@ -322,7 +324,7 @@ M.normalized = {
         normalizedBounds = { xMin = -0.9160, xMax = 1.0000, yMin = -0.9781, yMax = 0.9781 },
     },
     ["Rose 8/3"] = {
-        usage = "both",
+        usage = "enemy,boss",
         centerOffset = { x = -0.0000, y = -0.0000 },
         maxRadius = 1.0000,
         scaleToUnitRadius = 1.0000,
@@ -338,7 +340,7 @@ M.normalized = {
         normalizedBounds = { xMin = -0.8020, xMax = 0.9795, yMin = -0.9135, yMax = 0.9551 },
     },
     ["Wavy Circle (19:3)"] = {
-        usage = "both",
+        usage = "enemy,boss",
         centerOffset = { x = -0.0000, y = 0.0000 },
         maxRadius = 1.0000,
         scaleToUnitRadius = 1.0000,
@@ -347,8 +349,33 @@ M.normalized = {
     },
 }
 
+-- Reverse lookup: curveName → tag set {enemy=true, boss=true, ...}
+M._tagLookup = {}
+for groupName, list in pairs(M.groups) do
+    for i = 1, #list do
+        local name = list[i]
+        if not M._tagLookup[name] then
+            M._tagLookup[name] = {}
+        end
+        M._tagLookup[name][groupName] = true
+    end
+end
+
 function M.isUsable(curveName)
     return M.usable[curveName] == true
+end
+
+--- Returns tag set table (e.g. {enemy=true, boss=true}) or empty table.
+function M.getTags(curveName)
+    return M._tagLookup[curveName] or {}
+end
+
+--- Backward compat: returns first tag name or "none".
+function M.getGroup(curveName)
+    local tags = M._tagLookup[curveName]
+    if not tags then return "none" end
+    for k, _ in pairs(tags) do return k end
+    return "none"
 end
 
 function M.getNormalization(curveName)
